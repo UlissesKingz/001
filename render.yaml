@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: 001-online
+    runtime: node
+    plan: free
+    autoDeploy: true
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: APP_ORIGINS
+        sync: false
+      - key: MONGODB_URI
+        sync: false
+      - key: HTTP_RATE_LIMIT_MAX
+        value: "180"
+      - key: SOCKET_RATE_LIMIT_MAX
+        value: "90"

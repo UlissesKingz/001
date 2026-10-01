@@ -1,0 +1,1307 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>01</title>
+<style>
+:root{
+  --bg:#0c0f14;--panel:#171c24;--panel2:#202733;--line:#343e4d;--text:#f4f6fa;--muted:#98a4b5;
+  --accent:#f2ca68;--good:#63d89c;--bad:#ff7474;--red:#df5656;--blue:#4d82e8;--green:#42b97b;--yellow:#dfb936;
+}
+*{box-sizing:border-box} body{margin:0;background:radial-gradient(circle at 50% 25%,#202735,#0c0f14 58%);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;min-height:100vh}
+button{font:inherit}.app{max-width:1500px;margin:auto;padding:14px;display:grid;gap:10px}
+.top{display:flex;justify-content:space-between;gap:12px;align-items:center;background:#12171fdd;border:1px solid #29313d;border-radius:16px;padding:12px 14px}.title{font-size:20px;font-weight:850}.sub{font-size:12px;color:var(--muted)}
+.btn{border:1px solid #465163;background:#252d39;color:#fff;border-radius:10px;padding:9px 12px;cursor:pointer;font-weight:700}.btn:hover:not(:disabled){background:#313b49}.btn:disabled{opacity:.35;cursor:not-allowed}.btn.primary{background:var(--accent);border-color:var(--accent);color:#171306}.btn.good{background:#204c38;border-color:#36795b}.btn.good:not(:disabled){background:#2f9b64;border-color:#63d89c;color:#fff;box-shadow:0 0 0 2px #63d89c35,0 0 18px #63d89c55;animation:readyPulse 1.15s ease-in-out infinite alternate}@keyframes readyPulse{from{transform:translateY(0);box-shadow:0 0 0 2px #63d89c25,0 0 10px #63d89c35}to{transform:translateY(-1px);box-shadow:0 0 0 3px #63d89c45,0 0 24px #63d89c75}}.btn.bad{background:#512a2a;border-color:#834141}.btn.meld-ready:not(:disabled){background:#2f9b64;border-color:#63d89c;color:#fff;box-shadow:0 0 0 2px #63d89c35,0 0 18px #63d89c55;animation:readyPulse 1.15s ease-in-out infinite alternate}.btn.meld-invalid:not(:disabled){background:#b83e45;border-color:#ff7474;color:#fff;box-shadow:0 0 0 2px #ff747435,0 0 16px #ff74744a}.notice-modal{position:fixed;inset:0;background:#05070bbd;display:none;align-items:center;justify-content:center;padding:20px;z-index:1000}.notice-modal.open{display:flex}.notice-card{width:min(470px,94vw);background:#171c24;border:1px solid #445064;border-radius:18px;box-shadow:0 22px 70px #000b;padding:22px}.notice-card h2{margin:0 0 10px;font-size:20px}.notice-card p{margin:0 0 18px;color:#d7deea;line-height:1.5}.notice-actions{display:flex;justify-content:flex-end}
+.stats{display:grid;grid-template-columns:1.2fr 1fr .7fr;gap:10px}
+.turn-order{display:flex;align-items:center;justify-content:center;gap:7px;flex-wrap:wrap;background:#111720;border:1px solid #2d3542;border-radius:14px;padding:8px 10px}.turn-chip{border:1px solid #394454;border-radius:999px;padding:5px 9px;color:#aeb9c8;font-size:12px;font-weight:800}.turn-chip.active{background:var(--accent);border-color:var(--accent);color:#171306}.turn-arrow{color:#657286;font-weight:900}.stat{background:#141922;border:1px solid #2d3542;border-radius:14px;padding:10px 12px;min-height:64px}.stat b{display:block;margin-bottom:5px}.blocked{display:flex;gap:6px;flex-wrap:wrap}.pill{display:flex;align-items:center;gap:6px;border:1px solid #394454;border-radius:999px;padding:5px 8px;color:#cbd3df}.pill.on{background:#080a0e;outline:1px solid #000;opacity:.75}.dot{width:11px;height:11px;border-radius:50%}
+.board{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:auto auto auto;gap:10px}.seat,.center,.log{background:#131820dd;border:1px solid #2b3440;border-radius:17px;padding:10px}.seat.active{box-shadow:inset 0 0 0 2px var(--accent),0 0 28px #f2ca6820}.seat h3,.log h3{margin:0 0 8px;font-size:14px;display:flex;justify-content:space-between;gap:10px}.seat small{color:var(--muted)}
+.bot1{grid-column:1;grid-row:1}.bot2{grid-column:2;grid-row:1}.bot3{grid-column:3;grid-row:1}.center{grid-column:1/4;grid-row:2;min-height:320px}.human{grid-column:1/4;grid-row:3}.center-log{margin-top:10px;max-height:145px;overflow:auto;background:#0f141b;border-radius:12px}
+.human-top{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:4px}.human-top h3{flex:1;margin:0}.sort-box{display:flex;align-items:center;justify-content:flex-end;gap:6px;flex-wrap:wrap}.sort-label{font-size:11px;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:.45px;margin-right:2px}.sort-btn{padding:6px 9px;font-size:11px;border-radius:8px}.sort-btn.active{background:var(--accent);border-color:var(--accent);color:#171306;box-shadow:0 0 0 2px #f2ca6825}.sort-hint{margin:-1px 0 7px}.human button.card{cursor:grab}.human button.card:active{cursor:grabbing}
+.hand{display:flex;gap:7px;flex-wrap:wrap;align-items:flex-start;min-height:82px}.card{width:56px;height:78px;border-radius:10px;border:2px solid #ffffff25;background:#f7f7f2;color:#101217;position:relative;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:27px;box-shadow:0 7px 15px #0005;overflow:hidden;user-select:none;padding:0}.card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:10px;background:var(--c)}.card::after{content:attr(data-abbr);position:absolute;right:4px;top:4px;font-size:8px;color:#1118;font-weight:900;text-transform:uppercase}.card.blocked{background:repeating-linear-gradient(135deg,#171c24 0 8px,#222a36 8px 16px);color:#d6dde8;border-color:#05070a;box-shadow:inset 0 0 0 2px #ffffff09,0 7px 15px #0007}.card.blocked::before{opacity:.55}.card.blocked::after{color:#fff6}.card .lock{display:none;position:absolute;right:4px;bottom:3px;font-size:11px;color:#fff8}.card.blocked .lock{display:block;font-size:7px;letter-spacing:.35px;right:3px;bottom:3px}
+.card.special{background:linear-gradient(145deg,#efe7cb,#cfc3a0);color:#141414;border-color:#f2ca68;box-shadow:inset 0 0 0 2px #ffffff55,0 7px 15px #0005}
+.card.special::before{width:100%;background:repeating-linear-gradient(90deg,transparent 0 8px,#1111 8px 9px);opacity:.7}
+.card.special::after{content:"2 BITS";color:#1119;z-index:2}.card.special .lock{display:none}
+button.card{cursor:pointer}.human .hand{min-height:94px;padding:6px 4px;flex-wrap:nowrap;overflow-x:auto;overflow-y:visible;scrollbar-width:thin}.human button.card{cursor:grab;touch-action:none;transition:transform .12s ease,outline .12s ease,opacity .12s ease;position:relative}
+.human button.card.dragging{opacity:.5;transform:scale(.95);z-index:5}
+.human button.card.drag-over-left::before,.human button.card.drag-over-right::before{content:"";position:absolute;top:-5px;bottom:-5px;width:4px;background:var(--accent);border-radius:4px;z-index:20}
+.human button.card.drag-over-left::before{left:-6px}
+.human button.card.drag-over-right::before{right:-6px}.human button.card:active{cursor:grabbing}.human.selecting button.card:hover{transform:translateY(-5px)}button.card.selected{transform:translateY(-9px);outline:3px solid var(--accent);outline-offset:2px}.card.meld-selected{outline-color:var(--good)}
+.melds{display:flex;gap:5px;margin-top:7px;align-items:center}.meldmark{height:6px;width:25px;border-radius:10px;background:#2d3542}.meldmark.on{background:var(--good)}.refresh-label{margin-left:7px;font-size:8px;color:var(--muted);font-weight:900;align-self:center}.refreshmark{width:16px;height:16px;border-radius:50%;background:#2d3542;border:1px solid #4b5667;align-self:center;display:inline-flex;align-items:center;justify-content:center;font-size:11px;line-height:1;font-weight:1000;color:#657286}.refreshmark::before{content:"↻";transform:translateY(-.3px)}.refreshmark.on{background:#2387e8;border-color:#77baff;color:#fff;box-shadow:0 0 8px #2387e877}.refresh-button-icon{width:23px;height:23px;border-radius:50%;background:#2387e8;border:1px solid #77baff;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:16px;line-height:1;font-weight:1000;box-shadow:0 0 8px #2387e855;margin-right:6px;vertical-align:-2px}.refresh-button-icon span{display:block;transform:translateY(-1px)}
+.conveyor-title{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:10px}.middle-row{display:grid;grid-template-columns:96px minmax(0,1fr);gap:8px;align-items:stretch}.deckbox{border:1px solid #3b4655;border-radius:14px;background:#0e1218;padding:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:118px}.deckpile{position:relative;width:72px;height:98px;margin:2px 0 3px}.deckpile::before,.deckpile::after{content:"";position:absolute;width:62px;height:88px;border-radius:11px;background:#0d1117;border:2px solid #394452}.deckpile::before{left:8px;top:7px;transform:rotate(3deg);opacity:.65}.deckpile::after{left:3px;top:3px;transform:rotate(-2deg);opacity:.82}.deckcard{position:absolute;z-index:3;left:5px;top:0;width:62px;height:88px;border-radius:11px;border:2px solid #616c7b;background:linear-gradient(145deg,#151b24,#090c11);box-shadow:0 8px 20px #0008;overflow:hidden}.deckcard::before{content:"01  10  00  11\A 10  01  11  00\A 00  11  01  10";white-space:pre;position:absolute;inset:8px 6px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:10px;line-height:2.05;letter-spacing:1px;color:#dce3ed33;font-weight:900;border:1px solid #ffffff12;border-radius:7px}.deckcard::after{content:"VERSO";position:absolute;left:50%;bottom:6px;transform:translateX(-50%);font-size:8px;letter-spacing:1.4px;color:#d8dee9b8;font-weight:900}.deckpile.empty{opacity:.28}.deckpile.empty::before,.deckpile.empty::after{display:none}.deckpile.empty .deckcard{background:#0b0e13;border-style:dashed}.deckpile.empty .deckcard::before{content:"VAZIO";white-space:normal;color:#aeb7c5;letter-spacing:1.2px}.deckpile.empty .deckcard::after{display:none}.deckpile>.card{position:absolute;z-index:3;left:5px;top:0;width:62px;height:88px;pointer-events:none}.decktoplabel{font-size:10px;color:#aeb9c8;font-weight:800;letter-spacing:.4px;text-transform:uppercase}
+.conveyor-wrap{overflow-x:auto;padding:8px 4px}.conveyor{display:grid;grid-template-columns:repeat(9,minmax(64px,1fr));gap:8px;min-width:720px}.slot{min-height:102px;border:1px dashed #465264;background:#171d25;border-radius:12px;position:relative;display:flex;align-items:center;justify-content:center;padding:7px;transition:box-shadow .18s ease,border-color .18s ease,transform .18s ease}.slot.current-discard{border:3px solid var(--accent);box-shadow:0 0 0 4px #f2ca6830,0 0 24px #f2ca6845;transform:translateY(-2px)}.slot.current-discard::after{content:"PRÓXIMO";position:absolute;left:50%;bottom:-17px;transform:translateX(-50%);font-size:8px;line-height:1;font-weight:950;letter-spacing:.8px;color:var(--accent);background:#0c0f14;padding:2px 5px;border-radius:999px;white-space:nowrap}.slotnum{position:absolute;top:5px;left:7px;font-size:10px;color:#718096}.slot.current-discard .slotnum{color:var(--accent);font-weight:950}.slot.latest-discard{box-shadow:inset 0 0 0 3px #5ba7ff66}.slot.latest-discard::before{content:"ÚLTIMO";position:absolute;right:4px;top:4px;z-index:9;font-size:7px;font-weight:950;letter-spacing:.6px;color:#d9ecff;background:#235f9d;border:1px solid #5ba7ff;border-radius:999px;padding:2px 5px}.stack{position:absolute;bottom:4px;right:5px;font-size:9px;background:#07090c;padding:2px 5px;border-radius:999px;color:#cbd3df}.slot .card{width:58px;height:80px}.slot.used-space{border-color:#ff7474;background:#28191d;box-shadow:inset 0 0 0 2px #ff747430}.slot.used-space .card{filter:saturate(.72) brightness(.78)}.slot.used-space::before{content:"BLOQ.";position:absolute;left:50%;bottom:3px;transform:translateX(-50%);z-index:8;font-size:7px;font-weight:950;letter-spacing:.7px;color:#ffd0d0;background:#641f28;border:1px solid #ff7474;border-radius:999px;padding:2px 5px;white-space:nowrap}.slot.used-space.current-discard::after{bottom:-17px}
+.patterns-title{margin-top:12px;font-size:13px;font-weight:800}.patterns{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px}.pattern{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-weight:800;font-size:12px;border:1px solid #3c4756;background:#1d242e;border-radius:8px;padding:6px 8px}.pattern.hot{border-color:var(--accent);background:#3a321d}.pattern.locked{border-color:#ff7474;background:#3b2024;color:#ffc5c5;opacity:.88}
+.controls{margin-top:10px;display:grid;grid-template-columns:auto auto auto 1fr;gap:8px;align-items:center}.msg{min-height:40px;border:1px solid #303947;background:#10151c;border-radius:10px;padding:9px 10px;color:#cbd4df}.msg.warn{color:#ffd982}.msg.good{color:#7be7ad}.step{font-size:11px;color:#8f9bad;margin-bottom:2px}.log-entry{font-size:12px;color:#b7c1ce;border-bottom:1px solid #ffffff0c;padding:5px 0}.log-entry b{color:#fff}
+.rules{position:fixed;inset:0;background:#000b;display:none;align-items:center;justify-content:center;padding:20px;z-index:20}.rules.open{display:flex}.rules-card{max-width:740px;max-height:85vh;overflow:auto;background:#171d26;border:1px solid #3b4655;border-radius:18px;padding:18px}.rules-card h2{margin-top:0}.rules-card li{margin:7px 0;color:#d4dbe5}
+
+/* v22 — interface mais compacta */
+.top-actions{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.app{padding:8px;gap:6px}
+.top{padding:7px 10px;border-radius:12px}.title{font-size:17px}.top .sub{font-size:10px}.btn{padding:6px 9px;border-radius:8px;font-size:12px}
+.stats{gap:6px;grid-template-columns:.85fr 1.6fr .55fr}.stat{padding:6px 9px;min-height:42px;border-radius:10px;font-size:12px}.stat b{display:inline;margin:0 7px 0 0;font-size:11px}.blocked{display:inline-flex;gap:4px;vertical-align:middle}.pill{padding:3px 6px;font-size:10px}.dot{width:8px;height:8px}
+.turn-order{padding:4px 7px;gap:4px;border-radius:10px;min-height:30px}.turn-chip{padding:3px 7px;font-size:10px}.turn-arrow{font-size:10px}
+.board{gap:6px}.seat,.center,.log{padding:7px;border-radius:12px}.seat h3,.log h3{margin:0 0 4px;font-size:12px}.seat small{font-size:10px}.center{min-height:0}.center-log{margin-top:6px;max-height:64px;border-radius:9px}.log-entry{font-size:10px;padding:2px 0}
+.bot1 .hand,.bot2 .hand,.bot3 .hand{min-height:58px;gap:4px;flex-wrap:nowrap;overflow-x:auto}.bot1 .card,.bot2 .card,.bot3 .card{width:40px;height:56px;border-radius:7px;font-size:20px}.bot1 .card::before,.bot2 .card::before,.bot3 .card::before{width:7px}.bot1 .card::after,.bot2 .card::after,.bot3 .card::after{font-size:6px}.melds{margin-top:4px;gap:4px}.meldmark{height:4px;width:20px}
+.conveyor-title{margin-bottom:5px}.conveyor-title .sub{font-size:9px}.middle-row{grid-template-columns:112px 1fr;gap:7px}.deckbox{padding:6px;gap:4px;min-height:94px;border-radius:10px}.decktoplabel{font-size:8px}.deckpile{width:56px;height:72px;margin:0}.deckpile::before,.deckpile::after{width:48px;height:68px;border-radius:8px}.deckpile::before{left:6px;top:5px}.deckpile::after{left:2px;top:2px}.deckpile>.card{left:4px;width:48px;height:68px;font-size:22px}.deckbox .btn{width:100%;padding:5px 4px;font-size:9px}.deckbox .sub{font-size:8px;text-align:center}
+.conveyor-wrap{padding:4px 2px 10px}.conveyor{grid-template-columns:repeat(9,minmax(56px,1fr));gap:5px;min-width:610px}.slot{min-height:82px;padding:4px;border-radius:9px}.slot .card{width:46px;height:64px;font-size:22px}.slotnum{top:3px;left:5px;font-size:8px}.stack{font-size:7px;padding:1px 4px}.slot.current-discard::after{bottom:-13px;font-size:6px}.slot.latest-discard::before,.slot.used-space::before{font-size:6px;padding:1px 4px}
+.patterns-title{margin-top:5px;font-size:10px}.patterns{margin-top:4px;gap:4px;flex-wrap:nowrap;overflow-x:auto;padding-bottom:2px}.pattern{font-size:9px;padding:4px 6px;white-space:nowrap;border-radius:6px}
+.human-top{gap:8px;margin-bottom:1px}.sort-box{gap:4px}.sort-label{font-size:9px}.sort-btn{padding:4px 6px;font-size:9px}.sort-hint{font-size:9px;margin:0 0 2px}.human .hand{min-height:75px;padding:4px 2px;gap:5px}.human .card{width:49px;height:68px;font-size:23px}.human .card::before{width:8px}.controls{margin-top:5px;grid-template-columns:auto auto auto 1fr;gap:5px}.controls .btn{padding:6px 8px;font-size:10px}.msg{min-height:31px;padding:5px 7px;font-size:10px;border-radius:8px}.step{font-size:9px;margin-bottom:1px}
+body.fit-view{overflow:hidden}.app.fit-active{transform-origin:top center}
+#fitBtn.active{background:var(--accent);border-color:var(--accent);color:#171306}
+
+@media(max-width:900px){.stats{grid-template-columns:1fr}.board{display:flex;flex-direction:column}.bot1,.bot2,.bot3{order:1}.center{order:2}.human{order:3}.center-log{max-height:160px}.human-top{flex-direction:column}.sort-box{justify-content:flex-start}.middle-row{grid-template-columns:1fr}.deckbox{min-height:auto}.controls{grid-template-columns:1fr 1fr}.msg{grid-column:1/3}.card{width:51px;height:71px}}
+
+/* Tipografia retrô computacional */
+:root{
+  --retro-font: Consolas, "Lucida Console", "Courier New", monospace;
+}
+html, body, button, input, select, textarea, .card, .panel, .log, .badge, .chip, .token, .slot, .title, .subtitle {
+  font-family: var(--retro-font) !important;
+}
+body{
+  letter-spacing: 0.01em;
+}
+h1,h2,h3,.title,.section-title,.turn-title,.player-name{
+  font-family: var(--retro-font) !important;
+  font-weight: 700;
+  letter-spacing: 0.045em;
+}
+button,.badge,.chip,.token{
+  font-family: var(--retro-font) !important;
+  font-weight: 700;
+  letter-spacing: 0.035em;
+}
+.card{
+  font-family: var(--retro-font) !important;
+  font-weight: 700;
+}
+
+
+/* retro clean override */
+:root{--bg:#09111b;--panel:#0e1623;--panel2:#132033;--line:#29415f;--text:#e7dbc7;--muted:#96a6b8;--accent:#f2cf66;--good:#6edc94;--bad:#ff6e6e;--red:#e84f4f;--blue:#3b8deb;--green:#87b83b;--yellow:#f0c433}
+body{font-family:Consolas,"Lucida Console","Courier New",monospace;background:#08111a;color:var(--text);position:relative;overflow-x:hidden}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;background:linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px),linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px);background-size:32px 32px;opacity:.18}
+.app{max-width:1360px;padding:10px;gap:8px;position:relative;z-index:1}
+.top,.stat,.seat,.center,.log,.turn-order,.deckbox{background:rgba(9,17,26,.92)!important;border:1px solid #27425f;border-radius:8px;box-shadow:none}
+.top{padding:8px 10px}.title{font-size:42px;line-height:1;font-weight:900;letter-spacing:2px}.top .sub{display:block;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:#b9c3cf}.top-actions{display:flex;gap:8px}.top-actions #rulesBtn{display:inline-flex}
+.btn{border-radius:4px;padding:8px 10px;background:#132033;border:1px solid #355272;font-weight:800;letter-spacing:.6px;text-transform:uppercase}.btn.primary{background:#e0b943;color:#161209;border-color:#e0b943}.btn.good{background:#183526;border-color:#2f7c55}.btn.bad{background:#3c1d20;border-color:#8f464c}
+.stats{grid-template-columns:1fr .8fr .5fr;gap:8px}.stat{min-height:auto;padding:8px 10px}.stat b{margin-bottom:2px;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#c7d1dd}.turn-order{padding:6px 8px}.turn-chip{border-radius:4px;padding:4px 8px;font-size:11px}
+.board{gap:8px}.seat,.center{padding:8px}.seat h3,.log h3{font-size:12px;letter-spacing:.7px;text-transform:uppercase}.seat small{font-size:10px}.sub, .sort-hint, #deckHint{display:none!important}.human-top{margin-bottom:2px}.sort-box{gap:4px}.sort-btn{padding:5px 8px;font-size:10px;border-radius:4px}.sort-label{font-size:10px;letter-spacing:1px}.hand{gap:5px;min-height:72px}.human .hand{min-height:82px;padding:2px 0}.card{width:52px;height:72px;border-radius:6px;box-shadow:none;border-width:2px}.card::after{font-size:7px}.controls{gap:8px;margin-top:8px}.controls .msg{font-size:11px;min-height:18px}.melds{gap:4px;margin-top:6px}.meldmark{width:18px;height:5px;border-radius:0}.refreshmark{width:14px;height:14px;font-size:10px}.conveyor-title{margin-bottom:6px}.conveyor-title b{font-size:12px;letter-spacing:1px;text-transform:uppercase}.middle-row{grid-template-columns:92px minmax(0,1fr);gap:6px}.deckbox{min-height:100px;padding:8px}.decktoplabel{font-size:10px;letter-spacing:1px;text-transform:uppercase}.deckpile{width:66px;height:90px}.deckpile::before,.deckpile::after,.deckcard,.deckpile>.card{width:58px;height:82px;border-radius:7px}.deckcard::after{content:"OFFLINE"}.patterns-title{font-size:11px;letter-spacing:1px;text-transform:uppercase;margin:8px 0 4px}.patterns{gap:4px}.pattern{border-radius:4px;padding:4px 6px;font-size:10px}.conveyor-wrap{padding:4px 0}.center-log{max-height:92px;margin-top:8px;border-radius:6px}.logline{padding:3px 4px;font-size:11px}.rules-card,.notice-card{border-radius:8px;background:#0e1623;border:1px solid #355272}.notice-card h2,.rules-card h2{font-size:16px;letter-spacing:1px;text-transform:uppercase}.rules-card ul{font-size:12px;line-height:1.4}.rules-card li{margin-bottom:6px}
+@media (max-width:1100px){.stats{grid-template-columns:1fr 1fr 1fr}.middle-row{grid-template-columns:92px minmax(0,1fr)}.title{font-size:34px}}
+
+
+/* ===== 01 ultra clean ===== */
+body{background:#07101a;min-height:100vh}
+body::before{background-size:40px 40px;opacity:.11}
+.app{max-width:1280px;padding:8px;gap:6px}
+.top{background:transparent!important;border:0!important;padding:0 2px;min-height:44px}
+.title{font-size:48px;letter-spacing:1px;color:#e8d9c4}
+.top-actions{gap:5px}.top-actions .btn{width:34px;height:30px;padding:0;font-size:14px;background:#0d1825;border:1px solid #24415e}
+.stats,.turn-order,.patterns-title,.patterns,.center-log,.sort-hint{display:none!important}
+.board{grid-template-rows:auto auto auto;gap:6px}
+.seat,.center{border-radius:4px;padding:6px;background:rgba(8,16,25,.86)!important;border:1px solid #1f3852}
+.seat h3{margin:0 0 4px;font-size:11px;letter-spacing:1px}.seat h3 small{font-size:9px;color:#718398}
+.seat.active{box-shadow:inset 0 0 0 1px #e5bd4f,0 0 0 1px #e5bd4f!important}
+.bot1,.bot2,.bot3{min-height:96px}
+.bot1 .hand,.bot2 .hand,.bot3 .hand{gap:2px;flex-wrap:nowrap;overflow:hidden;min-height:64px}
+.bot1 .card,.bot2 .card,.bot3 .card{width:37px;height:54px;font-size:19px;border-radius:3px;border-width:1px;box-shadow:none}
+.bot1 .card::before,.bot2 .card::before,.bot3 .card::before{width:6px}
+.bot1 .card::after,.bot2 .card::after,.bot3 .card::after{font-size:5px;right:2px;top:2px}
+.bot1 .melds,.bot2 .melds,.bot3 .melds{margin-top:3px}
+.meldmark{width:15px;height:4px}
+.refreshmark{width:12px;height:12px;font-size:9px}
+.center{min-height:0;padding:6px}
+.conveyor-title{display:none}
+.middle-row{grid-template-columns:96px 1fr;gap:6px;align-items:center}
+.deckbox{min-height:96px;padding:4px;background:transparent!important;border:0!important;border-radius:0}
+.decktoplabel{font-size:8px;color:#718398;letter-spacing:1px}
+.deckpile{width:54px;height:76px;margin:0}.deckpile::before,.deckpile::after,.deckcard,.deckpile>.card{width:50px;height:70px;border-radius:4px}
+.deckpile::before{left:5px;top:4px}.deckpile::after{left:2px;top:2px}.deckpile>.card{left:2px}
+.deckbox .btn{width:84px;height:26px;padding:3px 5px;font-size:9px;border-radius:3px;margin:1px 0}
+#refreshBtn{font-size:0}.refresh-button-icon{width:20px;height:20px;margin:0;font-size:13px}
+.conveyor-wrap{padding:0;overflow-x:hidden}
+.conveyor{gap:3px}
+.slot{min-width:68px}
+.slot .card{width:52px;height:72px;border-radius:4px;font-size:25px;box-shadow:none}
+.slotnum{font-size:8px}
+.human{padding:6px 7px 7px}.human-top{align-items:center;margin:0 0 2px}.human-top h3{margin:0}
+.sort-box{gap:3px}.sort-label{display:none}.sort-btn{padding:4px 7px;font-size:9px;border-radius:3px}
+.human .hand{min-height:84px;padding:3px 0;gap:5px}
+.human .card{width:52px;height:72px;border-radius:4px;font-size:25px;box-shadow:none}
+.controls{display:flex;align-items:center;gap:5px;margin-top:5px;min-height:30px}.controls .btn{padding:6px 9px;font-size:10px;border-radius:3px}.controls .msg{font-size:9px;line-height:1.2;color:#8ea0b3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1}
+.rules,.notice-modal{backdrop-filter:none}.rules-card,.notice-card{border-radius:4px}
+@media(max-width:900px){.board{grid-template-columns:1fr}.bot1,.bot2,.bot3,.center,.human{grid-column:1}.bot1{grid-row:1}.bot2{grid-row:2}.bot3{grid-row:3}.center{grid-row:4}.human{grid-row:5}.middle-row{grid-template-columns:84px minmax(0,1fr)}.title{font-size:38px}}
+
+
+/* v39 refinements */
+.conveyor{grid-template-columns:repeat(9,minmax(0,1fr))!important;gap:3px!important;min-width:0!important;width:100%!important;justify-content:stretch!important}
+.slot{min-height:94px!important;padding:0!important;border-radius:5px!important;min-width:0!important}
+.slot .card{width:100%!important;max-width:none!important;height:92px!important;border-radius:4px!important;font-size:48px!important;box-shadow:inset 0 0 18px rgba(255,255,255,.05), 0 0 8px rgba(0,0,0,.35)!important;border:1px solid #6d7890!important;background:#0b1017!important;color:#ffffff!important;font-family:Consolas,"Lucida Console","Courier New",monospace;text-shadow:0 0 3px rgba(255,255,255,.98),0 0 12px rgba(255,255,255,.7),2px 0 0 rgba(255,0,80,.30),-2px 0 0 rgba(0,255,255,.30)}
+.slot .card.flowcard::before{content:"";position:absolute;left:0;top:0;bottom:0;width:22px;background:var(--c)!important;opacity:1;box-shadow:0 0 10px var(--c), 0 0 22px color-mix(in srgb, var(--c) 75%, white 25%)}
+.slot .card.flowcard::after{content:attr(data-fullcolor)!important;position:absolute;left:25px;top:5px;right:4px;font-size:8px!important;letter-spacing:1px;color:var(--c)!important;text-transform:uppercase;text-align:left;text-shadow:0 0 3px color-mix(in srgb, var(--c) 85%, white 15%),0 0 8px color-mix(in srgb, var(--c) 55%, white 45%),1px 0 0 rgba(255,0,80,.22),-1px 0 0 rgba(0,255,255,.22)}
+.slot .card.flowcard{display:flex;align-items:center;justify-content:center;overflow:hidden;background:linear-gradient(180deg,#09111a,#05080d)!important}
+.slot .card.flowcard .lock{display:none!important}
+.slot .card.flowcard.special{background:linear-gradient(180deg,#16140f,#0d0b07)!important;color:#ffffff!important;text-shadow:0 0 3px rgba(255,255,255,.95),0 0 10px rgba(255,235,170,.45),2px 0 0 rgba(255,0,80,.28),-2px 0 0 rgba(0,255,255,.28)}
+.slot .card.flowcard.special::before{width:22px!important;background:#f2ca68!important;opacity:1!important;box-shadow:0 0 10px #f2ca68,0 0 22px rgba(242,202,104,.7)!important}
+.slot .card.flowcard.special::after{content:attr(data-fullcolor)!important;color:#f2ca68!important;text-shadow:0 0 3px rgba(255,240,190,.95),0 0 8px rgba(242,202,104,.55),1px 0 0 rgba(255,0,80,.22),-1px 0 0 rgba(0,255,255,.22)!important}
+.slot .card.flowcard .bitpair{position:absolute;inset:auto 0 6px 0;text-align:center;font-size:50px;line-height:1;font-weight:900;letter-spacing:1px}
+.slot .card.flowcard .bitpair.small{font-size:42px}
+.helpbar{margin-top:8px;border:1px solid #4d5767;background:#0a0f15;border-radius:4px;padding:8px 10px;min-height:42px;display:flex;align-items:center;font-size:12px;line-height:1.35;color:#cbd7e6}.helpbar b{color:#f2cf66}.helpbar .label{color:#8fa3ba;margin-right:8px;text-transform:uppercase;letter-spacing:1px;font-size:10px}.slot.current-discard::after{content:"+"!important;left:50%;bottom:-10px;transform:translateX(-50%);font-size:10px;padding:0;background:none}.slot.latest-discard::before{content:"L"!important;right:3px;top:3px;padding:1px 4px;font-size:7px}.slot.used-space::before{content:"X"!important;left:50%;bottom:2px;transform:translateX(-50%);padding:1px 4px;font-size:7px}.slotnum{font-size:7px!important;top:2px!important;left:3px!important}.stack{font-size:6px!important;bottom:2px!important;right:2px!important}.deckbox .btn,.controls .btn,.sort-btn,.top-actions .btn{position:relative}
+
+
+/* v5: remove fluxo scrollbars + CRT color labels */
+.conveyor-wrap{overflow:hidden!important;overflow-x:hidden!important;overflow-y:hidden!important;padding:0 0 12px 0!important;scrollbar-width:none!important}
+.conveyor-wrap::-webkit-scrollbar{display:none!important;width:0!important;height:0!important}
+.conveyor{overflow:visible!important;min-width:0!important;width:100%!important}
+.slot{overflow:visible!important}
+.slot .card.flowcard::after{
+  color:var(--c)!important;
+  text-shadow:0 0 5px color-mix(in srgb,var(--c) 55%,transparent),1px 0 0 rgba(255,0,80,.22),-1px 0 0 rgba(0,255,255,.22)!important;
+  font-weight:900!important;
+}
+.slot .card.flowcard::before{
+  box-shadow:0 0 6px color-mix(in srgb,var(--c) 60%,transparent),1px 0 0 rgba(255,0,80,.2),-1px 0 0 rgba(0,255,255,.2)!important;
+}
+.slot .card.flowcard.special::after{color:#f2ca68!important;text-shadow:0 0 5px rgba(242,202,104,.55),1px 0 0 rgba(255,0,80,.22),-1px 0 0 rgba(0,255,255,.22)!important}
+.slot .card.flowcard.special::before{box-shadow:0 0 6px rgba(242,202,104,.55),1px 0 0 rgba(255,0,80,.2),-1px 0 0 rgba(0,255,255,.2)!important}
+
+
+/* v6 - cartas do fluxo ocupam melhor o slot */
+.slot{padding:3px!important;align-items:stretch!important;justify-content:stretch!important}
+.slot .card.flowcard{width:100%!important;max-width:none!important;height:auto!important;min-height:82px!important;align-self:stretch!important;justify-self:stretch!important}
+.slot .card.flowcard .bitpair{font-size:50px!important;bottom:8px!important}
+.slot .card.flowcard .bitpair.small{font-size:34px!important}
+.slot .card.flowcard::after{font-size:7px!important;left:10px!important;top:5px!important}
+.slot .card.flowcard::before{width:7px!important}
+
+
+.slot .card.flowcard{position:relative}
+.slot .card.flowcard .bitpair, .slot .card.flowcard::after{filter:saturate(1.15)}
+.slot .card.flowcard::marker{display:none}
+.slot .card.flowcard > *{position:relative;z-index:2}
+.slot .card.flowcard::selection{background:transparent}
+.slot .card.flowcard span{position:relative;z-index:2}
+.slot .card.flowcard::before{z-index:1}
+.slot .card.flowcard::after{z-index:2}
+.slot .card.flowcard:has(.bitpair)::selection{background:transparent}
+.slot .card.flowcard::after, .slot .card.flowcard .bitpair{mix-blend-mode:screen}
+.slot .card.flowcard .bitpair::before{content:"";position:absolute;inset:-4px -2px;pointer-events:none;background:repeating-linear-gradient(to bottom, rgba(255,255,255,.12) 0px, rgba(255,255,255,.12) 1px, rgba(0,0,0,0) 2px, rgba(0,0,0,0) 4px);opacity:.35;z-index:-1}
+.slot .card.flowcard::after{font-weight:700}
+.slot .card.flowcard::before,.slot .card.flowcard::after,.slot .card.flowcard .bitpair{animation:none}
+.slot .card.flowcard{background-image:linear-gradient(180deg, color-mix(in srgb, var(--c) 16%, #ffffff08), rgba(255,255,255,0)), linear-gradient(90deg, color-mix(in srgb, var(--c) 10%, transparent), transparent 58%), repeating-linear-gradient(to bottom, rgba(255,255,255,.06) 0px, rgba(255,255,255,.06) 1px, rgba(0,0,0,0) 2px, rgba(0,0,0,0) 4px) !important}
+
+
+.top{display:grid!important;grid-template-columns:1fr auto 1fr;align-items:center;padding:10px 12px!important}.titleWrap{grid-column:2;justify-self:center;text-align:center}.title{font-size:38px!important;line-height:1.02!important;font-weight:900;letter-spacing:1.5px;text-transform:none;color:#ffffff;text-shadow:0 0 3px rgba(255,255,255,.95),0 0 12px rgba(255,255,255,.45),2px 0 0 rgba(255,0,80,.24),-2px 0 0 rgba(0,255,255,.24)!important}.title #titleBits{display:inline-block;min-width:72px}.top-actions{grid-column:3;justify-self:end}.top .sub{display:none!important}
+
+
+.titleTagline{font-size:20%;letter-spacing:.8px;vertical-align:middle;opacity:.9;text-shadow:0 0 2px rgba(255,255,255,.8),1px 0 0 rgba(255,0,80,.18),-1px 0 0 rgba(0,255,255,.18)}
+
+.titleTagline{font-size:20%!important;opacity:.92;margin-left:8px;display:inline-block;vertical-align:middle;letter-spacing:.8px}
+
+.card.blocked{border:3px solid #d74b4b!important;filter:grayscale(1) saturate(0) brightness(.72)!important;box-shadow:0 0 0 1px rgba(215,75,75,.25) inset, 0 0 10px rgba(215,75,75,.25)!important} 
+.card.blocked::before{background:#666!important;box-shadow:none!important;opacity:.85!important} 
+.card.blocked::after{color:#cfcfcf!important;text-shadow:none!important} 
+.card.blocked .bitpair,.card.blocked{color:#d8d8d8!important;text-shadow:none!important} 
+.card.blocked.special::before{background:#666!important;box-shadow:none!important} 
+.card.blocked .lock{display:block!important;background:#3f0f14!important;border-top:1px solid #d74b4b!important;color:#ffd1d1!important;font-weight:900;letter-spacing:.8px} 
+
+
+.card.blocked{background:repeating-linear-gradient(135deg,#12161d 0 8px,#1a2028 8px 16px)!important;border:3px solid #e05050!important;box-shadow:0 0 0 1px rgba(224,80,80,.18) inset,0 0 12px rgba(224,80,80,.28)!important} 
+.card.blocked::before{background:color-mix(in srgb, var(--c) 50%, black 50%)!important;box-shadow:none!important;opacity:1!important} 
+.card.blocked::after{color:rgba(255,255,255,.38)!important;text-shadow:none!important;opacity:1!important} 
+.card.blocked,.card.blocked .bitpair{color:rgba(255,255,255,.42)!important;text-shadow:none!important;opacity:1!important} 
+.card.blocked.special::before{background:color-mix(in srgb, #f2ca68 50%, black 50%)!important;opacity:1!important} 
+.card.blocked .lock{display:flex!important;align-items:center;justify-content:center;position:absolute;left:50%;right:auto;transform:translateX(-50%);bottom:-2px;width:36px;height:36px;border-radius:50%;background:#4a1217!important;border:3px solid #e05050!important;color:#ffd7d7!important;font-size:24px!important;line-height:1!important;font-weight:1000!important;letter-spacing:0!important;box-shadow:0 0 10px rgba(224,80,80,.32)!important;opacity:1!important} 
+
+
+/* v17 title + footer */
+.title{font-size:52px!important;line-height:1!important;letter-spacing:1.8px!important}
+.title #titleBits{min-width:96px!important}
+.titleTagline{font-size:24%!important;margin-left:10px!important;letter-spacing:1px!important;opacity:.94!important}
+.legal-footer{position:fixed;left:0;right:0;bottom:0;z-index:1200;text-align:center;font-size:8px;line-height:1.2;color:#667487;letter-spacing:.25px;padding:5px 10px 6px;background:linear-gradient(to top,rgba(8,17,26,.98),rgba(8,17,26,.88));border-top:1px solid #1c2b3b;pointer-events:none} body{padding-bottom:24px!important}
+@media(max-width:900px){.title{font-size:42px!important}.titleTagline{font-size:25%!important}.title #titleBits{min-width:78px!important}}
+
+
+.top-actions{display:flex!important;gap:8px;align-items:center}
+.top-actions .btn{min-width:72px;height:32px;padding:0 12px;display:inline-flex;align-items:center;justify-content:center;border-radius:6px;font-size:11px;font-weight:900;letter-spacing:1px;white-space:nowrap}
+#rulesBtn{background:#15263b!important;border:1px solid #4d6e97!important;color:#f1f6ff!important;text-shadow:0 0 4px rgba(255,255,255,.2)}
+#rulesBtn:hover{background:#1b3250!important}
+#fitBtn,#newBtn{min-width:38px!important;width:38px!important;padding:0!important}
+
+
+/* v20 blocked-flow cleanup */
+.slot.used-space .card,
+.slot.used-space .card.flowcard,
+.slot.used-space .card.flowcard.special{
+  background:repeating-linear-gradient(135deg,#2a2f36 0 8px,#353c45 8px 16px)!important;
+  color:#c3c7cd!important;
+  text-shadow:none!important;
+  filter:none!important;
+}
+.slot.used-space .card::before,
+.slot.used-space .card.flowcard::before,
+.slot.used-space .card.flowcard.special::before{
+  background:#7b7f85!important;
+  box-shadow:none!important;
+  opacity:1!important;
+}
+.slot.used-space .card::after,
+.slot.used-space .card.flowcard::after,
+.slot.used-space .card.flowcard.special::after,
+.slot.used-space .card .bitpair,
+.slot.used-space .card.flowcard .bitpair,
+.slot.used-space .card.flowcard.special .bitpair{
+  color:#c3c7cd!important;
+  text-shadow:none!important;
+  filter:none!important;
+  opacity:1!important;
+}
+.slot.used-space .card .lock{display:none!important}
+.card.blocked,
+.card.blocked.special{
+  background:repeating-linear-gradient(135deg,#2a2f36 0 8px,#353c45 8px 16px)!important;
+  color:#c3c7cd!important;
+}
+.card.blocked::before,
+.card.blocked.special::before{background:#7b7f85!important;box-shadow:none!important;opacity:1!important}
+.card.blocked::after,
+.card.blocked .bitpair{color:#c3c7cd!important;text-shadow:none!important;opacity:1!important}
+.card.blocked .lock{width:36px!important;height:36px!important;font-size:24px!important;bottom:-2px!important}
+/* remove odd inner artifact from empty/current slots */
+.slot:not(:has(.card)) > *:not(.slotnum){display:none!important}
+
+
+/* v21: player OFFLINE cards back-style; flow used spaces remain gray */
+.human .card.blocked,
+.seat .card.blocked{
+  background:linear-gradient(180deg,#141b25 0%, #0b1017 100%)!important;
+  border:2px solid #3f536d!important;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.06), 0 6px 12px rgba(0,0,0,.45)!important;
+  color:transparent!important;
+  text-shadow:none!important;
+  filter:none!important;
+}
+.human .card.blocked::before,
+.seat .card.blocked::before{
+  left:0!important; width:100%!important;
+  background:repeating-linear-gradient(135deg,#1a2330 0 10px,#111822 10px 20px)!important;
+  box-shadow:none!important; opacity:1!important;
+}
+.human .card.blocked::after,
+.seat .card.blocked::after{
+  content:"OFFLINE"!important;
+  top:auto!important; right:auto!important; left:50%!important; bottom:8px!important;
+  transform:translateX(-50%);
+  font-size:8px!important; letter-spacing:1px!important;
+  color:#d8e1ee!important; text-shadow:none!important; opacity:.95!important;
+}
+.human .card.blocked .bitpair,
+.seat .card.blocked .bitpair{color:transparent!important; text-shadow:none!important; opacity:0!important}
+.human .card.blocked .lock,
+.seat .card.blocked .lock{display:none!important}
+.human .card.blocked.special::before,
+.seat .card.blocked.special::before{background:repeating-linear-gradient(135deg,#1a2330 0 10px,#111822 10px 20px)!important}
+
+/* stronger used-space styling only in the flow */
+.slot.used-space{
+  border:2px dashed #ff7474!important;
+  background:#2a2f36!important;
+  box-shadow:inset 0 0 0 2px rgba(255,116,116,.22)!important;
+}
+.slot.used-space::before{
+  content:"X"!important;
+  left:50%!important; bottom:1px!important; transform:translateX(-50%)!important;
+  min-width:16px; height:16px; display:flex; align-items:center; justify-content:center;
+  font-size:12px!important; font-weight:1000!important; line-height:1!important;
+  color:#ffd9d9!important; background:#641f28!important; border:1px solid #ff7474!important;
+  border-radius:999px!important; padding:0 4px!important; white-space:nowrap!important;
+}
+
+
+/* v22: player OFFLINE cards match face-visible style */
+.human .card.blocked,
+.seat .card.blocked{
+  background:
+    repeating-linear-gradient(135deg, rgba(18,24,32,.46) 0 9px, rgba(30,39,51,.46) 9px 18px),
+    #f2f2ec !important;
+  border:2px solid #41546f!important;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.10), 0 6px 12px rgba(0,0,0,.35)!important;
+  color:#b8c0ca!important;
+  text-shadow:none!important;
+  filter:none!important;
+}
+.human .card.blocked::before,
+.seat .card.blocked::before{
+  left:0!important;
+  width:8px!important;
+  background:color-mix(in srgb, var(--c) 50%, black 50%)!important;
+  box-shadow:none!important;
+  opacity:1!important;
+}
+.human .card.blocked::after,
+.seat .card.blocked::after{
+  content:attr(data-abbr)!important;
+  position:absolute!important;
+  right:4px!important;
+  top:4px!important;
+  left:auto!important;
+  bottom:auto!important;
+  transform:none!important;
+  font-size:7px!important;
+  letter-spacing:.6px!important;
+  color:#596678!important;
+  text-shadow:none!important;
+  opacity:1!important;
+}
+.human .card.blocked .lock,
+.seat .card.blocked .lock{
+  display:block!important;
+  position:absolute!important;
+  left:50%!important;
+  right:auto!important;
+  bottom:4px!important;
+  transform:translateX(-50%)!important;
+  width:auto!important;
+  height:auto!important;
+  border:none!important;
+  border-radius:0!important;
+  background:none!important;
+  box-shadow:none!important;
+  color:#dbe4ef!important;
+  font-size:8px!important;
+  line-height:1!important;
+  font-weight:900!important;
+  letter-spacing:1px!important;
+  opacity:1!important;
+}
+.human .card.blocked .bitpair,
+.seat .card.blocked .bitpair{color:#b8c0ca!important;text-shadow:none!important;opacity:1!important}
+.human .card.blocked.special::before,
+.seat .card.blocked.special::before{background:#7c6b3d!important}
+
+
+.decktoplabel,.conveyorlabel,.caplabel,.updlabel{display:inline-block;font-size:9px;font-weight:900;letter-spacing:1px;text-transform:uppercase;color:#aebdd0;margin-bottom:4px}
+.conveyorlabel{margin:0 0 6px 2px}
+.melds{align-items:center;flex-wrap:wrap}
+.caplabel,.updlabel{margin-right:4px}
+.meldmark{position:relative;width:15px;height:14px;border-radius:2px;background:#596271;border:1px solid #818a99;box-shadow:inset 0 0 0 1px rgba(255,255,255,.06)}
+.meldmark::before{content:"";position:absolute;left:2px;right:2px;top:2px;height:4px;border-radius:1px;background:#8f98a5;opacity:.9}
+.meldmark::after{content:"";position:absolute;right:2px;bottom:2px;width:4px;height:4px;border-radius:1px;background:#1f2530}
+.meldmark.on{background:#2c8f52;border-color:#7be2a1;box-shadow:0 0 8px rgba(110,220,148,.35), inset 0 0 0 1px rgba(255,255,255,.07)}
+.meldmark.on::before{background:#c4f4d6}
+.meldmark.on::after{background:#113a22}
+.refresh-label{display:none!important}
+.refreshmark{margin-right:1px}
+
+
+/* v25 — vitória visível, sem alterar a lógica do jogo */
+.seat.winner{
+  box-shadow:inset 0 0 0 2px #7be2a1,0 0 24px rgba(123,226,161,.24)!important;
+  border-color:#7be2a1!important;
+}
+.notice-card.winner-card{
+  width:min(560px,94vw);
+  text-align:center;
+  border:2px solid #7be2a1;
+  box-shadow:0 0 0 3px rgba(123,226,161,.16),0 24px 80px rgba(0,0,0,.72),0 0 28px rgba(123,226,161,.22);
+}
+.notice-card.winner-card h2{
+  margin:6px 0 12px;
+  font-size:25px;
+  color:#7be2a1;
+}
+.winner-big{
+  display:block;
+  margin-bottom:8px;
+  font-size:36px;
+  line-height:1;
+  font-weight:1000;
+  letter-spacing:2px;
+  color:#fff;
+  text-shadow:0 0 4px rgba(255,255,255,.9),0 0 15px rgba(123,226,161,.28),2px 0 0 rgba(255,0,80,.18),-2px 0 0 rgba(0,255,255,.18);
+}
+.winner-sub{
+  display:block;
+  margin-bottom:5px;
+  font-size:11px;
+  letter-spacing:1px;
+  color:#aebdd0;
+  text-transform:uppercase;
+}
+.winner-actions{
+  display:flex;
+  justify-content:center;
+  gap:8px;
+  flex-wrap:wrap;
+}
+
+
+/* v27: warning marker for next flow position */
+.slot.current-discard::after{
+  content:"⚠" !important;
+  left:50% !important;
+  bottom:-14px !important;
+  transform:translateX(-50%) !important;
+  font-size:15px !important;
+  line-height:1 !important;
+  font-weight:900 !important;
+  color:var(--accent) !important;
+  padding:0 !important;
+  background:none !important;
+  border:none !important;
+  border-radius:0 !important;
+  box-shadow:none !important;
+  text-shadow:0 0 8px rgba(242,202,104,.45) !important;
+}
+.slot.used-space.current-discard::after{bottom:-14px !important}
+
+
+/* v28: larger/lower next-position warning */
+.slot.current-discard::after{
+  bottom:-24px !important;
+  font-size:22px !important;
+  text-shadow:0 0 10px rgba(242,202,104,.5) !important;
+}
+.slot.used-space.current-discard::after{bottom:-24px !important}
+
+
+/* v29: used-space marker becomes red slashed circle */
+.slot.used-space::before{
+  content:"⊘" !important;
+  left:50% !important;
+  bottom:-24px !important;
+  transform:translateX(-50%) !important;
+  min-width:auto !important;
+  width:auto !important;
+  height:auto !important;
+  display:block !important;
+  font-size:22px !important;
+  line-height:1 !important;
+  font-weight:900 !important;
+  color:#ff7474 !important;
+  background:none !important;
+  border:none !important;
+  border-radius:0 !important;
+  padding:0 !important;
+  box-shadow:none !important;
+  text-shadow:0 0 8px rgba(255,116,116,.35) !important;
+}
+
+
+/* v30: better fill and no clipped bottom icons in center area */
+.center{
+  display:flex !important;
+  flex-direction:column !important;
+  justify-content:flex-start !important;
+  align-items:stretch !important;
+  padding-top:6px !important;
+  padding-bottom:18px !important;
+}
+.middle-row{
+  align-items:flex-start !important;
+  margin-top:0 !important;
+}
+.deckbox{
+  justify-content:flex-start !important;
+  padding-top:2px !important;
+}
+.conveyor-wrap{
+  padding:0 0 30px 0 !important;
+  margin-top:0 !important;
+}
+.conveyorlabel,
+.decktoplabel{
+  margin-bottom:6px !important;
+}
+.slot.current-discard::after,
+.slot.used-space::before{
+  bottom:-20px !important;
+}
+
+
+/* v31: move next-position marker to the side; make yellow border dominant */
+.slot.current-discard::after{
+  left:auto !important;
+  right:-16px !important;
+  top:50% !important;
+  bottom:auto !important;
+  transform:translateY(-50%) !important;
+  font-size:20px !important;
+  line-height:1 !important;
+}
+.slot.current-discard.used-space{
+  border:3px solid var(--accent) !important;
+  box-shadow:0 0 0 4px rgba(242,202,104,.30), inset 0 0 0 1px rgba(255,116,116,.35), 0 0 24px rgba(242,202,104,.45) !important;
+  background:#2a2420 !important;
+}
+.slot.current-discard.used-space .slotnum{color:var(--accent) !important;font-weight:950 !important}
+.slot.current-discard.used-space::before{
+  color:#ff8e8e !important;
+}
+
+
+/* v32: both flow status symbols below each space */
+.conveyor-wrap{padding:0 0 34px 0 !important;overflow:visible !important}
+.slot{overflow:visible !important}
+.slot.used-space::before{
+  left:50% !important;
+  right:auto !important;
+  top:auto !important;
+  bottom:-18px !important;
+  transform:translateX(-50%) !important;
+  font-size:18px !important;
+  z-index:12 !important;
+}
+.slot.current-discard::after{
+  left:50% !important;
+  right:auto !important;
+  top:auto !important;
+  bottom:-18px !important;
+  transform:translateX(-50%) !important;
+  font-size:18px !important;
+  z-index:13 !important;
+}
+.slot.current-discard.used-space::before{left:calc(50% - 10px) !important}
+.slot.current-discard.used-space::after{left:calc(50% + 10px) !important;transform:translateX(-50%) !important}
+
+
+/* v33: update marker above the next flow space; memory marker stays below */
+.slot.current-discard::after{
+  left:50% !important;
+  right:auto !important;
+  top:-18px !important;
+  bottom:auto !important;
+  transform:translateX(-50%) !important;
+  font-size:18px !important;
+  z-index:13 !important;
+}
+.slot.used-space::before{
+  left:50% !important;
+  right:auto !important;
+  top:auto !important;
+  bottom:-18px !important;
+  transform:translateX(-50%) !important;
+  font-size:18px !important;
+  z-index:12 !important;
+}
+.slot.current-discard.used-space::before{left:50% !important; bottom:-18px !important}
+.slot.current-discard.used-space::after{left:50% !important; top:-18px !important; transform:translateX(-50%) !important}
+.conveyor-wrap{padding:20px 0 34px 0 !important; overflow:visible !important}
+
+
+/* v34: icons a bit farther from flow borders */
+.slot.current-discard::after{
+  top:-24px !important;
+}
+.slot.used-space::before{
+  bottom:-24px !important;
+}
+.slot.current-discard.used-space::before{
+  bottom:-24px !important;
+}
+.slot.current-discard.used-space::after{
+  top:-24px !important;
+}
+.conveyor-wrap{padding:26px 0 40px 0 !important; overflow:visible !important}
+
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top"><div></div><div class="titleWrap"><div class="title" id="mainTitle"><span id="titleBits">001</span><span class="titleTagline"> - Um jogo de cartas e bits</span></div></div><div class="top-actions"><button class="btn" id="fitBtn" type="button" title="Ajustar à janela" data-help="Ajusta o jogo para caber melhor na janela.">□</button> <button class="btn" id="rulesBtn" data-help="Abre o manual resumido desta versão digital.">REGRAS</button> <button class="btn" id="newBtn" title="Nova partida" data-help="Começa uma nova partida.">↻</button></div></header>
+
+  <section class="stats">
+    <div class="stat"><b>Turno</b><span id="turnText">—</span></div>
+    <div class="stat"><b>OFFLINE neste turno</b><div class="blocked" id="blocked"></div></div>
+    <div class="stat"><b>&lt;entrada&gt;</b><span id="deckCount">—</span> cartas</div>
+  </section>
+
+  <div class="turn-order" id="turnOrder"></div>
+
+  <main class="board">
+    <section class="seat bot1" id="seat1"><h3><span>R1</span><small id="meta1"></small></h3><div class="hand" id="hand1"></div><div class="melds" id="melds1"></div></section>
+    <section class="seat bot2" id="seat2"><h3><span>R2</span><small id="meta2"></small></h3><div class="hand" id="hand2"></div><div class="melds" id="melds2"></div></section>
+    <section class="seat bot3" id="seat3"><h3><span>R3</span><small id="meta3"></small></h3><div class="hand" id="hand3"></div><div class="melds" id="melds3"></div></section>
+
+    <section class="center">
+      <div class="conveyor-title"><div><b>&lt;fluxo&gt;</b><div class="sub">9 posições</div></div></div>
+      <div class="middle-row">
+        <div class="deckbox" data-help="&lt;entrada&gt;: deck de compra. Você sempre compra do topo visível."><span class="decktoplabel">&lt;entrada&gt;</span><div class="deckpile" id="deckPile" data-help="Carta do topo da &lt;entrada&gt;. Esta é a próxima carta que pode ser comprada."></div><button class="btn primary" id="drawBtn" data-help="Compra a carta do topo visível da &lt;entrada&gt;.">COMPRA</button><button class="btn" id="refreshBtn" data-help="&lt;atualização&gt;: envia o topo da &lt;entrada&gt; para o &lt;fluxo&gt; sem desconectar cor. A nova carta cobre a anterior e libera o espaço se ele estiver com &lt;bloqueio&gt;. Você pode usar até 2 por turno e tem 3 na partida."><span class="refresh-button-icon"><span>↻</span></span>↻</button><span class="sub" id="deckHint"></span></div>
+        <div class="conveyor-wrap" data-help="&lt;fluxo&gt;: linha circular de 9 posições. É dele que você captura fragmentos."><span class="conveyorlabel">&lt;fluxo&gt;</span><div class="conveyor" id="conveyor"></div></div>
+      </div>
+      <div class="patterns-title">FRAGMENTOS</div><div class="patterns" id="patterns"></div>
+      <aside class="log center-log"><h3>Registro</h3><div id="log"></div></aside>
+    </section>
+
+    <section class="seat human" id="seat0" data-sort-mode="free">
+      <div class="human-top">
+        <h3><span>VOCÊ</span><small id="meta0"></small></h3>
+        <div class="sort-box" aria-label="Organização da área de jogo">
+          <span class="sort-label">ORDENAR:</span>
+          <button class="btn sort-btn" id="sortNumberBtn" type="button" data-help="Organiza sua área por números: primeiro 0, depois 1; em cada grupo, vermelho, azul, verde e amarelo.">0/1</button>
+          <button class="btn sort-btn" id="sortColorBtn" type="button" data-help="Organiza sua área por cores: vermelho, azul, verde e amarelo; em cada cor, 0 antes de 1.">COR</button>
+          <button class="btn sort-btn active" id="sortFreeBtn" type="button" data-help="Modo livre: você pode arrastar as cartas e deixá-las na ordem que quiser.">LIVRE</button>
+        </div>
+      </div>
+      <div class="sub sort-hint" id="sortHint"></div>
+      <div class="hand" id="hand0" data-help="Sua área de jogo. Clique para selecionar cartas; arraste para reorganizar."></div><div class="melds" id="melds0"></div>
+      <div class="controls">
+        <button class="btn good" id="meldBtn" disabled data-help="Captura um fragmento do &lt;fluxo&gt; quando as cartas selecionadas formarem uma sequência válida.">CAPTURAR</button>
+        <button class="btn" id="passBtn" disabled hidden aria-hidden="true">Ir para o descarte</button>
+        <button class="btn bad" id="discardBtn" disabled data-help="Descarta a carta selecionada no próximo espaço do &lt;fluxo&gt;.">DESCARTAR</button>
+        <div class="msg" id="humanMsg"></div>
+      </div>
+    </section>
+  </main>
+  <div class="helpbar" id="helpBar"><span class="label">INFO</span><span id="helpText">Passe o mouse sobre <b>cartas</b>, <b>botões</b> e <b>áreas</b> do jogo para ver o que cada item faz.</span></div>
+  <footer class="legal-footer">Jogo criado por Ulisses Reis © 2026 — Propriedade intelectual protegida. Reprodução, distribuição ou uso não autorizado são proibidos. Contato: designerulissesreis@gmail.com</footer>
+</div>
+
+<div class="rules" id="rules"><div class="rules-card"><h2>Regras desta versão</h2><ul>
+<li><b>2 a 4 jogadores.</b> Cada jogador começa com <b>9 cartas abertas</b> em sua área de jogo, <b>2 marcadores de &lt;atualização&gt;</b> e <b>4 marcadores de &lt;captura&gt;</b>.</li>
+<li>O baralho tem 96 cartas normais: 4 cores, cada uma com 12 cartas <b>0</b> e 12 cartas <b>1</b>, além das especiais <b>00, 01, 10 e 11</b>.</li>
+<li>Na preparação, abra <b>3 cartas normais</b> nas posições 1, 2 e 3 do <b>&lt;fluxo&gt;</b>. Se uma especial aparecer nessa abertura, coloque-a no fundo do deck de <b>&lt;entrada&gt;</b> e revele outra. A próxima carta entra na posição 4.</li>
+<li>Antes da compra, o jogador pode gastar <b>1 ou 2 marcadores de &lt;atualização&gt;</b>. Cada atualização envia a carta visível do topo da <b>&lt;entrada&gt;</b> diretamente para a próxima posição do <b>&lt;fluxo&gt;</b> e avança o ponteiro. Essa carta <b>não &lt;desconecta&gt; nenhuma cor</b>.</li>
+<li>Depois das atualizações, compre a carta visível do topo da <b>&lt;entrada&gt;</b>.</li>
+<li>Para <b>&lt;capturar&gt;</b> um fragmento, reproduza 3 posições consecutivas e disponíveis do <b>&lt;fluxo&gt;</b>. Com cartas normais, devem coincidir <b>bit e cor</b>. O &lt;fluxo&gt; é circular: <b>8–9–1</b> e <b>9–1–2</b> também são válidos.</li>
+<li>Ao capturar um fragmento, os <b>3 espaços do &lt;fluxo&gt;</b> recebem &lt;bloqueio&gt; e não podem participar de outra captura. Um bloqueio sai quando <b>qualquer nova carta entra</b> naquele espaço, seja por descarte normal ou por &lt;atualização&gt;.</li>
+<li>As especiais <b>00, 01, 10 e 11</b> podem substituir <b>duas posições consecutivas</b> de um fragmento, preservando a ordem dos dois bits e ignorando as cores dessas duas posições. Não é permitido usar duas especiais na mesma captura.</li>
+<li>Se uma carta especial estiver no <b>&lt;fluxo&gt;</b>, aquela posição pode valer por <b>apenas um</b> dos dois bits impressos nela durante uma captura.</li>
+<li>O jogador pode capturar <b>mais de um fragmento no mesmo turno</b>. Após cada captura, sua área é reposta com cartas da &lt;entrada&gt; até voltar a ter 9 cartas, se necessário.</li>
+<li>Depois das capturas, descarte 1 carta no próximo espaço do <b>&lt;fluxo&gt;</b>. Cartas especiais só podem ser descartadas se nenhuma outra carta disponível da sua área puder ser descartada.</li>
+<li>O descarte normal de uma carta colorida faz o <b>próximo jogador</b> &lt;desconectar&gt; essa cor: as cartas dessa cor ficam viradas para baixo, não podem ser usadas nem descartadas durante o turno dele e voltam a ficar ativas ao final desse turno.</li>
+<li>Se você capturou pelo menos um fragmento no turno, depois do descarte reponha novamente sua área até <b>9 cartas</b>.</li>
+<li>Se o deck de <b>&lt;entrada&gt;</b> acabar, recolha todas as cartas que estiverem ocultas sob as cartas visíveis do &lt;fluxo&gt;, embaralhe-as e forme uma nova &lt;entrada&gt;. Os topos visíveis permanecem onde estão.</li>
+<li><b>Vitória imediata:</b> o primeiro jogador que capturar o <b>4º fragmento</b> completa seu pacote de <b>12 bits</b> e vence.</li>
+</ul><button class="btn primary" id="closeRules">Fechar</button></div></div>
+
+<div class="notice-modal" id="invalidMeldModal" role="dialog" aria-modal="true" aria-labelledby="invalidMeldTitle">
+  <div class="notice-card">
+    <h2 id="invalidMeldTitle">Sequência inválida</h2>
+    <p>Essas cartas não capturam nenhum fragmento disponível do &lt;fluxo&gt;. Volte e tente outras cartas ou siga com a partida descartando uma carta.</p>
+    <div class="notice-actions"><button class="btn primary" id="invalidMeldOk" type="button">OK</button></div>
+  </div>
+</div>
+
+<div class="notice-modal" id="restartModal" role="dialog" aria-modal="true" aria-labelledby="restartTitle">
+  <div class="notice-card">
+    <h2 id="restartTitle">Reiniciar partida?</h2>
+    <p>Tem certeza de que deseja começar uma nova partida de <b>001</b>? O jogo atual será perdido.</p>
+    <div class="notice-actions" style="gap:8px">
+      <button class="btn" id="restartCancel">Cancelar</button>
+      <button class="btn bad" id="restartConfirm">Reiniciar</button>
+    </div>
+  </div>
+</div>
+
+
+<div class="notice-modal" id="winnerModal" role="dialog" aria-modal="true" aria-labelledby="winnerTitle">
+  <div class="notice-card winner-card">
+    <span class="winner-big" id="winnerBig">PARTIDA ENCERRADA</span>
+    <span class="winner-sub">4 fragmentos capturados • pacote de 12 bits concluído</span>
+    <h2 id="winnerTitle">Vitória</h2>
+    <p id="winnerText">Um jogador venceu a partida.</p>
+    <div class="winner-actions">
+      <button class="btn primary" id="winnerNewGame" type="button">Nova partida</button>
+      <button class="btn" id="winnerClose" type="button">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(()=>{
+'use strict';
+const COLORS=[
+ {id:'red',name:'Vermelho',abbr:'VER',css:'var(--red)'},
+ {id:'blue',name:'Azul',abbr:'AZU',css:'var(--blue)'},
+ {id:'green',name:'Verde',abbr:'VRD',css:'var(--green)'},
+ {id:'yellow',name:'Amarelo',abbr:'AMA',css:'var(--yellow)'}
+];
+const NAMES=['Você','Robô 1','Robô 2','Robô 3'];
+const S={deck:[],players:[],conveyor:Array(9).fill(null),stacks:Array.from({length:9},()=>[]),covers:Array(9).fill(0),usedSlots:new Set(),discardIndex:0,lastDiscardPos:null,current:0,phase:'idle',selected:[],winner:null,turnNo:0,gameId:0,sortMode:'free',capturedThisTurn:false,refreshesThisTurn:0};
+let dragState={id:null,startX:0,startY:0,dragging:false,targetId:null,after:false,suppressClick:false,pointerId:null};
+let fitActive=false;
+
+const $=s=>document.querySelector(s);
+const color=id=>COLORS.find(c=>c.id===id);
+const isSpecial=c=>!!(c&&c.special);
+const cardCode=c=>isSpecial(c)?c.pair:`${color(c.color).abbr}${c.value}`;
+const label=c=>isSpecial(c)?`Especial ${c.pair}`:`${color(c.color).name} ${c.value}`;
+const blockedFor=(p,c)=>p>=0 && !isSpecial(c) && S.players[p].offlineColor===c.color;
+const COLOR_ORDER={red:0,blue:1,green:2,yellow:3};
+const SPECIAL_ORDER={"00":0,"01":1,"10":2,"11":3};
+function sortHumanHand(){
+ if(!S.players[0]||S.sortMode==='free')return;
+ const hand=S.players[0].hand;
+ hand.sort((a,b)=>{
+   if(isSpecial(a)||isSpecial(b)){
+     if(isSpecial(a)&&isSpecial(b))return (SPECIAL_ORDER[a.pair]??9)-(SPECIAL_ORDER[b.pair]??9)||a.id-b.id;
+     return isSpecial(a)?1:-1;
+   }
+   if(S.sortMode==='number'){
+     // Grupo 0: vermelho → azul → verde → amarelo; depois grupo 1 na mesma ordem.
+     const numberRank=(Number(a.value)*4)+(COLOR_ORDER[a.color]??9);
+     const otherRank=(Number(b.value)*4)+(COLOR_ORDER[b.color]??9);
+     return numberRank-otherRank || a.id-b.id;
+   }
+   return COLOR_ORDER[a.color]-COLOR_ORDER[b.color] || a.value-b.value || a.id-b.id;
+ });
+}
+function setSortMode(mode){
+ if(!['number','color','free'].includes(mode))return;
+ S.sortMode=mode;S.selected=[];resetDrag(false);if(mode!=='free')sortHumanHand();render();
+}
+function updateFitScale(){
+ const app=document.querySelector('.app');const btn=$('#fitBtn');if(!app||!btn)return;
+ if(!fitActive){app.style.zoom='';app.classList.remove('fit-active');document.body.classList.remove('fit-view');btn.classList.remove('active');btn.textContent='Ajustar';return}
+ app.style.zoom='1';app.classList.add('fit-active');document.body.classList.add('fit-view');
+ requestAnimationFrame(()=>{
+   const naturalW=app.scrollWidth,naturalH=app.scrollHeight;
+   const zx=(window.innerWidth-8)/Math.max(1,naturalW),zy=(window.innerHeight-8)/Math.max(1,naturalH);
+   const z=Math.min(1,zx,zy);
+   app.style.zoom=Math.max(.55,z).toFixed(3);
+   btn.classList.add('active');btn.textContent='Tamanho normal';
+ });
+}
+function toggleFit(){fitActive=!fitActive;updateFitScale()}
+
+function shuffle(a){for(let i=a.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function makeDeck(){let a=[],id=1;for(const c of COLORS)for(const v of [0,1])for(let i=0;i<12;i++)a.push({id:id++,color:c.id,value:v});for(const pair of ['00','01','10','11'])a.push({id:id++,special:true,pair,color:null,value:null});return shuffle(a)}
+function takeOpeningNormal(){
+  let guard=0;
+  while(S.deck.length && guard<20){
+    guard++;
+    const c=S.deck.pop();
+    if(!isSpecial(c))return c;
+    S.deck.unshift(c); // especiais reveladas na preparação voltam para o fundo da &lt;entrada&gt;
+  }
+  return null;
+}
+function addLog(t){const d=document.createElement('div');d.className='log-entry';d.innerHTML=t;$('#log').prepend(d)}
+function recyclableCount(){return S.stacks.reduce((n,stack)=>n+Math.max(0,stack.length-1),0)}
+function recycleDeckFromConveyor(){
+ if(S.deck.length)return true;
+ const recycled=[];
+ for(let pos=0;pos<S.stacks.length;pos++){
+   const stack=S.stacks[pos];
+   if(stack.length>1){
+     recycled.push(...stack.splice(0,stack.length-1));
+     refreshSlot(pos);
+   }
+ }
+ if(!recycled.length)return false;
+ S.deck=shuffle(recycled);
+ addLog(`<b>&lt;entrada&gt; refeita:</b> ${recycled.length} carta${recycled.length===1?'':'s'} que estavam ocultas sob o &lt;fluxo&gt; voltaram ao deck e foram reembaralhadas. As cartas visíveis permaneceram no &lt;fluxo&gt;.`);
+ return true;
+}
+function draw(p){if(!S.deck.length&&!recycleDeckFromConveyor())return null;const c=S.deck.pop();S.players[p].hand.push(c);return c}
+function refillToNine(p){let n=0;while(S.players[p].hand.length<9){const c=draw(p);if(!c)break;n++}if(n)addLog(`<b>${NAMES[p]}</b> repôs ${n} carta${n===1?'':'s'} e voltou a ${S.players[p].hand.length} na área de jogo.`);if(S.players[p].hand.length<9)addLog(`<b>${NAMES[p]}</b> não conseguiu completar 9 cartas porque não há cartas ocultas suficientes no &lt;fluxo&gt; para refazer a &lt;entrada&gt;.`);return n}
+function sleepRun(fn,ms){const id=S.gameId;setTimeout(()=>{if(id===S.gameId)fn()},ms)}
+function patternLabel(indices){return indices.map(i=>i+1).join('–')}
+function patterns(){
+ let a=[];
+ for(let i=0;i<9;i++){
+   const indices=[i,(i+1)%9,(i+2)%9];
+   const cards=indices.map(x=>S.conveyor[x]);
+   if(cards.every(Boolean))a.push({i,indices,cards,locked:indices.some(x=>S.usedSlots.has(x))});
+ }
+ return a;
+}
+function refreshUsedSlot(pos){
+ if(S.usedSlots.delete(pos))addLog(`<b>&lt;bloqueio&gt; removido do espaço ${pos+1}:</b> uma nova carta entrou nessa posição do &lt;fluxo&gt; e cobriu a anterior.`);
+}
+function flowAcceptsNormal(flowCard,handCard){
+ if(!flowCard||!handCard||isSpecial(handCard))return false;
+ if(isSpecial(flowCard))return flowCard.pair.includes(String(handCard.value)); // especial no &lt;fluxo&gt;: escolha 1 dos 2 bits, sem cor
+ return flowCard.value===handCard.value&&flowCard.color===handCard.color;
+}
+function flowAcceptsBit(flowCard,bit){
+ if(!flowCard)return false;
+ return isSpecial(flowCard)?flowCard.pair.includes(String(bit)):flowCard.value===bit;
+}
+function matchFor(p,cards){
+ if(cards.some(c=>blockedFor(p,c)))return null;
+ // Captura normal: 3 cartas normais; a ordem física da área não importa.
+ if(cards.length===3 && cards.every(c=>!isSpecial(c))){
+   const perms=[[0,1,2],[0,2,1],[1,0,2],[1,2,0],[2,0,1],[2,1,0]];
+   for(const pt of patterns()){
+     if(pt.locked)continue;
+     for(const perm of perms){
+       if(pt.cards.every((fc,i)=>flowAcceptsNormal(fc,cards[perm[i]]))){
+         return Object.assign({},pt,{cardOrder:perm});
+       }
+     }
+   }
+ }
+ // Uma especial da área substitui EXATAMENTE 2 posições consecutivas: 1-2 ou 2-3.
+ if(cards.length===2){
+   const spIndex=cards.findIndex(isSpecial),normalIndex=cards.findIndex(c=>!isSpecial(c));
+   if(spIndex<0||normalIndex<0)return null;
+   const sp=cards[spIndex],normal=cards[normalIndex],bits=sp.pair.split('').map(Number);
+   for(const pt of patterns()){
+     if(pt.locked)continue;
+     for(const start of [0,1]){
+       const covered=[start,start+1];
+       const remaining=start===0?2:0;
+       if(!flowAcceptsNormal(pt.cards[remaining],normal))continue;
+       if(flowAcceptsBit(pt.cards[covered[0]],bits[0])&&flowAcceptsBit(pt.cards[covered[1]],bits[1])){
+         return Object.assign({},pt,{specialUse:true,pair:sp.pair,covered,remaining,cardOrder:[spIndex,normalIndex]});
+       }
+     }
+   }
+ }
+ return null;
+}
+function humanSelection(){
+ const inds=[...S.selected];
+ return {inds,cards:inds.map(i=>S.players[0].hand[i]).filter(Boolean)};
+}
+function allOptions(p){
+ const h=S.players[p].hand,out=[];
+ // Combinações normais de 3 cartas; matchFor resolve a ordem automaticamente.
+ for(let a=0;a<h.length-2;a++)for(let b=a+1;b<h.length-1;b++)for(let c=b+1;c<h.length;c++){
+   if(isSpecial(h[a])||isSpecial(h[b])||isSpecial(h[c]))continue;
+   const inds=[a,b,c],cards=inds.map(i=>h[i]);
+   const pat=matchFor(p,cards);
+   if(pat)out.push({inds,order:(pat.cardOrder||[0,1,2]).map(k=>inds[k]),pat});
+ }
+ // Coringa de 2 bits + uma carta normal.
+ for(let a=0;a<h.length-1;a++)for(let b=a+1;b<h.length;b++){
+   const inds=[a,b],cards=inds.map(i=>h[i]);if(cards.filter(isSpecial).length!==1)continue;
+   const pat=matchFor(p,cards);if(pat)out.push({inds,order:(pat.cardOrder||[0,1]).map(k=>inds[k]),pat});
+ }
+ return out;
+}
+function disconnectNextPlayer(source,colorId){
+ const next=(source+1)%4;
+ S.players[next].offlineColor=colorId;
+ addLog(`<b>${NAMES[next]}</b> deve &lt;desconectar&gt; <b>${color(colorId).name}</b> neste turno. Essas cartas ficam OFFLINE e não podem ser usadas nem descartadas.`);
+}
+function reconnectPlayer(p){
+ const id=S.players[p]&&S.players[p].offlineColor;
+ if(!id)return;
+ S.players[p].offlineColor=null;
+ addLog(`<b>${NAMES[p]}</b> &lt;reconectou&gt; ${color(id).name} ao encerrar o turno.`);
+}
+function refreshSlot(pos){
+ const stack=S.stacks[pos];S.conveyor[pos]=stack.length?stack[stack.length-1]:null;S.covers[pos]=stack.length;
+}
+function hasConnectedNormal(p){
+ return S.players[p].hand.some(c=>!isSpecial(c)&&!blockedFor(p,c));
+}
+function canDiscardCard(p,index){
+ const c=S.players[p]&&S.players[p].hand[index];
+ if(!c)return false;
+ if(blockedFor(p,c))return false; // cartas OFFLINE não podem ser descartadas
+ if(!isSpecial(c))return true;
+ // Especial só pode entrar no &lt;fluxo&gt; se nenhuma outra carta disponível puder ser descartada.
+ return !hasConnectedNormal(p);
+}
+function placeDiscard(p,index){
+ const candidate=S.players[p].hand[index];
+ if(!candidate||!canDiscardCard(p,index))return null;
+ const [c]=S.players[p].hand.splice(index,1);if(!c)return null;
+ const pos=S.discardIndex%9;
+ S.stacks[pos].push(c);refreshSlot(pos);
+ // Qualquer nova carta que entre no espaço libera seu &lt;bloqueio&gt;.
+ refreshUsedSlot(pos);
+ S.discardIndex++;S.lastDiscardPos=pos;
+ addLog(`<b>${NAMES[p]}</b> descartou ${label(c)} no espaço ${pos+1} do &lt;fluxo&gt;.`);
+ if(isSpecial(c)){
+   addLog(`A carta especial <b>${c.pair}</b> entrou no &lt;fluxo&gt; sem &lt;desconectar&gt; cor. Em uma captura, essa posição poderá usar apenas <b>1</b> dos seus 2 bits.`);
+ }else{
+   disconnectNextPlayer(p,c.color);
+ }
+ return c;
+}
+function useRefresh(p){
+ if(!S.players[p]||S.players[p].refresh<=0)return null;
+ if(!S.deck.length&&!recycleDeckFromConveyor())return null;
+ const c=S.deck.pop();
+ S.players[p].refresh--;
+ const pos=S.discardIndex%9;
+ S.stacks[pos].push(c);refreshSlot(pos);
+ // A &lt;atualização&gt; cobre a carta anterior e também libera qualquer &lt;bloqueio&gt; do espaço.
+ refreshUsedSlot(pos);
+ S.discardIndex++;S.lastDiscardPos=pos;
+ addLog(`<b>${NAMES[p]}</b> gastou 1 &lt;atualização&gt; e enviou ${label(c)} direto para o espaço ${pos+1} do &lt;fluxo&gt;. A nova carta libera o espaço se ele estava com &lt;bloqueio&gt;, mas não &lt;desconecta&gt; nenhuma cor.`);
+ if(!S.deck.length)recycleDeckFromConveyor();
+ return c;
+}
+function meld(p,opt){
+ const shown=opt.order.map(i=>S.players[p].hand[i]);
+ [...opt.inds].sort((a,b)=>b-a).forEach(i=>S.players[p].hand.splice(i,1));
+ S.players[p].melds++;
+ S.capturedThisTurn=true;
+ opt.pat.indices.forEach(i=>S.usedSlots.add(i));
+ if(opt.pat.specialUse){
+   addLog(`<b>${NAMES[p]}</b> &lt;capturou&gt; o fragmento ${patternLabel(opt.pat.indices)} usando a especial <b>${opt.pat.pair}</b> em duas posições consecutivas e ${shown.filter(c=>!isSpecial(c)).map(cardCode).join('')}.`);
+ }else{
+   addLog(`<b>${NAMES[p]}</b> &lt;capturou&gt; ${shown.map(cardCode).join(' → ')} no fragmento ${patternLabel(opt.pat.indices)}.`);
+ }
+ addLog(`<b>Espaços ${patternLabel(opt.pat.indices)} receberam &lt;bloqueio&gt;.</b> Cada marcador sai quando uma nova carta for descartada sobre seu espaço.`);
+ if(S.players[p].melds>=4){
+   S.winner=p;S.phase='gameover';
+   addLog(`<b>${NAMES[p]} venceu ao capturar o 4º fragmento e completar o pacote de 12 bits!</b>`);
+   render();
+   showWinnerModal(p);
+   return;
+ }
+ // Após cada captura, a área volta a 9 cartas antes de tentar outro fragmento.
+ refillToNine(p);
+}
+function makeCard(c,p,index){
+ const isHuman=p===0;const el=document.createElement(isHuman?'button':'div');el.className='card';
+ if(isSpecial(c)){
+   el.classList.add('special');el.style.setProperty('--c','#f2ca68');el.dataset.abbr='2 BITS';el.dataset.fullcolor='ESPECIAL';el.dataset.valueLabel=c.pair;el.append(document.createTextNode(c.pair));
+ }
+ else{
+   if(blockedFor(p,c))el.classList.add('blocked');
+   el.style.setProperty('--c',color(c.color).css);el.dataset.abbr=color(c.color).abbr;el.dataset.fullcolor=color(c.color).name.toUpperCase();el.dataset.valueLabel=String(c.value);el.append(document.createTextNode(c.value));
+ }
+ el.dataset.help=isSpecial(c)?`Carta especial ${c.pair}. Ela pode substituir duas posições consecutivas de um fragmento quando está na sua área.`:`Carta ${color(c.color).name} ${c.value}. ${p===-1?'No &lt;fluxo&gt;, pode fazer parte de fragmentos.':'Na sua área, pode ser selecionada para capturar ou descartada se estiver disponível.'}`;
+ const lock=document.createElement('span');lock.className='lock';lock.textContent='X';el.appendChild(lock);
+ if(isHuman){
+   el.type='button';el.dataset.index=index;el.dataset.cardId=c.id;el.draggable=false;
+   if(S.selected.includes(index))el.classList.add('selected');
+   el.addEventListener('click',()=>{if(dragState.suppressClick){dragState.suppressClick=false;return}humanCard(Number(el.dataset.index))});
+ }
+ return el;
+}
+function renderBlockedSummary(){
+ const bl=$('#blocked');bl.innerHTML='';
+ for(let p=0;p<4;p++){
+   const x=document.createElement('span');x.className='pill';
+   const id=S.players[p].offlineColor;
+   x.innerHTML=`<b>${NAMES[p]}:</b>&nbsp;${id?`<span class="dot" title="${color(id).name} OFFLINE" style="background:${color(id).css}"></span> ${color(id).name}`:'online'}`;
+   bl.appendChild(x);
+ }
+}
+function render(){
+ const seat0=$('#seat0');if(seat0)seat0.dataset.sortMode=S.sortMode;
+ const sortMap={number:'#sortNumberBtn',color:'#sortColorBtn',free:'#sortFreeBtn'};
+ Object.entries(sortMap).forEach(([mode,sel])=>{const el=$(sel);if(el)el.classList.toggle('active',S.sortMode===mode)});
+ const sortHint=$('#sortHint');if(sortHint)sortHint.textContent=S.sortMode==='number'?'Ordenado agora por números: 0 (vermelho → azul → verde → amarelo), depois 1 na mesma ordem. Você ainda pode arrastar e bagunçar livremente.':S.sortMode==='color'?'Ordenado agora por cores: vermelho → azul → verde → amarelo, com 0 antes de 1. Você ainda pode arrastar e bagunçar livremente.':'↔ Modo Livre: arraste as cartas como quiser. Clique em Números ou Cores a qualquer momento para reorganizar novamente.';
+ for(let p=0;p<4;p++){
+   const h=$(`#hand${p}`);h.innerHTML='';S.players[p].hand.forEach((c,i)=>h.appendChild(makeCard(c,p,i)));
+   h.classList.toggle('selecting',p===0&&S.current===0&&(S.phase==='play'||S.phase==='discard'));
+   $(`#meta${p}`).textContent=`${S.players[p].hand.length} cartas • ${S.players[p].melds}/4 capturas • ${S.players[p].refresh} atualizações`;
+   const m=$(`#melds${p}`);m.innerHTML='';
+   const cl=document.createElement('span');cl.className='caplabel';cl.innerHTML='&lt;capturados&gt;';
+   cl.dataset.help=`Marcadores de &lt;capturados&gt; de ${NAMES[p]}. Cada disquete verde representa 1 fragmento já capturado.`;
+   m.appendChild(cl);
+   for(let i=0;i<4;i++){
+     const x=document.createElement('span');
+     const captured=i<S.players[p].melds;
+     x.className='meldmark'+(captured?' on':'');
+     x.dataset.help=captured
+       ? `${NAMES[p]} já capturou este fragmento. O primeiro a completar 4 capturas vence.`
+       : `Marcador de &lt;capturados&gt; de ${NAMES[p]}. Quando este disquete ficar verde, significa que 1 fragmento foi capturado.`;
+     m.appendChild(x);
+   }
+   const rl=document.createElement('span');rl.className='updlabel';rl.innerHTML='&lt;atualização&gt;';
+   rl.dataset.help=`Marcadores de &lt;atualização&gt; de ${NAMES[p]}. Cada jogador começa com 3 para toda a partida.`;
+   m.appendChild(rl);
+   for(let i=0;i<3;i++){
+     const x=document.createElement('span');
+     const available=i<S.players[p].refresh;
+     x.className='refreshmark'+(available?' on':'');
+     x.title=available?'Atualização disponível':'Atualização gasta';
+     x.dataset.help=available
+       ? `&lt;atualização&gt; disponível de ${NAMES[p]}. Antes da compra, pode enviar o topo da &lt;entrada&gt; direto para o &lt;fluxo&gt; sem desconectar cor.`
+       : `&lt;atualização&gt; já gasta por ${NAMES[p]}. Cada jogador possui apenas 2 durante toda a partida.`;
+     m.appendChild(x);
+   }
+   $(`#seat${p}`).classList.toggle('active',S.current===p&&S.winner===null);
+   $(`#seat${p}`).classList.toggle('winner',S.winner===p);
+ }
+ $('#deckCount').textContent=S.deck.length;const deckPile=$('#deckPile');if(deckPile){deckPile.classList.toggle('empty',S.deck.length===0);deckPile.innerHTML='';if(S.deck.length){const top=S.deck[S.deck.length-1];const topEl=makeCard(top,-1,-1);topEl.setAttribute('aria-label',`Topo da entrada: ${label(top)}`);deckPile.appendChild(topEl)}else{const empty=document.createElement('div');empty.className='deckcard';deckPile.appendChild(empty)}}$('#turnText').textContent=S.winner!==null?`${NAMES[S.winner]} venceu`:`${NAMES[S.current]} • turno ${S.turnNo}`;
+ const to=$('#turnOrder');to.innerHTML='';NAMES.forEach((name,i)=>{const chip=document.createElement('span');chip.className='turn-chip'+(S.current===i&&S.winner===null?' active':'');chip.textContent=name;to.appendChild(chip);if(i<3){const ar=document.createElement('span');ar.className='turn-arrow';ar.textContent='→';to.appendChild(ar)}});const ar=document.createElement('span');ar.className='turn-arrow';ar.textContent='↺';to.appendChild(ar);
+ renderBlockedSummary();
+ const cv=$('#conveyor');cv.innerHTML='';const nextDiscardPos=S.discardIndex%9;S.conveyor.forEach((c,i)=>{const s=document.createElement('div');let cls='slot';if(i===nextDiscardPos)cls+=' current-discard';if(i===S.lastDiscardPos)cls+=' latest-discard';if(S.usedSlots.has(i))cls+=' used-space';s.className=cls;s.dataset.help=`Espaço ${i+1} do &lt;fluxo&gt;. ${i===nextDiscardPos?'Este é o próximo espaço que receberá uma carta. ':''}${S.usedSlots.has(i)?'Este espaço está bloqueado para captura até receber um descarte normal por cima. ':''}${i===S.lastDiscardPos?'Esta é a posição do descarte mais recente. ':''}`;s.innerHTML=`<span class="slotnum">${i+1}</span>`;if(c){const cardEl=makeCard(c,-1,-1);cardEl.classList.add('flowcard');cardEl.dataset.help=isSpecial(c)?`Carta especial ${c.pair} no &lt;fluxo&gt;. Em uma captura, o jogador escolhe apenas um dos dois bits impressos para essa posição.`:`Carta ${color(c.color).name} ${c.value} no &lt;fluxo&gt;. Para capturar um fragmento, a sequência precisa corresponder em cor, bit e ordem.`;if(isSpecial(c)){cardEl.innerHTML='';const t=document.createElement('span');t.className='bitpair small';t.textContent=c.pair;cardEl.appendChild(t)}else{cardEl.textContent='';const t=document.createElement('span');t.className='bitpair';t.textContent=String(c.value);cardEl.appendChild(t)}s.appendChild(cardEl);if(S.covers[i]>1){const n=document.createElement('span');n.className='stack';n.textContent=`×${S.covers[i]}`;s.appendChild(n)}}cv.appendChild(s)});
+ const ps=$('#patterns');ps.innerHTML='';const hot=new Set(allOptions(0).map(o=>o.pat.i));for(const p of patterns()){const x=document.createElement('span');x.className='pattern'+(p.locked?' locked':(hot.has(p.i)?' hot':''));x.textContent=`${patternLabel(p.indices)}: ${p.cards.map(cardCode).join(' → ')}${p.locked?' • BLOQUEADO':''}`;if(p.locked)x.title='Uma ou mais posições deste fragmento estão com marcador de &lt;bloqueio&gt; e só serão liberadas por um novo descarte sobre o espaço.';ps.appendChild(x)}if(!ps.children.length)ps.innerHTML='<span class="sub">Ainda não há três posições consecutivas preenchidas no &lt;fluxo&gt;.</span>';
+ updateControls();
+ if(fitActive)requestAnimationFrame(updateFitScale);
+}
+function updateControls(){
+ const drawBtn=$('#drawBtn'),refreshBtn=$('#refreshBtn'),discardBtn=$('#discardBtn'),meldBtn=$('#meldBtn'),passBtn=$('#passBtn'),msg=$('#humanMsg'),hint=$('#deckHint');
+ drawBtn.disabled=true;refreshBtn.disabled=true;discardBtn.disabled=true;discardBtn.textContent='Descartar';meldBtn.disabled=true;passBtn.disabled=true;msg.className='msg';hint.textContent='';
+ if(S.winner!==null){
+   msg.classList.add('good');
+   msg.innerHTML=`<div class="step">PARTIDA ENCERRADA</div><b>${S.winner===0?'Você venceu!':NAMES[S.winner]+' venceu!'}</b> 4 fragmentos capturados • 12 bits completos.`;
+   return;
+ }
+ if(S.current!==0){
+   const off=S.players[S.current].offlineColor;
+   msg.innerHTML=`<div class="step">TURNO DE ${NAMES[S.current].toUpperCase()}</div>${off?`Cor <b>${color(off).name}</b> OFFLINE. `:''}O robô pode usar &lt;atualização&gt; → compra → &lt;captura&gt; fragmentos → descarta → &lt;desconecta&gt; uma cor do próximo jogador.`;
+   return;
+ }
+ if(S.phase==='draw'){
+   drawBtn.disabled=S.deck.length===0;
+   refreshBtn.disabled=S.players[0].refresh<=0||S.deck.length===0||S.refreshesThisTurn>=2;
+   hint.textContent=S.deck.length?`Topo: ${label(S.deck[S.deck.length-1])} • Atualizações: ${S.players[0].refresh}/3 • usadas neste turno: ${S.refreshesThisTurn}/2`:'&lt;entrada&gt; vazia';
+   msg.classList.add('warn');
+   if(S.refreshesThisTurn===0)msg.innerHTML='<div class="step">1. FILTRAR / COMPRAR</div>Compre o <b>topo visível da &lt;entrada&gt;</b> ou gaste 1 &lt;atualização&gt;. Você pode usar até <b>2</b> no mesmo turno.';
+   else if(S.refreshesThisTurn===1)msg.innerHTML='<div class="step">1. FILTRAR / COMPRAR</div>Você já usou <b>1 &lt;atualização&gt;</b>. Compre o novo topo ou use sua segunda atualização.';
+   else msg.innerHTML='<div class="step">1. FILTRAR / COMPRAR</div>Você usou as <b>2 &lt;atualizações&gt;</b>. A próxima carta do topo deve ser comprada.';
+   return;
+ }
+ if(S.phase==='play'){
+   const hs=humanSelection(),cards=hs.cards;
+   const selectedCard=S.selected.length===1?S.players[0].hand[S.selected[0]]:null;
+   const canDiscard=S.selected.length===1&&canDiscardCard(0,S.selected[0]);
+   discardBtn.disabled=!canDiscard;
+   const pat=(S.selected.length===2||S.selected.length===3)?matchFor(0,cards):null;
+   const fullInvalid=(S.selected.length===3&&!pat)||(S.selected.length===2&&cards.filter(isSpecial).length===1&&!pat);
+   meldBtn.classList.remove('ready','meld-ready','meld-invalid','good','bad');
+   if(pat){meldBtn.disabled=false;meldBtn.classList.add('meld-ready');}
+   else if(fullInvalid){meldBtn.disabled=false;meldBtn.classList.add('meld-invalid');}
+   else meldBtn.disabled=true;
+
+   if(pat){
+     msg.classList.add('good');
+     if(pat.specialUse){
+       msg.innerHTML=`<div class="step">3. &lt;CAPTURAR&gt;</div>Fragmento válido: a especial <b>${pat.pair}</b> substitui duas posições consecutivas de ${patternLabel(pat.indices)}. Clique em <b>CAPTURAR</b>.`;
+     }else{
+       const ordered=(pat.cardOrder||[0,1,2]).map(k=>cards[k]);
+       msg.innerHTML=`<div class="step">3. &lt;CAPTURAR&gt;</div>As cartas selecionadas capturam ${patternLabel(pat.indices)}: <b>${ordered.map(cardCode).join(' → ')}</b>. Clique em <b>CAPTURAR</b>.`;
+     }
+   }else if(fullInvalid){
+     msg.classList.add('warn');
+     msg.innerHTML='<div class="step">3. &lt;CAPTURAR&gt;</div>As cartas selecionadas não correspondem a nenhum fragmento disponível do &lt;fluxo&gt;. O botão vermelho mostra o aviso.';
+   }else if(S.selected.length===1){
+     if(blockedFor(0,selectedCard)){
+       msg.classList.add('warn');
+       msg.innerHTML=`<div class="step">3/4. JOGAR</div>${label(selectedCard)} está <b>OFFLINE</b>: não pode ser usada em captura nem descartada neste turno.`;
+     }else if(isSpecial(selectedCard)){
+       if(canDiscard){
+         msg.classList.add('warn');
+         msg.innerHTML='<div class="step">3/4. JOGAR</div>Esta especial pode ser descartada porque não há outra carta disponível para descarte. Ou selecione também uma carta normal para tentar uma captura.';
+       }else{
+         msg.innerHTML='<div class="step">3. &lt;CAPTURAR&gt;</div>Carta especial selecionada. Ela pode substituir duas posições consecutivas; selecione também 1 carta normal. A especial só pode ser descartada se nenhuma outra carta disponível puder ser descartada.';
+       }
+     }else{
+       msg.innerHTML='<div class="step">3/4. JOGAR</div>1 carta selecionada. Continue selecionando para tentar &lt;capturar&gt; um fragmento ou clique em <b>DESCARTAR</b>.';
+     }
+   }else{
+     const off=S.players[0].offlineColor;
+     msg.innerHTML=`<div class="step">3. &lt;CAPTURAR&gt;</div>${off?`<b>${color(off).name}</b> está OFFLINE neste turno. `:''}Capture quantos fragmentos conseguir/quiser antes de descartar. Use <b>3 cartas normais</b> ou <b>1 especial + 1 normal</b>.`;
+   }
+   return;
+ }
+ if(S.phase==='discard'){
+   const selectedCard=S.selected.length===1?S.players[0].hand[S.selected[0]]:null;
+   discardBtn.disabled=!(S.selected.length===1&&canDiscardCard(0,S.selected[0]));
+   msg.classList.add('warn');
+   if(selectedCard&&blockedFor(0,selectedCard))msg.innerHTML='<div class="step">4. DESCARTAR</div>Essa carta está <b>OFFLINE</b> e não pode ser descartada. Selecione outra.';
+   else if(selectedCard&&isSpecial(selectedCard)&&!canDiscardCard(0,S.selected[0]))msg.innerHTML='<div class="step">4. DESCARTAR</div>A especial só pode ser descartada se nenhuma outra carta disponível puder ser descartada.';
+   else if(S.selected.length===1)msg.innerHTML='<div class="step">4. DESCARTAR</div>Carta selecionada. Clique em <b>DESCARTAR</b> para enviá-la ao próximo espaço do &lt;fluxo&gt;.';
+   else msg.innerHTML='<div class="step">4. DESCARTAR</div>Selecione uma carta disponível e clique em <b>DESCARTAR</b>.';
+   return;
+ }
+ if(S.phase==='handoff'){
+   msg.classList.add('good');
+   msg.innerHTML='<div class="step">TURNO CONCLUÍDO</div>Reconectando sua área e passando automaticamente para o próximo jogador…';
+ }
+}
+function clearDragMarks(){document.querySelectorAll('#hand0 .card').forEach(el=>el.classList.remove('dragging','drag-over-left','drag-over-right'))}
+function resetDrag(keepSuppress=false){clearDragMarks();const sup=keepSuppress?dragState.suppressClick:false;dragState={id:null,startX:0,startY:0,dragging:false,targetId:null,after:false,suppressClick:sup,pointerId:null}}
+function dragPointerDown(e){const card=e.target.closest('#hand0 .card');if(!card||e.button!==0)return;dragState.id=Number(card.dataset.cardId);dragState.startX=e.clientX;dragState.startY=e.clientY;dragState.dragging=false;dragState.targetId=null;dragState.after=false;dragState.pointerId=e.pointerId}
+function dragPointerMove(e){if(dragState.id===null||dragState.pointerId!==e.pointerId)return;const dx=e.clientX-dragState.startX,dy=e.clientY-dragState.startY;if(!dragState.dragging&&Math.hypot(dx,dy)<7)return;dragState.dragging=true;e.preventDefault();clearDragMarks();const source=document.querySelector(`#hand0 .card[data-card-id="${dragState.id}"]`);if(source)source.classList.add('dragging');const hit=document.elementFromPoint(e.clientX,e.clientY);const target=hit&&hit.closest?hit.closest('#hand0 .card'):null;if(!target||Number(target.dataset.cardId)===dragState.id){dragState.targetId=null;return}const r=target.getBoundingClientRect();dragState.after=e.clientX>r.left+r.width/2;dragState.targetId=Number(target.dataset.cardId);target.classList.add(dragState.after?'drag-over-right':'drag-over-left')}
+function dragPointerUp(e){if(dragState.id===null||dragState.pointerId!==e.pointerId)return;if(dragState.dragging){e.preventDefault();const hand=S.players[0].hand;const from=hand.findIndex(c=>c.id===dragState.id);if(from>=0){const [card]=hand.splice(from,1);let insert;if(dragState.targetId===null){const box=$('#hand0').getBoundingClientRect();insert=e.clientX<box.left+box.width/2?0:hand.length}else{insert=hand.findIndex(c=>c.id===dragState.targetId);if(insert<0)insert=hand.length;else if(dragState.after)insert++}hand.splice(insert,0,card);S.selected=[];S.sortMode='free'}dragState.suppressClick=true;clearDragMarks();render();setTimeout(()=>{dragState.suppressClick=false},180);dragState.id=null;dragState.dragging=false;dragState.targetId=null;dragState.pointerId=null}else{dragState.id=null;dragState.pointerId=null}}
+function dragPointerCancel(){resetDrag(false)}
+function humanCard(index){
+ if(S.current!==0||S.winner!==null)return;
+ const c=S.players[0].hand[index];if(!c)return;
+ if(S.phase==='play'){
+   const at=S.selected.indexOf(index);
+   if(at>=0)S.selected.splice(at,1);else if(S.selected.length<3)S.selected.push(index);
+   render();return;
+ }
+ if(S.phase==='discard'){
+   const at=S.selected.indexOf(index);
+   if(at>=0)S.selected=[];
+   else S.selected=[index];
+   render();return;
+ }
+}
+
+function humanDraw(){
+ if(S.current!==0||S.phase!=='draw'||S.winner!==null)return;
+ const c=draw(0);if(!c){finishDeck();return}
+ addLog(`<b>Você</b> ${S.refreshesThisTurn?'comprou após '+S.refreshesThisTurn+' &lt;atualização&gt;'+(S.refreshesThisTurn>1?'ões':''):'comprou da &lt;entrada&gt;'}: ${label(c)}.`);
+ S.phase='play';S.selected=[];render();
+}
+function humanRefresh(){
+ if(S.current!==0||S.phase!=='draw'||S.winner!==null||S.players[0].refresh<=0||S.refreshesThisTurn>=2)return;
+ if(!useRefresh(0))return;
+ S.refreshesThisTurn++;
+ if(S.refreshesThisTurn>=2){
+   const c=draw(0);if(!c){finishDeck();return}
+   addLog(`<b>Você</b> usou a 2ª &lt;atualização&gt; e comprou obrigatoriamente a nova carta do topo: ${label(c)}.`);
+   S.phase='play';S.selected=[];render();return;
+ }
+ addLog('<b>Você</b> pode comprar o novo topo ou gastar sua 2ª &lt;atualização&gt;.');
+ render();
+}
+function showInvalidMeld(){const m=$('#invalidMeldModal');if(m)m.classList.add('open')}
+function hideInvalidMeld(){const m=$('#invalidMeldModal');if(m)m.classList.remove('open')}
+
+function showWinnerModal(p){
+ const modal=$('#winnerModal');if(!modal)return;
+ const human=p===0;
+ const name=human?'VOCÊ':NAMES[p];
+ const big=$('#winnerBig'),title=$('#winnerTitle'),text=$('#winnerText');
+ if(big)big.textContent=human?'VOCÊ VENCEU':`${NAMES[p]} VENCEU`;
+ if(title)title.textContent='Partida encerrada';
+ if(text)text.innerHTML=human
+   ? 'Você capturou <b>4 fragmentos</b>, completou o pacote de <b>12 bits</b> e venceu.'
+   : `<b>${name}</b> capturou <b>4 fragmentos</b>, completou o pacote de <b>12 bits</b> e venceu.`;
+ modal.classList.add('open');
+}
+
+function humanMeld(){
+ if(S.current!==0||S.phase!=='play'||!(S.selected.length===2||S.selected.length===3))return;
+ const hs=humanSelection(),pat=matchFor(0,hs.cards);
+ if(!pat){showInvalidMeld();return}
+ const order=(pat.cardOrder||hs.inds.map((_,i)=>i)).map(k=>hs.inds[k]);
+ meld(0,{inds:hs.inds,order,pat});
+ S.selected=[];
+ if(S.winner===null){
+   S.phase='play';
+   addLog('<b>Você</b> pode tentar &lt;capturar&gt; outro fragmento neste turno ou selecionar 1 carta disponível e descartar.');
+ }
+ render();
+}
+function humanPass(){if(S.current!==0||S.phase!=='play'||S.winner!==null)return;S.selected=[];S.phase='discard';render()}
+function humanDiscard(){
+ if(S.current!==0||!(S.phase==='play'||S.phase==='discard')||S.selected.length!==1)return;
+ const idx=S.selected[0];
+ if(!canDiscardCard(0,idx))return;
+ const c=placeDiscard(0,idx);if(!c)return;
+ if(S.capturedThisTurn)refillToNine(0);
+ reconnectPlayer(0);
+ S.selected=[];S.phase='handoff';render();sleepRun(nextPlayer,700);
+}
+function noDrawsLeft(){return S.deck.length===0&&recyclableCount()===0}
+function finishDeck(){
+ S.phase='gameover';
+ addLog('<b>Não há mais cartas disponíveis na &lt;entrada&gt; nem cartas ocultas sob o &lt;fluxo&gt; para formar um novo deck.</b>');
+ render();
+}
+function nextPlayer(){if(S.winner!==null){render();return}S.current=(S.current+1)%4;startTurn()}
+function startTurn(){
+ if(S.winner!==null)return;
+ S.turnNo++;S.selected=[];S.refreshesThisTurn=0;S.capturedThisTurn=false;
+ if(!S.deck.length&&!recycleDeckFromConveyor()){finishDeck();return}
+ if(S.current===0){S.phase='draw';render();return}
+ S.phase='botDraw';render();sleepRun(()=>botDraw(S.current),420);
+}
+function topHelpsBot(p){
+ if(!S.deck.length)return false;const c=S.deck[S.deck.length-1];S.players[p].hand.push(c);const helps=allOptions(p).length>0;S.players[p].hand.pop();return helps;
+}
+function botDraw(p){
+ if(S.winner!==null||S.current!==p)return;
+ if(!S.deck.length&&!recycleDeckFromConveyor()){finishDeck();return}
+ let used=0;
+ while(used<2&&S.players[p].refresh>0&&S.deck.length>0){
+   const chance=used===0?0.48:0.34;
+   const shouldRefresh=!topHelpsBot(p)&&(Math.random()<chance);
+   if(!shouldRefresh)break;
+   if(!useRefresh(p))break;
+   used++;
+   if(used===2)break;
+ }
+ const c=draw(p);
+ if(!c){finishDeck();return}
+ addLog(`<b>${NAMES[p]}</b> ${used?`comprou após ${used} &lt;atualização&gt;${used>1?'ões':''}`:'comprou da &lt;entrada&gt;'}: ${label(c)}.`);
+ S.phase='botPlay';render();sleepRun(()=>botPlay(p),650)
+}
+function botPlay(p){
+ if(S.winner!==null||S.current!==p)return;
+ const opts=allOptions(p);
+ if(opts.length){
+   const opt=opts[Math.floor(Math.random()*opts.length)];
+   meld(p,opt);
+   render();
+   if(S.winner!==null)return;
+   S.phase='botPlay';
+   sleepRun(()=>botPlay(p),520);
+   return;
+ }
+ addLog(`<b>${NAMES[p]}</b> não tem mais fragmentos válidos para capturar neste turno.`);
+ S.phase='botDiscard';render();sleepRun(()=>botDiscard(p),650);
+}
+function chooseBotDiscard(p){
+ const h=S.players[p].hand;if(!h.length)return -1;
+ const participation=Array(h.length).fill(0);
+ for(const o of allOptions(p))for(const i of o.inds)participation[i]++;
+ const legal=h.map((c,i)=>canDiscardCard(p,i)?i:-1).filter(i=>i>=0);
+ if(!legal.length)return -1;
+ const normals=legal.filter(i=>!isSpecial(h[i]));
+ const pool=normals.length?normals:legal;
+ const min=Math.min(...pool.map(i=>participation[i]));
+ const best=pool.filter(i=>participation[i]===min);
+ return best[Math.floor(Math.random()*best.length)];
+}
+function botDiscard(p){
+ if(S.winner!==null||S.current!==p)return;
+ const di=chooseBotDiscard(p);
+ if(di<0){
+   addLog(`<b>${NAMES[p]}</b> não possui carta legal para descartar segundo as regras atuais.`);
+   reconnectPlayer(p);
+   S.phase='botHandoff';render();sleepRun(nextPlayer,750);return;
+ }
+ const c=placeDiscard(p,di);
+ if(!c)return;
+ if(S.capturedThisTurn)refillToNine(p);
+ reconnectPlayer(p);
+ S.phase='botHandoff';render();sleepRun(nextPlayer,750);
+}
+function seedConveyor(){
+ for(let i=0;i<3;i++){
+   const c=takeOpeningNormal();
+   if(c){S.stacks[i].push(c);refreshSlot(i)}
+ }
+ S.discardIndex=3;S.lastDiscardPos=null;
+ addLog('<b>&lt;fluxo&gt; iniciado</b> com 3 cartas normais nas posições 1–3. Se uma especial apareceu durante a abertura, ela foi enviada ao fundo da &lt;entrada&gt;.');
+}
+function newGame(){
+ S.gameId++;S.sortMode='free';S.deck=makeDeck();
+ S.players=NAMES.map(()=>({hand:[],melds:0,offlineColor:null,refresh:3}));
+ S.conveyor=Array(9).fill(null);S.stacks=Array.from({length:9},()=>[]);S.covers=Array(9).fill(0);S.usedSlots=new Set();
+ S.discardIndex=0;S.lastDiscardPos=null;S.current=0;S.phase='idle';S.selected=[];S.winner=null;S.turnNo=0;S.refreshesThisTurn=0;S.capturedThisTurn=false;
+ $('#log').innerHTML='';const wm=$('#winnerModal');if(wm)wm.classList.remove('open');
+ for(let r=0;r<9;r++)for(let p=0;p<4;p++)draw(p);
+ sortHumanHand();seedConveyor();
+ addLog('<b>Nova.</b> 9 cartas abertas, 2 marcadores de &lt;atualização&gt; e 4 marcadores de &lt;captura&gt; por jogador. O topo da &lt;entrada&gt; fica visível.');
+ startTurn();
+}
+$('#hand0').addEventListener('pointerdown',dragPointerDown);window.addEventListener('pointermove',dragPointerMove,{passive:false});window.addEventListener('pointerup',dragPointerUp,{passive:false});window.addEventListener('pointercancel',dragPointerCancel);
+$('#sortNumberBtn').addEventListener('click',()=>setSortMode('number'));$('#sortColorBtn').addEventListener('click',()=>setSortMode('color'));$('#sortFreeBtn').addEventListener('click',()=>setSortMode('free'));
+$('#fitBtn').addEventListener('click',toggleFit);window.addEventListener('resize',()=>{if(fitActive)updateFitScale()});
+$('#drawBtn').addEventListener('click',humanDraw);$('#refreshBtn').addEventListener('click',humanRefresh);$('#discardBtn').addEventListener('click',humanDiscard);$('#meldBtn').addEventListener('click',humanMeld);$('#newBtn').addEventListener('click',()=>$('#restartModal').classList.add('open'));$('#invalidMeldOk').addEventListener('click',hideInvalidMeld);$('#invalidMeldModal').addEventListener('click',e=>{if(e.target.id==='invalidMeldModal')hideInvalidMeld()});$('#rulesBtn').addEventListener('click',()=>$('#rules').classList.add('open'));$('#closeRules').addEventListener('click',()=>$('#rules').classList.remove('open'));$('#rules').addEventListener('click',e=>{if(e.target.id==='rules')$('#rules').classList.remove('open')});$('#winnerClose').addEventListener('click',()=>$('#winnerModal').classList.remove('open'));$('#winnerNewGame').addEventListener('click',()=>{$('#winnerModal').classList.remove('open');newGame()});$('#winnerModal').addEventListener('click',e=>{if(e.target.id==='winnerModal')$('#winnerModal').classList.remove('open')});$('#restartCancel').addEventListener('click',()=>$('#restartModal').classList.remove('open'));$('#restartConfirm').addEventListener('click',()=>{$('#restartModal').classList.remove('open');newGame()});$('#restartModal').addEventListener('click',e=>{if(e.target.id==='restartModal')$('#restartModal').classList.remove('open')});
+function setHelp(text){const el=$('#helpText');if(el)el.innerHTML=text;}
+function defaultHelp(){setHelp('Passe o mouse sobre cartas, botões, marcadores e áreas do jogo para ver o que cada item faz.');}
+document.addEventListener('mouseover',e=>{const t=e.target.closest('[data-help]');if(t)setHelp(t.dataset.help);});
+document.addEventListener('mouseout',e=>{const t=e.target.closest('[data-help]');if(t){const rel=e.relatedTarget&&e.relatedTarget.closest?e.relatedTarget.closest('[data-help]'):null;if(rel!==t)defaultHelp();}});
+$('#seat1').dataset.help='Área de jogo do Robô 1.';$('#seat2').dataset.help='Área de jogo do Robô 2.';$('#seat3').dataset.help='Área de jogo do Robô 3.';$('#seat0').dataset.help='Sua área de jogo principal. Aqui você seleciona, organiza, captura e descarta cartas.';defaultHelp();
+
+const TITLE_SEQUENCE=['101','000','001','110','100','111','010'];
+function pulseTitleBits(){
+  const el=$('#titleBits'); if(!el) return;
+  const original='001';
+  let i=0;
+  const step=250;
+  const timer=setInterval(()=>{
+    if(i<TITLE_SEQUENCE.length){ el.textContent=TITLE_SEQUENCE[i]; i++; }
+    else { clearInterval(timer); el.textContent=original; }
+  }, step);
+}
+setInterval(pulseTitleBits,10000);
+newGame();
+})();
+</script>
+
+
+</body></html>
