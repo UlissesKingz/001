@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: 001-online
+    name: game001
     runtime: node
     plan: free
     autoDeploy: true

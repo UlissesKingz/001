@@ -9,7 +9,7 @@ Base inicial para publicar o jogo **001 — Um jogo de cartas e bits** com:
 - GitHub
 - Render
 
-A interface atual é a versão `v34`, em `public/index.html`.
+A interface atual parte da versão `v34` e inclui o novo fluxo online de device → entrada → lobby → jogo.
 
 ## 1. Desenvolvimento local
 
@@ -89,3 +89,8 @@ será validado no servidor antes de qualquer atualização enviada aos clientes.
 A base atual ainda mantém o jogo local da v31. O próximo passo é migrar a
 lógica de partidas online para o servidor: criar/entrar em sala, lobby,
 turnos, validação de capturas, reconexão e encerramento.
+
+
+## Multiplayer
+
+A estrutura de salas, lobby, bots, reconexão e votação de reinício está documentada em `ARCHITECTURE.md`. A próxima etapa é migrar o motor de regras do jogo para o servidor, tornando cada jogada autoritativa.

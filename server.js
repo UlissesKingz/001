@@ -9,6 +9,7 @@ import { connectMongo, mongoReady } from './src/lib/mongo.js';
 import { applySecurity } from './src/middleware/security.js';
 import { requireAllowedOrigin, isAllowedOrigin } from './src/middleware/origin.js';
 import { socketSecurity } from './src/lib/socketSecurity.js';
+import { attachRoomHandlers } from './src/lib/rooms.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -59,7 +60,7 @@ app.use((err, _req, res, _next) => {
 const server = http.createServer(app);
 
 const io = new SocketIOServer(server, {
-  serveClient: false,
+  serveClient: true,
   transports: ['websocket', 'polling'],
   maxHttpBufferSize: 64 * 1024,
   cors: {
@@ -73,9 +74,9 @@ const io = new SocketIOServer(server, {
 
 socketSecurity(io);
 
-// Multiplayer events will be added here.
-// Important: the server will remain authoritative; the client will never decide
-// legal moves, winners, scores, or room ownership.
+// Lobby/room coordination is authoritative on the server.
+// The game engine itself will be migrated server-side in the next implementation phase.
+attachRoomHandlers(io);
 
 async function main() {
   await connectMongo();

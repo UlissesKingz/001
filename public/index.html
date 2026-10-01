@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>01</title>
+<title>001 — Um jogo de cartas e bits</title>
 <style>
 :root{
   --bg:#0c0f14;--panel:#171c24;--panel2:#202733;--line:#343e4d;--text:#f4f6fa;--muted:#98a4b5;
@@ -604,10 +604,106 @@ body::before{background-size:40px 40px;opacity:.11}
 }
 .conveyor-wrap{padding:26px 0 40px 0 !important; overflow:visible !important}
 
+
+/* ===== 001 Online shell ===== */
+#gameApp{display:none}
+body.in-game #gameApp{display:grid}
+body.in-game #preApp{display:none}
+.preapp{min-height:calc(100vh - 28px);display:flex;align-items:center;justify-content:center;padding:28px 18px 48px;position:relative;z-index:2}
+.pre-screen{display:none;width:min(980px,100%)}
+.pre-screen.active{display:block}
+.pre-panel{background:rgba(8,16,25,.9);border:1px solid #27425f;border-radius:8px;padding:24px;box-shadow:0 22px 70px rgba(0,0,0,.28)}
+.brand-hero{text-align:center;margin:0 auto 28px}
+.brand-title{font-family:var(--retro-font,Consolas,"Lucida Console","Courier New",monospace);font-size:clamp(64px,11vw,118px);line-height:.9;font-weight:1000;letter-spacing:4px;color:#fff;text-shadow:0 0 3px rgba(255,255,255,.95),0 0 15px rgba(255,255,255,.4),3px 0 0 rgba(255,0,80,.25),-3px 0 0 rgba(0,255,255,.25)}
+.brand-tagline{margin-top:12px;font-size:clamp(12px,1.7vw,18px);letter-spacing:2px;text-transform:uppercase;color:#9fb0c4;font-weight:800}
+.pre-actions{display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap}
+.device-grid,.entry-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;max-width:720px;margin:0 auto}
+.device-card,.entry-card{border:1px solid #355272;background:#0d1723;border-radius:6px;padding:22px;text-align:left;color:#fff;min-height:150px}
+.device-card{cursor:pointer;transition:.15s transform,.15s border-color,.15s background}
+.device-card:hover{transform:translateY(-2px);border-color:#e0b943;background:#111e2d}
+.device-icon{font-size:36px;margin-bottom:14px;color:#e0b943}
+.device-card b,.entry-card h2{font-size:18px;letter-spacing:1px;text-transform:uppercase}
+.device-card p,.entry-card p{color:#8fa3ba;font-size:12px;line-height:1.5;margin:8px 0 0}
+.form-stack{display:grid;gap:10px}
+.field{display:grid;gap:6px;text-align:left}
+.field label{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#8fa3ba;font-weight:900}
+.field input{width:100%;border:1px solid #355272;background:#07101a;color:#fff;border-radius:4px;padding:11px 12px;font:inherit;outline:none}
+.field input:focus{border-color:#e0b943;box-shadow:0 0 0 2px rgba(224,185,67,.14)}
+.entry-nick{max-width:460px;margin:0 auto 16px}
+.pre-toolbar{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-top:18px;flex-wrap:wrap}
+.pre-link{background:none;border:0;color:#9fb0c4;cursor:pointer;font:inherit;text-decoration:underline;text-underline-offset:3px}
+.pre-status{min-height:20px;margin-top:10px;text-align:center;font-size:11px;color:#ff9a9a}
+.lobby-head{display:flex;justify-content:space-between;gap:14px;align-items:flex-start;flex-wrap:wrap;margin-bottom:18px}
+.room-code-box{border:1px solid #355272;background:#07101a;padding:10px 13px;border-radius:4px}
+.room-code-label{font-size:8px;text-transform:uppercase;letter-spacing:1px;color:#7990a8}
+.room-code{font-size:26px;font-weight:1000;letter-spacing:4px;color:#fff;margin-top:2px}
+.lobby-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.lobby-seat{min-height:138px;border:1px dashed #355272;background:#0a1420;border-radius:5px;padding:14px;display:flex;flex-direction:column;justify-content:space-between;gap:10px}
+.lobby-seat.filled{border-style:solid}
+.lobby-seat.me{border-color:#e0b943;box-shadow:inset 0 0 0 1px rgba(224,185,67,.25)}
+.lobby-seat.bot{border-color:#4d6d59}
+.seat-no{font-size:9px;color:#63788f;letter-spacing:1px}
+.seat-name{font-size:15px;font-weight:900;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.seat-meta{font-size:9px;color:#8fa3ba;text-transform:uppercase;letter-spacing:.7px}
+.lobby-controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;align-items:center}
+.connection-pill{font-size:9px;border:1px solid #355272;padding:5px 7px;border-radius:99px;color:#8fa3ba}
+.connection-pill.online{border-color:#347d57;color:#76d9a3}
+.restart-votes{display:grid;gap:7px;margin:14px 0}
+.restart-vote-line{display:flex;justify-content:space-between;gap:10px;border-bottom:1px solid #ffffff0d;padding-bottom:5px;font-size:11px}
+.online-note{position:fixed;left:50%;top:12px;transform:translateX(-50%);z-index:1600;background:#0b1520;border:1px solid #355272;border-radius:4px;padding:7px 10px;font-size:10px;color:#d8e3ef;display:none;max-width:min(540px,90vw);text-align:center}
+.online-note.show{display:block}
+body.device-mobile #gameApp{max-width:560px}
+body.device-mobile .board{display:flex!important;flex-direction:column!important}
+body.device-mobile .bot1,body.device-mobile .bot2,body.device-mobile .bot3{order:1}
+body.device-mobile .center{order:2}
+body.device-mobile .human{order:3}
+body.device-mobile .top{grid-template-columns:1fr auto!important}
+body.device-mobile .titleWrap{grid-column:1!important;justify-self:start!important;text-align:left!important}
+body.device-mobile .top-actions{grid-column:2!important}
+@media(max-width:760px){.device-grid,.entry-grid{grid-template-columns:1fr}.lobby-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.pre-panel{padding:17px}.brand-title{font-size:64px}}
+@media(max-width:460px){.lobby-grid{grid-template-columns:1fr 1fr}.room-code{font-size:21px}.device-card,.entry-card{padding:16px;min-height:130px}}
+
 </style>
 </head>
 <body>
-<div class="app">
+<div class="online-note" id="onlineNote"></div>
+<div class="preapp" id="preApp">
+  <section class="pre-screen active" id="deviceScreen">
+    <div class="brand-hero"><div class="brand-title"><span class="preBits">001</span></div><div class="brand-tagline">Um jogo de cartas e bits</div></div>
+    <div class="pre-panel">
+      <div class="device-grid">
+        <button class="device-card" type="button" data-device="desktop"><div class="device-icon">▣</div><b>Desktop</b><p>Interface completa para computador, notebook ou telas maiores.</p></button>
+        <button class="device-card" type="button" data-device="mobile"><div class="device-icon">▯</div><b>Mobile</b><p>Interface reorganizada para toque e telas estreitas.</p></button>
+      </div>
+      <div class="pre-toolbar"><span></span><button class="pre-link openRules" type="button">REGRAS</button></div>
+    </div>
+  </section>
+
+  <section class="pre-screen" id="entryScreen">
+    <div class="brand-hero"><div class="brand-title"><span class="preBits">001</span></div><div class="brand-tagline">Um jogo de cartas e bits</div></div>
+    <div class="pre-panel">
+      <div class="field entry-nick"><label for="nicknameInput">Nickname</label><input id="nicknameInput" maxlength="18" autocomplete="nickname" placeholder="Seu nome no jogo"></div>
+      <div class="entry-grid">
+        <div class="entry-card"><h2>Criar sala</h2><p>Crie uma sala nova e aguarde jogadores ou adicione bots no lobby.</p><div style="margin-top:18px"><button class="btn primary" id="createRoomBtn" type="button">CRIAR SALA</button></div></div>
+        <div class="entry-card"><h2>Entrar em sala</h2><div class="form-stack"><div class="field"><label for="roomCodeInput">Código da sala</label><input id="roomCodeInput" maxlength="6" autocomplete="off" placeholder="ABC123"></div><button class="btn" id="joinRoomBtn" type="button">ENTRAR</button></div></div>
+      </div>
+      <div class="pre-status" id="entryStatus"></div>
+      <div class="pre-toolbar"><button class="pre-link" id="changeDeviceBtn" type="button">← TROCAR DEVICE</button><button class="pre-link openRules" type="button">REGRAS</button></div>
+    </div>
+  </section>
+
+  <section class="pre-screen" id="lobbyScreen">
+    <div class="brand-hero"><div class="brand-title"><span class="preBits">001</span></div><div class="brand-tagline">Um jogo de cartas e bits</div></div>
+    <div class="pre-panel">
+      <div class="lobby-head"><div><div style="font-size:11px;letter-spacing:1px;color:#8fa3ba;text-transform:uppercase">Lobby</div><h2 style="margin:4px 0 0">AGUARDANDO JOGADORES</h2><div class="connection-pill" id="connectionPill">conectando...</div></div><div class="room-code-box"><div class="room-code-label">Código da sala</div><div class="room-code" id="lobbyCode">------</div><button class="pre-link" id="copyRoomCode" type="button">COPIAR</button></div></div>
+      <div class="lobby-grid" id="lobbyGrid"></div>
+      <div class="pre-status" id="lobbyStatus"></div>
+      <div class="lobby-controls"><button class="btn" id="addBotBtn" type="button">+ BOT</button><button class="btn primary" id="startRoomBtn" type="button">INICIAR PARTIDA</button><button class="btn" id="leaveRoomBtn" type="button">SAIR</button><button class="btn openRules" type="button">REGRAS</button></div>
+    </div>
+  </section>
+</div>
+
+<div class="app" id="gameApp">
   <header class="top"><div></div><div class="titleWrap"><div class="title" id="mainTitle"><span id="titleBits">001</span><span class="titleTagline"> - Um jogo de cartas e bits</span></div></div><div class="top-actions"><button class="btn" id="fitBtn" type="button" title="Ajustar à janela" data-help="Ajusta o jogo para caber melhor na janela.">□</button> <button class="btn" id="rulesBtn" data-help="Abre o manual resumido desta versão digital.">REGRAS</button> <button class="btn" id="newBtn" title="Nova partida" data-help="Começa uma nova partida.">↻</button></div></header>
 
   <section class="stats">
@@ -654,11 +750,11 @@ body::before{background-size:40px 40px;opacity:.11}
     </section>
   </main>
   <div class="helpbar" id="helpBar"><span class="label">INFO</span><span id="helpText">Passe o mouse sobre <b>cartas</b>, <b>botões</b> e <b>áreas</b> do jogo para ver o que cada item faz.</span></div>
-  <footer class="legal-footer">Jogo criado por Ulisses Reis © 2026 — Propriedade intelectual protegida. Reprodução, distribuição ou uso não autorizado são proibidos. Contato: designerulissesreis@gmail.com</footer>
 </div>
+<footer class="legal-footer">Jogo criado por Ulisses Reis © 2026 — Propriedade intelectual protegida. Reprodução, distribuição ou uso não autorizado são proibidos. Contato: designerulissesreis@gmail.com</footer>
 
 <div class="rules" id="rules"><div class="rules-card"><h2>Regras desta versão</h2><ul>
-<li><b>2 a 4 jogadores.</b> Cada jogador começa com <b>9 cartas abertas</b> em sua área de jogo, <b>2 marcadores de &lt;atualização&gt;</b> e <b>4 marcadores de &lt;captura&gt;</b>.</li>
+<li><b>2 a 4 jogadores.</b> Cada jogador começa com <b>9 cartas abertas</b> em sua área de jogo, <b>3 marcadores de &lt;atualização&gt;</b> e <b>4 marcadores de &lt;captura&gt;</b>.</li>
 <li>O baralho tem 96 cartas normais: 4 cores, cada uma com 12 cartas <b>0</b> e 12 cartas <b>1</b>, além das especiais <b>00, 01, 10 e 11</b>.</li>
 <li>Na preparação, abra <b>3 cartas normais</b> nas posições 1, 2 e 3 do <b>&lt;fluxo&gt;</b>. Se uma especial aparecer nessa abertura, coloque-a no fundo do deck de <b>&lt;entrada&gt;</b> e revele outra. A próxima carta entra na posição 4.</li>
 <li>Antes da compra, o jogador pode gastar <b>1 ou 2 marcadores de &lt;atualização&gt;</b>. Cada atualização envia a carta visível do topo da <b>&lt;entrada&gt;</b> diretamente para a próxima posição do <b>&lt;fluxo&gt;</b> e avança o ponteiro. Essa carta <b>não &lt;desconecta&gt; nenhuma cor</b>.</li>
@@ -708,6 +804,111 @@ body::before{background-size:40px 40px;opacity:.11}
   </div>
 </div>
 
+
+<div class="notice-modal" id="restartVoteModal" role="dialog" aria-modal="true" aria-labelledby="restartVoteTitle">
+  <div class="notice-card">
+    <h2 id="restartVoteTitle">Reiniciar partida?</h2>
+    <p id="restartVoteText">Outro jogador pediu para reiniciar a partida.</p>
+    <div class="restart-votes" id="restartVotes"></div>
+    <div class="notice-actions" style="gap:8px"><button class="btn bad" id="restartVoteNo" type="button">RECUSAR</button><button class="btn primary" id="restartVoteYes" type="button">ACEITAR</button></div>
+  </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+(() => {
+  const $ = s => document.querySelector(s);
+  const $$ = s => [...document.querySelectorAll(s)];
+  const state = { device:null, room:null, token:localStorage.getItem('001_room_token') || '', socket:null };
+  const errors = {
+    invalid_input:'Confira o nickname e o código da sala.', room_not_found:'Sala não encontrada.', room_full:'A sala está cheia.',
+    nickname_taken:'Este nickname já está sendo usado nesta sala.', game_already_started:'A partida desta sala já começou.',
+    host_only:'Somente o criador da sala pode fazer isso.', need_two_players:'São necessários pelo menos 2 participantes.',
+    restart_pending:'Já existe um pedido de reinício aguardando votos.'
+  };
+  function note(text, ms=2200){const el=$('#onlineNote');if(!el)return;el.textContent=text;el.classList.add('show');clearTimeout(note.t);note.t=setTimeout(()=>el.classList.remove('show'),ms)}
+  function showScreen(id){$$('.pre-screen').forEach(x=>x.classList.remove('active'));const el=$(id);if(el)el.classList.add('active')}
+  function setEntryStatus(text=''){const el=$('#entryStatus');if(el)el.textContent=text}
+  function setLobbyStatus(text=''){const el=$('#lobbyStatus');if(el)el.textContent=text}
+  function currentNickname(){return ($('#nicknameInput')?.value||'').trim()}
+  function applyDevice(device){state.device=device;document.body.classList.toggle('device-mobile',device==='mobile');localStorage.setItem('001_device',device)}
+  function saveToken(token){state.token=token||'';if(token)localStorage.setItem('001_room_token',token);else localStorage.removeItem('001_room_token')}
+  function myPlayer(){return state.room?.players?.find(p=>p.id===state.room.viewerId)||null}
+  function isHost(){return state.room && state.room.hostId===state.room.viewerId}
+  function playerName(id){return state.room?.players?.find(p=>p.id===id)?.nickname||'Jogador'}
+  function humanCount(){return state.room?.players?.filter(p=>p.type==='human').length||0}
+  function renderLobby(){
+    const room=state.room;if(!room)return;
+    $('#lobbyCode').textContent=room.code;
+    const grid=$('#lobbyGrid');grid.innerHTML='';
+    for(let seat=0;seat<4;seat++){
+      const p=room.players.find(x=>x.seat===seat);
+      const el=document.createElement('div');el.className='lobby-seat'+(p?' filled':'')+(p?.id===room.viewerId?' me':'')+(p?.type==='bot'?' bot':'');
+      if(!p){el.innerHTML=`<div class="seat-no">ESPAÇO ${seat+1}</div><div class="seat-name" style="color:#53677d">VAZIO</div><div class="seat-meta">aguardando</div>`}
+      else{
+        const meta=p.type==='bot'?'BOT':`${p.device||'desktop'}${p.isHost?' • HOST':''}${p.connected===false?' • DESCONECTADO':''}`;
+        el.innerHTML=`<div><div class="seat-no">ESPAÇO ${seat+1}</div><div class="seat-name"></div></div><div class="seat-meta"></div>`;
+        el.querySelector('.seat-name').textContent=p.nickname;el.querySelector('.seat-meta').textContent=meta;
+        if(isHost()&&p.type==='bot'){const b=document.createElement('button');b.className='btn';b.style.padding='4px 7px';b.style.fontSize='8px';b.textContent='REMOVER';b.onclick=()=>state.socket.emit('room:removeBot',{botId:p.id},()=>{});el.appendChild(b)}
+      }
+      grid.appendChild(el)
+    }
+    $('#addBotBtn').style.display=isHost()?'inline-flex':'none';
+    $('#startRoomBtn').style.display=isHost()?'inline-flex':'none';
+    $('#addBotBtn').disabled=room.players.length>=4||room.phase!=='lobby';
+    $('#startRoomBtn').disabled=room.players.length<2||room.phase!=='lobby';
+    if(room.restart) renderRestartVote();
+  }
+  function renderRestartVote(){
+    const r=state.room?.restart;if(!r)return;
+    const modal=$('#restartVoteModal');const req=playerName(r.requestedBy);$('#restartVoteText').textContent=`${req} pediu para reiniciar a partida. Todos os jogadores humanos precisam aceitar.`;
+    const votes=$('#restartVotes');votes.innerHTML='';
+    for(const p of state.room.players.filter(x=>x.type==='human')){
+      const row=document.createElement('div');row.className='restart-vote-line';const v=r.votes?.[p.id];row.innerHTML='<span></span><b></b>';row.children[0].textContent=p.nickname;row.children[1].textContent=v===true?'ACEITOU':v===false?'RECUSOU':'AGUARDANDO';votes.appendChild(row)
+    }
+    const myVote=r.votes?.[state.room.viewerId];$('#restartVoteYes').disabled=myVote===true;$('#restartVoteNo').disabled=myVote===false;
+    modal.classList.add('open')
+  }
+  function enterGame(room){
+    if(room) state.room={...state.room,...room,viewerId:state.room?.viewerId||room.viewerId};
+    document.body.classList.add('in-game');
+    $('#restartVoteModal')?.classList.remove('open');
+    setTimeout(()=>{if(window.start001LocalGame)window.start001LocalGame()},0);
+  }
+  function leaveToEntry(){document.body.classList.remove('in-game');state.room=null;saveToken('');showScreen('#entryScreen')}
+  function connect(){
+    if(typeof io!=='function'){setEntryStatus('Não foi possível carregar a conexão com o servidor.');return}
+    const socket=io({transports:['websocket','polling']});state.socket=socket;
+    socket.on('connect',()=>{const p=$('#connectionPill');if(p){p.textContent='online';p.classList.add('online')}if(state.token)socket.emit('room:resume',{token:state.token},res=>{if(!res?.ok){saveToken('');return}state.room=res.room;applyDevice(myPlayer()?.device||state.device||'desktop');if(res.room.phase==='game')enterGame(res.room);else{showScreen('#lobbyScreen');renderLobby()}})});
+    socket.on('disconnect',()=>{const p=$('#connectionPill');if(p){p.textContent='reconectando...';p.classList.remove('online')}});
+    socket.on('room:state',room=>{state.room=room;if(room.phase==='lobby'){document.body.classList.remove('in-game');showScreen('#lobbyScreen')}renderLobby()});
+    socket.on('game:start',payload=>{state.room=payload.room||state.room;enterGame(state.room);note('Partida iniciada')});
+    socket.on('restart:requested',()=>renderRestartVote());
+    socket.on('restart:rejected',({by})=>{$('#restartVoteModal')?.classList.remove('open');note(`${playerName(by)} recusou o reinício.`)});
+    socket.on('game:restart',()=>{$('#restartVoteModal')?.classList.remove('open');if(window.start001LocalGame)window.start001LocalGame();note('Todos aceitaram. A partida foi reiniciada.')});
+  }
+  $$('.device-card').forEach(btn=>btn.addEventListener('click',()=>{applyDevice(btn.dataset.device);showScreen('#entryScreen')}));
+  $('#changeDeviceBtn')?.addEventListener('click',()=>showScreen('#deviceScreen'));
+  $$('.openRules').forEach(btn=>btn.addEventListener('click',()=>$('#rules')?.classList.add('open')));
+  $('#roomCodeInput')?.addEventListener('input',e=>{e.target.value=e.target.value.toUpperCase().replace(/[^A-Z2-9]/g,'').slice(0,6)});
+  $('#createRoomBtn')?.addEventListener('click',()=>{const nickname=currentNickname();setEntryStatus('');state.socket.emit('room:create',{nickname,device:state.device||'desktop'},res=>{if(!res?.ok)return setEntryStatus(errors[res?.error]||'Não foi possível criar a sala.');saveToken(res.token);state.room=res.room;showScreen('#lobbyScreen');renderLobby()})});
+  $('#joinRoomBtn')?.addEventListener('click',()=>{const nickname=currentNickname(),code=($('#roomCodeInput')?.value||'').trim().toUpperCase();setEntryStatus('');state.socket.emit('room:join',{nickname,code,device:state.device||'desktop'},res=>{if(!res?.ok)return setEntryStatus(errors[res?.error]||'Não foi possível entrar na sala.');saveToken(res.token);state.room=res.room;showScreen('#lobbyScreen');renderLobby()})});
+  $('#copyRoomCode')?.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(state.room?.code||'');note('Código copiado!')}catch{note('Não foi possível copiar automaticamente.')}});
+  $('#addBotBtn')?.addEventListener('click',()=>state.socket.emit('room:addBot',{},res=>{if(!res?.ok)setLobbyStatus(errors[res.error]||'Não foi possível adicionar o bot.')}));
+  $('#startRoomBtn')?.addEventListener('click',()=>state.socket.emit('room:start',{},res=>{if(!res?.ok)setLobbyStatus(errors[res.error]||'Não foi possível iniciar a partida.')}));
+  $('#leaveRoomBtn')?.addEventListener('click',()=>state.socket.emit('room:leave',{},()=>leaveToEntry()));
+  $('#restartVoteYes')?.addEventListener('click',()=>state.socket.emit('restart:vote',{accept:true},()=>{}));
+  $('#restartVoteNo')?.addEventListener('click',()=>state.socket.emit('restart:vote',{accept:false},()=>{}));
+  window.Online001={
+    requestRestart(){if(!state.room||state.room.phase!=='game'){if(window.start001LocalGame)window.start001LocalGame();return}state.socket.emit('restart:request',{},res=>{if(!res?.ok)note(errors[res.error]||'Não foi possível pedir o reinício.');else note('Pedido de reinício enviado.')})},
+    getRoom(){return state.room}
+  };
+  const savedDevice=localStorage.getItem('001_device');if(savedDevice==='desktop'||savedDevice==='mobile')state.device=savedDevice;
+  connect();
+  const seq=['101','000','001','110','100','111','010'];setInterval(()=>{$$('.preBits').forEach(el=>{let i=0;const t=setInterval(()=>{if(i<seq.length)el.textContent=seq[i++];else{clearInterval(t);el.textContent='001'}},250)})},10000);
+})();
+
+</script>
 <script>
 (()=>{
 'use strict';
@@ -1274,13 +1475,13 @@ function newGame(){
  $('#log').innerHTML='';const wm=$('#winnerModal');if(wm)wm.classList.remove('open');
  for(let r=0;r<9;r++)for(let p=0;p<4;p++)draw(p);
  sortHumanHand();seedConveyor();
- addLog('<b>Nova.</b> 9 cartas abertas, 2 marcadores de &lt;atualização&gt; e 4 marcadores de &lt;captura&gt; por jogador. O topo da &lt;entrada&gt; fica visível.');
+ addLog('<b>Nova.</b> 9 cartas abertas, 3 marcadores de &lt;atualização&gt; e 4 marcadores de &lt;captura&gt; por jogador. O topo da &lt;entrada&gt; fica visível.');
  startTurn();
 }
 $('#hand0').addEventListener('pointerdown',dragPointerDown);window.addEventListener('pointermove',dragPointerMove,{passive:false});window.addEventListener('pointerup',dragPointerUp,{passive:false});window.addEventListener('pointercancel',dragPointerCancel);
 $('#sortNumberBtn').addEventListener('click',()=>setSortMode('number'));$('#sortColorBtn').addEventListener('click',()=>setSortMode('color'));$('#sortFreeBtn').addEventListener('click',()=>setSortMode('free'));
 $('#fitBtn').addEventListener('click',toggleFit);window.addEventListener('resize',()=>{if(fitActive)updateFitScale()});
-$('#drawBtn').addEventListener('click',humanDraw);$('#refreshBtn').addEventListener('click',humanRefresh);$('#discardBtn').addEventListener('click',humanDiscard);$('#meldBtn').addEventListener('click',humanMeld);$('#newBtn').addEventListener('click',()=>$('#restartModal').classList.add('open'));$('#invalidMeldOk').addEventListener('click',hideInvalidMeld);$('#invalidMeldModal').addEventListener('click',e=>{if(e.target.id==='invalidMeldModal')hideInvalidMeld()});$('#rulesBtn').addEventListener('click',()=>$('#rules').classList.add('open'));$('#closeRules').addEventListener('click',()=>$('#rules').classList.remove('open'));$('#rules').addEventListener('click',e=>{if(e.target.id==='rules')$('#rules').classList.remove('open')});$('#winnerClose').addEventListener('click',()=>$('#winnerModal').classList.remove('open'));$('#winnerNewGame').addEventListener('click',()=>{$('#winnerModal').classList.remove('open');newGame()});$('#winnerModal').addEventListener('click',e=>{if(e.target.id==='winnerModal')$('#winnerModal').classList.remove('open')});$('#restartCancel').addEventListener('click',()=>$('#restartModal').classList.remove('open'));$('#restartConfirm').addEventListener('click',()=>{$('#restartModal').classList.remove('open');newGame()});$('#restartModal').addEventListener('click',e=>{if(e.target.id==='restartModal')$('#restartModal').classList.remove('open')});
+$('#drawBtn').addEventListener('click',humanDraw);$('#refreshBtn').addEventListener('click',humanRefresh);$('#discardBtn').addEventListener('click',humanDiscard);$('#meldBtn').addEventListener('click',humanMeld);$('#newBtn').addEventListener('click',()=>$('#restartModal').classList.add('open'));$('#invalidMeldOk').addEventListener('click',hideInvalidMeld);$('#invalidMeldModal').addEventListener('click',e=>{if(e.target.id==='invalidMeldModal')hideInvalidMeld()});$('#rulesBtn').addEventListener('click',()=>$('#rules').classList.add('open'));$('#closeRules').addEventListener('click',()=>$('#rules').classList.remove('open'));$('#rules').addEventListener('click',e=>{if(e.target.id==='rules')$('#rules').classList.remove('open')});$('#winnerClose').addEventListener('click',()=>$('#winnerModal').classList.remove('open'));$('#winnerNewGame').addEventListener('click',()=>{$('#winnerModal').classList.remove('open');if(window.Online001)window.Online001.requestRestart();else newGame()});$('#winnerModal').addEventListener('click',e=>{if(e.target.id==='winnerModal')$('#winnerModal').classList.remove('open')});$('#restartCancel').addEventListener('click',()=>$('#restartModal').classList.remove('open'));$('#restartConfirm').addEventListener('click',()=>{$('#restartModal').classList.remove('open');if(window.Online001)window.Online001.requestRestart();else newGame()});$('#restartModal').addEventListener('click',e=>{if(e.target.id==='restartModal')$('#restartModal').classList.remove('open')});
 function setHelp(text){const el=$('#helpText');if(el)el.innerHTML=text;}
 function defaultHelp(){setHelp('Passe o mouse sobre cartas, botões, marcadores e áreas do jogo para ver o que cada item faz.');}
 document.addEventListener('mouseover',e=>{const t=e.target.closest('[data-help]');if(t)setHelp(t.dataset.help);});
@@ -1299,6 +1500,7 @@ function pulseTitleBits(){
   }, step);
 }
 setInterval(pulseTitleBits,10000);
+window.start001LocalGame=newGame;
 newGame();
 })();
 </script>
