@@ -912,3 +912,72 @@ body.device-mobile .lobby-controls .btn{width:100%!important;min-height:42px!imp
   body.device-mobile .slot .card.flowcard .bitpair.small{font-size:16px!important}
   body.device-mobile .human button.card{min-height:50px!important;font-size:16px!important}
 }
+
+
+/* ===== v39 — mobile stage fit + turn instruction ===== */
+.turn-prompt{
+  display:flex;align-items:center;justify-content:center;
+  min-height:28px;padding:6px 10px;margin:2px 0 4px;
+  border:1px solid rgba(242,202,104,.55);border-radius:8px;
+  color:#f2ca68;background:linear-gradient(180deg,rgba(242,202,104,.12),rgba(242,202,104,.05));
+  font-size:12px;font-weight:900;letter-spacing:.45px;text-align:center;
+  text-shadow:0 0 8px rgba(242,202,104,.18);
+}
+.turn-prompt.wait{color:#bcc8d7;border-color:#36506a;background:rgba(53,82,114,.16)}
+.turn-prompt.done{color:#a7f2c4;border-color:#347d57;background:rgba(52,125,87,.14)}
+.turn-prompt.active{box-shadow:0 0 0 1px rgba(242,202,104,.14) inset,0 0 14px rgba(242,202,104,.08)}
+
+body.device-mobile.in-game{overflow:hidden!important}
+body.device-mobile.in-game #gameApp{
+  width:min(calc(100vw - 8px), calc((100dvh - 42px) * 9 / 16));
+  max-width:calc(100vw - 8px)!important;
+  margin:0 auto!important;
+  transform-origin:top center;
+  will-change:transform;
+}
+body.device-mobile .top{margin-bottom:2px!important}
+body.device-mobile .center,
+body.device-mobile .human,
+body.device-mobile .bot1,
+body.device-mobile .bot2,
+body.device-mobile .bot3{padding:4px!important;border-radius:10px!important}
+body.device-mobile .seat h3{margin:0 0 3px!important;font-size:10px!important}
+body.device-mobile .seat small{font-size:8px!important}
+body.device-mobile .middle-row{display:flex!important;flex-direction:column!important;align-items:center!important;gap:4px!important}
+body.device-mobile .deckbox{
+  width:min(188px,100%)!important;
+  grid-template-columns:54px minmax(0,1fr) 42px!important;
+  margin:0 auto 2px!important;
+}
+body.device-mobile #drawBtn{height:38px!important;font-size:10px!important}
+body.device-mobile #refreshBtn{width:42px!important;height:38px!important}
+body.device-mobile .conveyor-wrap{width:100%!important;padding:14px 0 22px!important;margin:0!important}
+body.device-mobile .conveyorlabel{display:block!important;margin:0 0 4px 2px!important}
+body.device-mobile .conveyor{gap:2px!important}
+body.device-mobile .slot{min-height:60px!important;height:60px!important}
+body.device-mobile .slot .card.flowcard{height:56px!important;min-height:56px!important}
+body.device-mobile .slot .card.flowcard .bitpair{font-size:22px!important;bottom:4px!important}
+body.device-mobile .slot .card.flowcard .bitpair.small{font-size:16px!important}
+body.device-mobile .slot.current-discard::after{top:-18px!important;font-size:13px!important}
+body.device-mobile .slot.used-space::before{bottom:-18px!important;font-size:13px!important}
+body.device-mobile .human{border-width:2px!important}
+body.device-mobile .turn-prompt{font-size:10px!important;min-height:24px!important;padding:4px 7px!important;margin:0 0 4px!important}
+body.device-mobile .human-top{gap:3px!important;margin:0 0 1px!important}
+body.device-mobile .sort-label{font-size:8px!important}
+body.device-mobile .sort-btn{padding:3px 5px!important;font-size:8px!important}
+body.device-mobile .human .hand{gap:2px!important;padding:3px 0!important}
+body.device-mobile .human button.card{min-height:50px!important;font-size:18px!important}
+body.device-mobile .controls{gap:5px!important;margin-top:4px!important}
+body.device-mobile .controls .btn{min-height:36px!important;padding:6px 5px!important;font-size:10px!important}
+body.device-mobile .controls .msg{font-size:8px!important;padding:4px 6px!important}
+body.device-mobile .bot1 .hand,body.device-mobile .bot2 .hand,body.device-mobile .bot3 .hand{gap:2px!important}
+body.device-mobile .bot1 .card,body.device-mobile .bot2 .card,body.device-mobile .bot3 .card{min-height:34px!important;font-size:14px!important}
+body.device-mobile .legal-footer{font-size:6px!important;line-height:1.15!important;padding:3px 4px 4px!important}
+
+@media (max-width:360px){
+  body.device-mobile.in-game #gameApp{width:min(calc(100vw - 4px), calc((100dvh - 40px) * 9 / 16));}
+  body.device-mobile .deckbox{width:min(178px,100%)!important}
+  body.device-mobile .slot{min-height:56px!important;height:56px!important}
+  body.device-mobile .slot .card.flowcard{height:52px!important;min-height:52px!important}
+  body.device-mobile .human button.card{min-height:46px!important;font-size:16px!important}
+}

@@ -28,6 +28,7 @@
       document.body.classList.remove('fit-view');
       button.classList.remove('active');
       button.textContent = '□';
+      updateMobileStageScale();
       return;
     }
     app.style.zoom = '1';
@@ -39,12 +40,41 @@
       app.style.zoom = Math.max(0.55, Math.min(1, scaleX, scaleY)).toFixed(3);
       button.classList.add('active');
       button.textContent = '↙';
+      updateMobileStageScale();
     });
   }
 
   function toggleFit() {
     fitActive = !fitActive;
     updateFitScale();
+  }
+
+  function updateMobileStageScale() {
+    const app = $('.app');
+    if (!app) return;
+    const mobileGame = document.body.classList.contains('device-mobile') && document.body.classList.contains('in-game');
+    if (!mobileGame) {
+      app.style.width = '';
+      app.style.maxWidth = '';
+      if (!fitActive) app.style.transform = '';
+      app.style.transformOrigin = '';
+      return;
+    }
+    const footer = $('.legal-footer');
+    const footerH = footer?.offsetHeight || 0;
+    const availableH = Math.max(320, window.innerHeight - footerH - 8);
+    const availableW = Math.max(280, window.innerWidth - 8);
+    const stageW = Math.min(availableW, Math.max(280, availableH * (9 / 16)));
+    app.style.width = `${Math.round(stageW)}px`;
+    app.style.maxWidth = 'calc(100vw - 8px)';
+    if (fitActive) return;
+    app.style.transformOrigin = 'top center';
+    app.style.transform = 'scale(1)';
+    requestAnimationFrame(() => {
+      const naturalH = app.scrollHeight;
+      const scale = Math.max(0.74, Math.min(1, availableH / Math.max(1, naturalH)));
+      app.style.transform = `scale(${scale.toFixed(3)})`;
+    });
   }
 
   function showWinner(name, isMe) {
@@ -81,7 +111,7 @@
   $('#invalidMeldOk')?.addEventListener('click', hideInvalid);
   $('#invalidMeldModal')?.addEventListener('click', (event) => { if (event.target.id === 'invalidMeldModal') hideInvalid(); });
   $('#fitBtn')?.addEventListener('click', toggleFit);
-  window.addEventListener('resize', () => { if (fitActive) updateFitScale(); });
+  window.addEventListener('resize', () => { if (fitActive) updateFitScale(); else updateMobileStageScale(); });
   $('#changeDeviceBtn')?.addEventListener('click', () => { location.href = '/device.html'; });
 
   $('#newBtn')?.addEventListener('click', () => $('#restartModal')?.classList.add('open'));
@@ -115,5 +145,5 @@
   defaultHelp();
 
   setInterval(pulseBits, 10000);
-  window.UI001 = { note, showInvalid, hideInvalid, showWinner, escapeHtml, updateFitScale };
+  window.UI001 = { note, showInvalid, hideInvalid, showWinner, escapeHtml, updateFitScale, updateMobileStageScale };
 })();

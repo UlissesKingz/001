@@ -250,12 +250,19 @@
     return [...state.selected].map((id) => hand.find((card) => card.id === id)).filter(Boolean);
   }
 
+  function syncSelectionUI() {
+    $$('#hand0 .card').forEach((card) => {
+      card.classList.toggle('selected', state.selected.has(Number(card.dataset.cardId)));
+    });
+    renderControls();
+  }
+
   function toggleSelected(cardId) {
     const game = state.room?.game;
     if (!game || !isMyTurn() || game.phase !== 'play') return;
     if (state.selected.has(cardId)) state.selected.delete(cardId);
     else if (state.selected.size < 3) state.selected.add(cardId);
-    renderGame();
+    syncSelectionUI();
   }
 
   function renderMarkers(container, player) {
@@ -422,26 +429,35 @@
     const discard = $('#discardBtn');
     const msg = $('#humanMsg');
     const hint = $('#deckHint');
+    const turnPrompt = $('#turnPrompt');
+    const setTurnPrompt = (text, tone = '') => {
+      if (!turnPrompt) return;
+      turnPrompt.className = `turn-prompt${tone ? ` ${tone}` : ''}`;
+      turnPrompt.textContent = text;
+    };
     draw.disabled = true; refresh.disabled = true; capture.disabled = true; discard.disabled = true;
     capture.classList.remove('meld-ready', 'meld-invalid');
     hint.textContent = '';
-    if (!game || !player) return;
+    if (!game || !player) { setTurnPrompt('Aguarde o início da partida.'); return; }
     if (game.phase === 'gameover') {
-      msg.className = 'msg good';
       const winner = gamePlayer(game.winnerId);
+      setTurnPrompt(winner ? `${winner.id === state.room.viewerId ? 'Você venceu!' : `${winner.name} venceu!`} Partida encerrada.` : 'Partida encerrada.', 'done');
+      msg.className = 'msg good';
       msg.textContent = winner ? `${winner.id === state.room.viewerId ? 'Você venceu!' : `${winner.name} venceu!`} 4 fragmentos capturados • 12 bits completos.` : 'Partida encerrada.';
       return;
     }
     if (!isMyTurn()) {
       const current = gamePlayer(game.currentPlayerId);
+      setTurnPrompt(`Aguarde: é o turno de ${current?.name || 'outro jogador'}.`, 'wait');
       msg.className = 'msg';
       msg.textContent = `Turno de ${current?.name || 'outro jogador'}.`;
       return;
     }
     if (game.phase === 'draw') {
       draw.disabled = !game.deckTop;
-      refresh.disabled = player.refresh <= 0 || !game.deckTop || game.refreshesThisTurn >= 2;
-      hint.textContent = game.deckTop ? `Topo: ${cardLabel(game.deckTop)} • Atualizações: ${player.refresh}/3 • usadas neste turno: ${game.refreshesThisTurn}/2` : '<entrada> vazia';
+      refresh.disabled = player.refresh <= 0 || !game.deckTop || game.refreshesThisTurn >= 3;
+      hint.textContent = game.deckTop ? `Topo: ${cardLabel(game.deckTop)} • Atualizações: ${player.refresh}/3 • usadas neste turno: ${game.refreshesThisTurn}/3` : '<entrada> vazia';
+      setTurnPrompt('É o seu turno: <atualizar> o deck ou comprar carta da <entrada>.', 'active');
       msg.className = 'msg warn';
       msg.textContent = game.refreshesThisTurn === 0
         ? '1. FILTRAR / COMPRAR — compre o topo visível da <entrada> ou use <atualização>.'
@@ -449,6 +465,7 @@
       return;
     }
     if (game.phase === 'play') {
+      setTurnPrompt(game.capturedThisTurn ? 'É o seu turno: descarte 1 carta no <fluxo>.' : 'É o seu turno: <capturar> fragmento ou descartar carta no <fluxo>.', 'active');
       const cards = selectedCards();
       const match = [2, 3].includes(cards.length) ? matchForClient(cards) : null;
       const fullInvalid = (cards.length === 3 && !match) || (cards.length === 2 && cards.filter(isSpecial).length === 1 && !match);
@@ -577,7 +594,7 @@
 
   function clearDragMarks() { $$('#hand0 .card').forEach((card) => card.classList.remove('dragging', 'drag-over-left', 'drag-over-right')); }
   $('#hand0')?.addEventListener('pointerdown', (event) => {
-    if (state.sortMode !== 'free' || event.button !== 0) return;
+    if (DEVICE === 'mobile' || state.sortMode !== 'free' || event.button !== 0) return;
     const card = event.target.closest('#hand0 .card');
     if (!card) return;
     state.drag = { id: Number(card.dataset.cardId), startX: event.clientX, startY: event.clientY, dragging: false, targetId: null, after: false, pointerId: event.pointerId, suppressClick: false };
