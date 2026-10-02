@@ -1273,3 +1273,140 @@ body.viewer-spectator .human{padding-bottom:14px}
 }
 body.device-mobile .viewer-banner{font-size:10px;padding:6px 8px}
 body.device-mobile .top-actions #exitRoomBtn{width:31px!important;min-width:31px!important}
+
+/* v51b - mobile landscape behaves close to desktop */
+@media (orientation: landscape) {
+  body.device-mobile.mobile-landscape.in-game{overflow:hidden!important}
+  body.device-mobile.mobile-landscape.in-game #gameApp{
+    width:min(calc(100vw - 10px), calc((100dvh - 34px) * 16 / 9))!important;
+    max-width:none!important;
+    padding:6px 8px 2px!important;
+  }
+  body.device-mobile.mobile-landscape .top{
+    grid-template-columns:auto 1fr auto!important;
+    gap:8px!important;
+    padding:8px 10px!important;
+    margin-bottom:4px!important;
+  }
+  body.device-mobile.mobile-landscape .titleWrap{grid-column:2!important;justify-self:center!important;text-align:center!important}
+  body.device-mobile.mobile-landscape .title{font-size:34px!important;line-height:1!important}
+  body.device-mobile.mobile-landscape .title #titleBits{min-width:66px!important}
+  body.device-mobile.mobile-landscape .titleTagline{font-size:24%!important;margin-left:6px!important}
+  body.device-mobile.mobile-landscape .top-actions{grid-column:3!important;gap:6px!important}
+  body.device-mobile.mobile-landscape .top-actions .btn{height:28px!important;min-width:34px!important;font-size:10px!important}
+  body.device-mobile.mobile-landscape #rulesBtn{min-width:64px!important;padding:0 8px!important}
+
+  body.device-mobile.mobile-landscape .board{
+    display:grid!important;
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    grid-template-rows:auto auto auto!important;
+    gap:6px!important;
+  }
+  body.device-mobile.mobile-landscape .bot1{grid-column:1!important;grid-row:1!important;order:unset!important}
+  body.device-mobile.mobile-landscape .bot2{grid-column:2!important;grid-row:1!important;order:unset!important}
+  body.device-mobile.mobile-landscape .bot3{grid-column:3!important;grid-row:1!important;order:unset!important}
+  body.device-mobile.mobile-landscape .center{grid-column:1/4!important;grid-row:2!important;order:unset!important;width:100%!important}
+  body.device-mobile.mobile-landscape .human{grid-column:1/4!important;grid-row:3!important;order:unset!important;width:100%!important}
+
+  body.device-mobile.mobile-landscape .center,
+  body.device-mobile.mobile-landscape .human,
+  body.device-mobile.mobile-landscape .bot1,
+  body.device-mobile.mobile-landscape .bot2,
+  body.device-mobile.mobile-landscape .bot3{
+    padding:5px 6px!important;
+    border-radius:12px!important;
+  }
+  body.device-mobile.mobile-landscape .seat h3{font-size:9px!important;margin:0 0 3px!important}
+  body.device-mobile.mobile-landscape .seat small{font-size:7px!important}
+
+  body.device-mobile.mobile-landscape .middle-row{
+    display:grid!important;
+    grid-template-columns:78px minmax(0,1fr)!important;
+    gap:6px!important;
+    align-items:stretch!important;
+  }
+  body.device-mobile.mobile-landscape .deckbox{
+    width:auto!important;
+    min-height:92px!important;
+    padding:6px!important;
+    gap:5px!important;
+  }
+  body.device-mobile.mobile-landscape .deckpile{width:52px!important;height:72px!important}
+  body.device-mobile.mobile-landscape .deckpile::before,
+  body.device-mobile.mobile-landscape .deckpile::after,
+  body.device-mobile.mobile-landscape .deckcard,
+  body.device-mobile.mobile-landscape .deckpile>.card{width:48px!important;height:68px!important}
+  body.device-mobile.mobile-landscape #drawBtn{height:24px!important;font-size:9px!important;padding:0 6px!important}
+  body.device-mobile.mobile-landscape #refreshBtn{width:52px!important;height:24px!important;padding:0!important}
+  body.device-mobile.mobile-landscape #deckHint{font-size:7px!important;line-height:1.15!important}
+
+  body.device-mobile.mobile-landscape .conveyor-wrap{padding:2px 0 16px!important;width:100%!important}
+  body.device-mobile.mobile-landscape .conveyorlabel{display:block!important;margin:0 0 3px 2px!important;font-size:9px!important}
+  body.device-mobile.mobile-landscape .conveyor{gap:4px!important;min-width:0!important;width:100%!important}
+  body.device-mobile.mobile-landscape .slot{min-height:70px!important;height:70px!important;padding:3px!important}
+  body.device-mobile.mobile-landscape .slot .card.flowcard{min-height:64px!important;height:64px!important}
+  body.device-mobile.mobile-landscape .slot .card.flowcard::before{width:7px!important}
+  body.device-mobile.mobile-landscape .slot .card.flowcard::after{left:9px!important;top:4px!important;font-size:6px!important}
+  body.device-mobile.mobile-landscape .slot .card.flowcard .bitpair{font-size:34px!important;bottom:5px!important}
+  body.device-mobile.mobile-landscape .slot .card.flowcard .bitpair.small{font-size:25px!important}
+  body.device-mobile.mobile-landscape .slotnum{font-size:5px!important}
+  body.device-mobile.mobile-landscape .stack{font-size:5px!important}
+  body.device-mobile.mobile-landscape .slot.current-discard::after{top:-16px!important;font-size:12px!important}
+  body.device-mobile.mobile-landscape .slot.used-space::before{bottom:-16px!important;font-size:12px!important}
+
+  body.device-mobile.mobile-landscape .turn-prompt{font-size:9px!important;min-height:20px!important;padding:4px 8px!important;margin:0 0 4px!important}
+  body.device-mobile.mobile-landscape .human-top{
+    display:flex!important;
+    flex-direction:row!important;
+    align-items:flex-start!important;
+    justify-content:space-between!important;
+    gap:8px!important;
+    margin:0 0 2px!important;
+  }
+  body.device-mobile.mobile-landscape .sort-box{width:auto!important;justify-content:flex-end!important}
+  body.device-mobile.mobile-landscape .sort-label{font-size:8px!important}
+  body.device-mobile.mobile-landscape .sort-btn{font-size:8px!important;padding:3px 5px!important}
+  body.device-mobile.mobile-landscape .human .hand,
+  body.device-mobile.mobile-landscape .bot1 .hand,
+  body.device-mobile.mobile-landscape .bot2 .hand,
+  body.device-mobile.mobile-landscape .bot3 .hand{
+    display:grid!important;
+    grid-template-columns:repeat(9,minmax(0,1fr))!important;
+    gap:3px!important;
+    min-height:0!important;
+    overflow:hidden!important;
+    padding:2px 0!important;
+  }
+  body.device-mobile.mobile-landscape .human button.card,
+  body.device-mobile.mobile-landscape .bot1 .card,
+  body.device-mobile.mobile-landscape .bot2 .card,
+  body.device-mobile.mobile-landscape .bot3 .card{
+    width:100%!important;
+    min-width:0!important;
+    min-height:52px!important;
+    height:52px!important;
+    font-size:21px!important;
+  }
+  body.device-mobile.mobile-landscape .human button.card::before,
+  body.device-mobile.mobile-landscape .bot1 .card::before,
+  body.device-mobile.mobile-landscape .bot2 .card::before,
+  body.device-mobile.mobile-landscape .bot3 .card::before{width:6px!important}
+  body.device-mobile.mobile-landscape .human button.card::after,
+  body.device-mobile.mobile-landscape .bot1 .card::after,
+  body.device-mobile.mobile-landscape .bot2 .card::after,
+  body.device-mobile.mobile-landscape .bot3 .card::after{font-size:5px!important;right:2px!important;top:2px!important}
+  body.device-mobile.mobile-landscape .human button.card.special::after,
+  body.device-mobile.mobile-landscape .bot1 .card.special::after,
+  body.device-mobile.mobile-landscape .bot2 .card.special::after,
+  body.device-mobile.mobile-landscape .bot3 .card.special::after{font-size:4px!important}
+
+  body.device-mobile.mobile-landscape .melds{gap:3px!important;margin-top:3px!important}
+  body.device-mobile.mobile-landscape .meldmark{width:14px!important;height:5px!important}
+  body.device-mobile.mobile-landscape .refresh-label{font-size:7px!important;margin-left:5px!important}
+  body.device-mobile.mobile-landscape .refreshmark{width:13px!important;height:13px!important;font-size:9px!important}
+  body.device-mobile.mobile-landscape .controls{display:grid!important;grid-template-columns:110px 110px minmax(0,1fr)!important;gap:4px!important;align-items:stretch!important;margin-top:3px!important}
+  body.device-mobile.mobile-landscape .controls .btn{min-height:26px!important;font-size:9px!important;padding:4px 5px!important}
+  body.device-mobile.mobile-landscape .controls .msg{font-size:8px!important;padding:4px 6px!important;min-height:26px!important}
+  body.device-mobile.mobile-landscape .helpbar{display:flex!important;min-height:26px!important;font-size:10px!important;padding:5px 7px!important;margin-top:4px!important}
+  body.device-mobile.mobile-landscape .legal-footer{font-size:6px!important;padding:3px 6px 4px!important}
+}

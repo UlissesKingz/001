@@ -4,8 +4,6 @@
   const $$ = (selector) => [...document.querySelectorAll(selector)];
   let fitActive = false;
   let mobileFitKey = '';
-  let mobileViewport = null;
-  let mobileResizeTimer = null;
 
   function note(text, ms = 2200) {
     const el = $('#onlineNote');
@@ -20,6 +18,13 @@
   function closeRules() { $('#rules')?.classList.remove('open'); }
   function showInvalid() { $('#invalidMeldModal')?.classList.add('open'); }
   function hideInvalid() { $('#invalidMeldModal')?.classList.remove('open'); }
+
+
+  function syncMobileOrientationClass() {
+    const mobile = document.body.classList.contains('device-mobile');
+    const landscape = mobile && window.matchMedia('(orientation: landscape)').matches;
+    document.body.classList.toggle('mobile-landscape', Boolean(landscape));
+  }
 
   function updateFitScale() {
     const app = $('.app');
@@ -55,16 +60,13 @@
   function updateMobileStageScale(force = false) {
     const app = $('.app');
     if (!app) return;
+    syncMobileOrientationClass();
     const mobileGame = document.body.classList.contains('device-mobile') && document.body.classList.contains('in-game');
     if (!mobileGame) {
       mobileFitKey = '';
-      mobileViewport = null;
-      document.body.classList.remove('mobile-landscape');
-      app.dataset.mobileFitReady = '';
       app.style.width = '';
       app.style.maxWidth = '';
       app.style.left = '';
-      app.style.top = '';
       app.style.position = '';
       if (!fitActive) app.style.transform = '';
       app.style.transformOrigin = '';
@@ -73,25 +75,16 @@
 
     const footer = $('.legal-footer');
     const footerH = footer?.offsetHeight || 0;
-    const measuredW = Math.max(280, window.innerWidth - 8);
-    const measuredH = Math.max(320, window.innerHeight - footerH - 8);
+    const availableH = Math.max(320, window.innerHeight - footerH - 8);
+    const availableW = Math.max(280, window.innerWidth - 8);
+    const landscape = document.body.classList.contains('mobile-landscape');
+    const key = `${Math.round(availableW)}x${Math.round(availableH)}:${landscape ? 'L' : 'P'}`;
 
-    // Keep the viewport reference stable while the browser's address/navigation
-    // bars appear or disappear. Height-only changes from browser chrome must not
-    // rescale the board between game actions.
-    if (!mobileViewport || force) mobileViewport = { w: measuredW, h: measuredH };
-    const widthChanged = Math.abs(measuredW - mobileViewport.w) > 36;
-    if (widthChanged) mobileViewport = { w: measuredW, h: measuredH };
+    // During the match, card/action state updates should not reset the whole
+    // stage to scale(1). Recalculate only on first entry or viewport resize.
+    if (!force && mobileFitKey === key && app.dataset.mobileFitReady === '1') return;
 
-    const availableW = mobileViewport.w;
-    const availableH = mobileViewport.h;
-    const landscape = availableW > availableH;
-    document.body.classList.toggle('mobile-landscape', landscape);
-    const key = `${landscape ? 'L' : 'P'}:${Math.round(availableW)}x${Math.round(availableH)}`;
-    if (!force && !widthChanged && mobileFitKey === key && app.dataset.mobileFitReady === '1') return;
-
-    app.style.position = 'fixed';
-    app.style.top = '2px';
+    app.style.position = 'relative';
     app.style.left = '50%';
     app.style.maxWidth = 'none';
     app.style.transformOrigin = 'top center';
@@ -99,32 +92,39 @@
     const currentScaleMatch = app.style.transform.match(/scale\(([^)]+)\)/);
     const currentScale = currentScaleMatch ? Number(currentScaleMatch[1]) || 1 : 1;
 
-    let layoutW;
     if (landscape) {
-      // Use a desktop-like canvas in phone landscape, then scale the complete
-      // composition to the available screen. This keeps the desktop hierarchy
-      // instead of stretching the portrait layout.
-      layoutW = 1180;
-    } else {
-      const naturalBefore = Math.max(1, app.scrollHeight);
-      const initialScale = Math.min(1, availableH / naturalBefore);
-      const compensation = 0.72;
-      layoutW = Math.min(
-        availableW / Math.max(initialScale, 0.01),
-        availableW * (1 + (1 - initialScale) * compensation)
-      );
-      if (!Number.isFinite(layoutW) || layoutW <= 0) layoutW = availableW;
+      const stageW = Math.max(760, Math.min(availableW, availableH * 16 / 9, 1280));
+      app.style.width = `${Math.round(stageW)}px`;
+      requestAnimationFrame(() => {
+        const naturalH = Math.max(1, app.scrollHeight);
+        const finalScale = Math.min(1, availableH / naturalH, availableW / Math.max(1, stageW));
+        const safeScale = Number.isFinite(finalScale) ? finalScale : currentScale;
+        app.style.transform = `translateX(-50%) scale(${safeScale.toFixed(3)})`;
+        app.dataset.mobileFitReady = '1';
+        mobileFitKey = key;
+      });
+      return;
     }
 
-    // Width, measurement and transform are applied synchronously in the same
-    // task so there is no unscaled intermediate frame between game actions.
+    const baseWidth = Number.parseFloat(app.style.width) || availableW;
+    const currentNaturalH = Math.max(1, app.scrollHeight);
+    let scale = Math.min(1, availableH / currentNaturalH);
+
+    const compensation = 0.72;
+    let layoutW = Math.min(availableW / Math.max(scale, 0.01), availableW * (1 + (1 - scale) * compensation));
+    if (!Number.isFinite(layoutW) || layoutW <= 0) layoutW = baseWidth;
     app.style.width = `${Math.round(layoutW)}px`;
-    const naturalH = Math.max(1, app.scrollHeight);
-    const finalScale = Math.min(1, availableH / naturalH, availableW / Math.max(1, layoutW));
-    const safeScale = Number.isFinite(finalScale) ? finalScale : currentScale;
-    app.style.transform = `translateX(-50%) scale(${safeScale.toFixed(3)})`;
-    app.dataset.mobileFitReady = '1';
-    mobileFitKey = key;
+
+    // A single frame is enough for width reflow; keep the previous transform
+    // while measuring so the user never sees a full-size/black flash.
+    requestAnimationFrame(() => {
+      const naturalH = Math.max(1, app.scrollHeight);
+      const finalScale = Math.min(1, availableH / naturalH, availableW / Math.max(1, layoutW));
+      const safeScale = Number.isFinite(finalScale) ? finalScale : currentScale;
+      app.style.transform = `translateX(-50%) scale(${safeScale.toFixed(3)})`;
+      app.dataset.mobileFitReady = '1';
+      mobileFitKey = key;
+    });
   }
 
   function showWinner(name, isMe) {
@@ -161,13 +161,7 @@
   $('#invalidMeldOk')?.addEventListener('click', hideInvalid);
   $('#invalidMeldModal')?.addEventListener('click', (event) => { if (event.target.id === 'invalidMeldModal') hideInvalid(); });
   $('#fitBtn')?.addEventListener('click', toggleFit);
-  window.addEventListener('resize', () => {
-    clearTimeout(mobileResizeTimer);
-    mobileResizeTimer = setTimeout(() => {
-      if (fitActive) updateFitScale();
-      else updateMobileStageScale(false);
-    }, 180);
-  });
+  window.addEventListener('resize', () => { syncMobileOrientationClass(); if (fitActive) updateFitScale(); else { mobileFitKey = ''; updateMobileStageScale(true); } });
   $('#changeDeviceBtn')?.addEventListener('click', () => { location.href = '/device.html'; });
 
   $('#newBtn')?.addEventListener('click', () => $('#restartModal')?.classList.add('open'));
@@ -201,5 +195,6 @@
   defaultHelp();
 
   setInterval(pulseBits, 10000);
-  window.UI001 = { note, showInvalid, hideInvalid, showWinner, escapeHtml, updateFitScale, updateMobileStageScale };
+  syncMobileOrientationClass();
+  window.UI001 = { note, showInvalid, hideInvalid, showWinner, escapeHtml, updateFitScale, updateMobileStageScale, syncMobileOrientationClass };
 })();
