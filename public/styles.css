@@ -1051,3 +1051,36 @@ body.device-mobile .titleTagline{
 }
 body.device-mobile .top-actions{gap:3px!important;margin-left:2px!important}
 body.device-mobile #rulesBtn{padding-left:5px!important;padding-right:5px!important}
+\n\n/* ===== v45 — flow card entry animation ===== */\n.slot .card.flowcard.flow-enter{\n  animation:flowCardRise 1s cubic-bezier(.22,.72,.2,1) both!important;\n  transform-origin:50% 100%;\n  will-change:transform,opacity,clip-path;\n}\n@keyframes flowCardRise{\n  0%{opacity:0;transform:translateY(58%);clip-path:inset(100% 0 0 0 round 5px)}\n  38%{opacity:.82}\n  100%{opacity:1;transform:translateY(0);clip-path:inset(0 0 0 0 round 5px)}\n}\n@media (prefers-reduced-motion:reduce){\n  .slot .card.flowcard.flow-enter{animation-duration:.01ms!important}\n}\n
+
+/* ===== v46 — physical manual link ===== */
+.physical-manual-link{
+  position:fixed;
+  right:10px;
+  bottom:28px;
+  z-index:1250;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:5px 8px;
+  border:1px solid #355272;
+  border-radius:5px;
+  background:rgba(9,17,26,.94);
+  color:#dce6f2;
+  font-size:8px;
+  font-weight:900;
+  letter-spacing:.45px;
+  text-decoration:none;
+  white-space:nowrap;
+  box-shadow:0 2px 10px rgba(0,0,0,.28);
+}
+.physical-manual-link:hover{
+  border-color:#f2ca68;
+  color:#f2ca68;
+}
+body.device-mobile .physical-manual-link{
+  right:6px;
+  bottom:24px;
+  padding:4px 6px;
+  font-size:7px;
+}

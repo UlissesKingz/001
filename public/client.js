@@ -19,6 +19,8 @@
     sortMode: 'free',
     handOrder: [],
     shownWinnerMatch: null,
+    flowMatchId: null,
+    flowCardIds: null,
     drag: { id: null, startX: 0, startY: 0, dragging: false, targetId: null, after: false, pointerId: null, suppressClick: false }
   };
 
@@ -367,6 +369,16 @@
 
     const used = new Set(game.usedSlots || []);
     const conveyor = $('#conveyor');
+    const currentFlowIds = game.conveyor.map((card) => card?.id ?? null);
+    const previousFlowIds = state.flowMatchId === game.matchId ? state.flowCardIds : null;
+    const enteredFlowSlots = new Set();
+    if (previousFlowIds) {
+      currentFlowIds.forEach((id, index) => {
+        if (id !== null && id !== previousFlowIds[index]) enteredFlowSlots.add(index);
+      });
+    }
+    state.flowMatchId = game.matchId;
+    state.flowCardIds = currentFlowIds;
     conveyor.innerHTML = '';
     const nextPos = game.discardIndex % 9;
     game.conveyor.forEach((card, index) => {
@@ -376,6 +388,7 @@
       if (card) {
         const cardEl = makeCard(card, null, false);
         cardEl.classList.add('flowcard');
+        if (enteredFlowSlots.has(index)) cardEl.classList.add('flow-enter');
         cardEl.innerHTML = '';
         const bits = document.createElement('span'); bits.className = `bitpair${isSpecial(card) ? ' small' : ''}`; bits.textContent = isSpecial(card) ? card.pair : String(card.value); cardEl.appendChild(bits);
         slot.appendChild(cardEl);
@@ -470,13 +483,20 @@
       return;
     }
     if (game.phase === 'play') {
-      setTurnPrompt(game.capturedThisTurn ? 'É o seu turno: descarte 1 carta no <fluxo>.' : 'É o seu turno: <capturar> fragmento ou descartar carta no <fluxo>.', 'active');
+      setTurnPrompt(game.capturedThisTurn ? 'É o seu turno: descarte 1 carta no <fluxo>.' : 'É o seu turno: <capturar> 1 fragmento ou descartar carta no <fluxo>.', 'active');
       const cards = selectedCards();
+      discard.disabled = !(cards.length === 1 && canDiscardClient(cards[0]));
+      if (game.capturedThisTurn) {
+        msg.className = 'msg';
+        msg.textContent = cards.length === 1
+          ? (canDiscardClient(cards[0]) ? 'Fragmento já capturado neste turno. Clique em DESCARTAR.' : 'Essa carta está OFFLINE ou não pode ser descartada agora.')
+          : 'Você já capturou 1 fragmento neste turno. Agora selecione 1 carta para descartar no <fluxo>.';
+        return;
+      }
       const match = [2, 3].includes(cards.length) ? matchForClient(cards) : null;
       const fullInvalid = (cards.length === 3 && !match) || (cards.length === 2 && cards.filter(isSpecial).length === 1 && !match);
       if (match) { capture.disabled = false; capture.classList.add('meld-ready'); }
       else if (fullInvalid) { capture.disabled = false; capture.classList.add('meld-invalid'); }
-      discard.disabled = !(cards.length === 1 && canDiscardClient(cards[0]));
       if (match) {
         msg.className = 'msg good';
         msg.textContent = `Fragmento válido: ${match.indices.map((index) => index + 1).join('–')}. Clique em CAPTURAR.`;
@@ -488,7 +508,7 @@
         msg.textContent = canDiscardClient(cards[0]) ? '1 carta selecionada: continue selecionando para capturar ou clique em DESCARTAR.' : 'Essa carta está OFFLINE ou não pode ser descartada agora.';
       } else {
         msg.className = 'msg';
-        msg.textContent = 'Capture quantos fragmentos conseguir/quiser antes de descartar. Use 3 cartas normais ou 1 especial + 1 normal.';
+        msg.textContent = 'Você pode capturar no máximo 1 fragmento neste turno. Use 3 cartas normais ou 1 especial + 1 normal; ou selecione 1 carta para descartar.';
       }
     }
   }

@@ -28,22 +28,32 @@ test('inicia partida autoritativa com 9 cartas por jogador e 3 cartas no fluxo',
   assert.equal(room.game.phase, 'draw');
 });
 
-test('atualização libera bloqueio e a segunda atualização compra automaticamente', () => {
+test('atualização libera bloqueio e permite usar os 3 marcadores no mesmo turno', () => {
   const { room, player } = freshRoom();
   game.startGame(room);
-  const pos1 = room.game.discardIndex % 9;
-  room.game.usedSlots.add(pos1);
-  game.playerRefresh(room, player.id);
-  assert.equal(room.game.usedSlots.has(pos1), false);
-  assert.equal(room.game.players[player.id].refresh, 2);
-  assert.equal(room.game.phase, 'draw');
 
-  const pos2 = room.game.discardIndex % 9;
-  room.game.usedSlots.add(pos2);
-  game.playerRefresh(room, player.id);
-  assert.equal(room.game.usedSlots.has(pos2), false);
-  assert.equal(room.game.players[player.id].refresh, 1);
-  assert.equal(room.game.refreshesThisTurn, 2);
-  assert.equal(room.game.phase, 'play');
+  for (let use = 1; use <= 3; use += 1) {
+    const pos = room.game.discardIndex % 9;
+    room.game.usedSlots.add(pos);
+    game.playerRefresh(room, player.id);
+    assert.equal(room.game.usedSlots.has(pos), false);
+    assert.equal(room.game.players[player.id].refresh, 3 - use);
+    assert.equal(room.game.refreshesThisTurn, use);
+    assert.equal(room.game.phase, use < 3 ? 'draw' : 'play');
+  }
+
   assert.equal(room.game.players[player.id].hand.length, 10);
+});
+
+
+test('permite apenas uma captura por turno', () => {
+  const { room, player } = freshRoom();
+  game.startGame(room);
+  room.game.currentIndex = room.game.turnOrder.indexOf(player.id);
+  room.game.phase = 'play';
+  room.game.capturedThisTurn = true;
+  assert.throws(
+    () => game.playerCapture(room, player.id, []),
+    /já capturou um fragmento neste turno/
+  );
 });
