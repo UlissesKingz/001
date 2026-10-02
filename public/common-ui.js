@@ -3,6 +3,7 @@
   const $ = (selector) => document.querySelector(selector);
   const $$ = (selector) => [...document.querySelectorAll(selector)];
   let fitActive = false;
+  let mobileFitKey = '';
 
   function note(text, ms = 2200) {
     const el = $('#onlineNote');
@@ -49,11 +50,12 @@
     updateFitScale();
   }
 
-  function updateMobileStageScale() {
+  function updateMobileStageScale(force = false) {
     const app = $('.app');
     if (!app) return;
     const mobileGame = document.body.classList.contains('device-mobile') && document.body.classList.contains('in-game');
     if (!mobileGame) {
+      mobileFitKey = '';
       app.style.width = '';
       app.style.maxWidth = '';
       app.style.left = '';
@@ -67,33 +69,37 @@
     const footerH = footer?.offsetHeight || 0;
     const availableH = Math.max(320, window.innerHeight - footerH - 8);
     const availableW = Math.max(280, window.innerWidth - 8);
+    const key = `${Math.round(availableW)}x${Math.round(availableH)}`;
 
-    // Start from the full phone width. If height forces the board to shrink,
-    // widen its unscaled canvas so the scaled result still uses more of the
-    // horizontal screen instead of leaving large empty side margins.
+    // During the match, card/action state updates should not reset the whole
+    // stage to scale(1). Recalculate only on first entry or viewport resize.
+    if (!force && mobileFitKey === key && app.dataset.mobileFitReady === '1') return;
+
     app.style.position = 'relative';
     app.style.left = '50%';
     app.style.maxWidth = 'none';
     app.style.transformOrigin = 'top center';
-    app.style.width = `${Math.round(availableW)}px`;
-    if (fitActive) return;
 
-    app.style.transform = 'translateX(-50%) scale(1)';
+    const currentScaleMatch = app.style.transform.match(/scale\(([^)]+)\)/);
+    const currentScale = currentScaleMatch ? Number(currentScaleMatch[1]) || 1 : 1;
+    const baseWidth = Number.parseFloat(app.style.width) || availableW;
+    const currentNaturalH = Math.max(1, app.scrollHeight);
+    let scale = Math.min(1, availableH / currentNaturalH);
+
+    const compensation = 0.72;
+    let layoutW = Math.min(availableW / Math.max(scale, 0.01), availableW * (1 + (1 - scale) * compensation));
+    if (!Number.isFinite(layoutW) || layoutW <= 0) layoutW = baseWidth;
+    app.style.width = `${Math.round(layoutW)}px`;
+
+    // A single frame is enough for width reflow; keep the previous transform
+    // while measuring so the user never sees a full-size/black flash.
     requestAnimationFrame(() => {
-      let naturalH = Math.max(1, app.scrollHeight);
-      let scale = Math.min(1, availableH / naturalH);
-
-      // Compensate part of the vertical scale in the layout width. This makes
-      // the mobile table visibly larger while keeping the whole board fitted.
-      const compensation = 0.72;
-      let layoutW = Math.min(availableW / Math.max(scale, 0.01), availableW * (1 + (1 - scale) * compensation));
-      app.style.width = `${Math.round(layoutW)}px`;
-
-      requestAnimationFrame(() => {
-        naturalH = Math.max(1, app.scrollHeight);
-        scale = Math.min(1, availableH / naturalH, availableW / Math.max(1, layoutW));
-        app.style.transform = `translateX(-50%) scale(${scale.toFixed(3)})`;
-      });
+      const naturalH = Math.max(1, app.scrollHeight);
+      const finalScale = Math.min(1, availableH / naturalH, availableW / Math.max(1, layoutW));
+      const safeScale = Number.isFinite(finalScale) ? finalScale : currentScale;
+      app.style.transform = `translateX(-50%) scale(${safeScale.toFixed(3)})`;
+      app.dataset.mobileFitReady = '1';
+      mobileFitKey = key;
     });
   }
 
@@ -131,7 +137,7 @@
   $('#invalidMeldOk')?.addEventListener('click', hideInvalid);
   $('#invalidMeldModal')?.addEventListener('click', (event) => { if (event.target.id === 'invalidMeldModal') hideInvalid(); });
   $('#fitBtn')?.addEventListener('click', toggleFit);
-  window.addEventListener('resize', () => { if (fitActive) updateFitScale(); else updateMobileStageScale(); });
+  window.addEventListener('resize', () => { if (fitActive) updateFitScale(); else { mobileFitKey = ''; updateMobileStageScale(true); } });
   $('#changeDeviceBtn')?.addEventListener('click', () => { location.href = '/device.html'; });
 
   $('#newBtn')?.addEventListener('click', () => $('#restartModal')?.classList.add('open'));

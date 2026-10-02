@@ -1000,3 +1000,9 @@ body.device-mobile .human .controls .msg.good{
 body.device-mobile .human .controls .msg.bad{
   color:#ff9c9c!important;
 }
+
+
+/* ===== v41 — stable mobile repaint + tighter subtitle ===== */
+body.device-mobile .title #titleBits{min-width:0!important}
+body.device-mobile .titleTagline{margin-left:3px!important;font-size:20%!important;letter-spacing:0!important}
+body.device-mobile.in-game #gameApp{backface-visibility:hidden;-webkit-backface-visibility:hidden}

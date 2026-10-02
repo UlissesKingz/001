@@ -85,8 +85,10 @@ app.get('/api/admin/matches', adminAuth, async (req, res) => {
 
 const socketContext = new Map();
 const emptyRoomTimers = new Map();
+const botTurnTimers = new Map();
 const rateBuckets = new Map();
 const EMPTY_ROOM_CLOSE_MS = 10 * 60 * 1000;
+const BOT_ACTION_DELAY_MS = Math.max(250, Math.min(1000, Number(process.env.BOT_ACTION_DELAY_MS || 430)));
 
 function clientIp(socket) {
   const forwarded = String(socket.handshake.headers['x-forwarded-for'] || '').split(',')[0].trim();
@@ -149,6 +151,35 @@ function maybeRecord(room) {
   storage.recordMatch(room).catch((error) => console.warn('[MongoDB] registro:', error.message));
 }
 
+function cancelBotTurn(code) {
+  const timer = botTurnTimers.get(code);
+  if (timer) clearTimeout(timer);
+  botTurnTimers.delete(code);
+}
+
+function scheduleBotTurn(room, delay = BOT_ACTION_DELAY_MS) {
+  if (!room || !game.rooms.has(room.code) || !game.isBotTurn(room)) {
+    if (room?.code) cancelBotTurn(room.code);
+    return;
+  }
+  if (botTurnTimers.has(room.code)) return;
+  const timer = setTimeout(() => {
+    botTurnTimers.delete(room.code);
+    const live = game.rooms.get(room.code);
+    if (!live || !game.isBotTurn(live)) return;
+    try {
+      game.runBotAction(live);
+      maybeRecord(live);
+      emitRoom(live);
+      if (game.isBotTurn(live)) scheduleBotTurn(live);
+    } catch (error) {
+      console.warn(`[BOT ${live.code}]`, error.message);
+    }
+  }, delay);
+  timer.unref?.();
+  botTurnTimers.set(room.code, timer);
+}
+
 function cancelRoomCleanup(code) {
   const timer = emptyRoomTimers.get(code);
   if (timer) clearTimeout(timer);
@@ -160,7 +191,10 @@ function scheduleRoomCleanup(room) {
   if (room.players.some((player) => player.type === 'human' && player.connected)) return;
   const timer = setTimeout(() => {
     const current = game.rooms.get(room.code);
-    if (current && !current.players.some((player) => player.type === 'human' && player.connected)) game.rooms.delete(room.code);
+    if (current && !current.players.some((player) => player.type === 'human' && player.connected)) {
+      cancelBotTurn(room.code);
+      game.rooms.delete(room.code);
+    }
     emptyRoomTimers.delete(room.code);
   }, EMPTY_ROOM_CLOSE_MS);
   timer.unref?.();
@@ -176,6 +210,7 @@ function action(socket, ack, fn) {
     maybeRecord(ctx.room);
     emitRoom(ctx.room);
     safeAck(ack, { ok: true, result });
+    scheduleBotTurn(ctx.room);
   } catch (error) {
     safeAck(ack, { ok: false, error: error.message });
   }
@@ -191,6 +226,7 @@ io.on('connection', (socket) => {
       bindSocket(socket, room, player);
       safeAck(ack, { ok: true, token: player.resumeToken, room: game.publicRoom(room, player.id) });
       emitRoom(room);
+      scheduleBotTurn(room);
     } catch (error) {
       safeAck(ack, { ok: false, error: error.message });
     }
@@ -203,6 +239,7 @@ io.on('connection', (socket) => {
       bindSocket(socket, room, player);
       safeAck(ack, { ok: true, token: player.resumeToken, room: game.publicRoom(room, player.id) });
       emitRoom(room);
+      scheduleBotTurn(room);
     } catch (error) {
       safeAck(ack, { ok: false, error: error.message });
     }
@@ -214,6 +251,7 @@ io.on('connection', (socket) => {
       bindSocket(socket, room, player);
       safeAck(ack, { ok: true, token: player.resumeToken, room: game.publicRoom(room, player.id) });
       emitRoom(room);
+      scheduleBotTurn(room);
     } catch (error) {
       safeAck(ack, { ok: false, error: error.message });
     }

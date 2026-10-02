@@ -491,7 +491,6 @@ function startGame(room) {
   addLog(game, 'Nova partida: 9 cartas abertas, 3 <atualização> e 4 marcadores de <capturados> por jogador.');
   startTurn(room);
   room.updatedAt = Date.now();
-  runBotsUntilHuman(room);
   return game;
 }
 
@@ -590,14 +589,14 @@ function playerDraw(room, playerId) {
 function playerRefresh(room, playerId) {
   const { game, player } = validateTurn(room, playerId, 'draw');
   if (player.refresh <= 0) throw new Error('Você não possui mais marcadores de <atualização>.');
-  if (game.refreshesThisTurn >= 2) throw new Error('O limite é 2 <atualização> por turno.');
+  if (game.refreshesThisTurn >= 3) throw new Error('O limite é 3 <atualização> por turno.');
   const card = useRefresh(room, player);
   if (!card) throw new Error('Não há carta disponível para atualizar.');
   game.refreshesThisTurn += 1;
-  if (game.refreshesThisTurn >= 2) {
+  if (game.refreshesThisTurn >= 3) {
     const bought = drawCard(game, player);
     if (!bought) throw new Error('Não há carta disponível para a compra obrigatória.');
-    addLog(game, `${player.name} usou a 2ª <atualização> e comprou automaticamente ${cardLabel(bought)}.`);
+    addLog(game, `${player.name} usou a 3ª <atualização> e comprou automaticamente ${cardLabel(bought)}.`);
     game.phase = 'play';
   }
   room.updatedAt = Date.now();
@@ -623,7 +622,6 @@ function playerDiscard(room, playerId, cardId) {
   if (game.capturedThisTurn) refillToNine(game, player);
   player.offlineColor = null;
   nextPlayer(room);
-  runBotsUntilHuman(room);
   room.updatedAt = Date.now();
 }
 
@@ -650,49 +648,66 @@ function chooseBotDiscard(room, player) {
   return best[crypto.randomInt(0, best.length)];
 }
 
-function runBotTurn(room, player) {
-  const game = room.game;
-  if (!game || game.phase === 'gameover') return;
-  let used = 0;
-  while (game.phase === 'draw' && used < 2 && player.refresh > 0 && game.deck.length > 0) {
-    const chance = used === 0 ? 480 : 340;
-    if (topHelpsBot(room, player) || crypto.randomInt(0, 1000) >= chance) break;
-    if (!useRefresh(room, player)) break;
-    used += 1;
-    game.refreshesThisTurn += 1;
-  }
+function isBotTurn(room) {
+  if (!room || room.status !== 'game' || !room.game || room.game.phase === 'gameover') return false;
+  return currentPlayer(room)?.type === 'bot';
+}
+
+// Executes exactly ONE visible bot action. The server is responsible for
+// waiting briefly, broadcasting the new state, then asking for the next one.
+function runBotAction(room) {
+  const game = room?.game;
+  const player = currentPlayer(room);
+  if (!game || game.phase === 'gameover' || !player || player.type !== 'bot') return { action: 'none', turnEnded: true };
+
   if (game.phase === 'draw') {
+    const used = game.refreshesThisTurn || 0;
+    if (used < 3 && player.refresh > 0 && game.deck.length > 0) {
+      const chance = used === 0 ? 480 : used === 1 ? 340 : 260;
+      const shouldRefresh = !topHelpsBot(room, player) && crypto.randomInt(0, 1000) < chance;
+      if (shouldRefresh) {
+        const refreshed = useRefresh(room, player);
+        if (refreshed) {
+          game.refreshesThisTurn += 1;
+          room.updatedAt = Date.now();
+          return { action: 'refresh', playerId: player.id, cardId: refreshed.id };
+        }
+      }
+    }
+
     const bought = drawCard(game, player);
     if (!bought) {
       game.phase = 'gameover';
       game.finishedAt = Date.now();
-      return;
+      room.updatedAt = Date.now();
+      return { action: 'gameover', playerId: player.id };
     }
     addLog(game, `${player.name} comprou ${cardLabel(bought)} da <entrada>.`);
     game.phase = 'play';
+    room.updatedAt = Date.now();
+    return { action: 'draw', playerId: player.id, cardId: bought.id };
   }
-  while (game.phase === 'play') {
-    const options = allOptions(game, player);
-    if (!options.length) break;
-    const option = options[crypto.randomInt(0, options.length)];
-    const selected = option.indices.map((index) => player.hand[index]);
-    applyCapture(room, player, selected, option.pattern);
-    if (game.phase === 'gameover') return;
-  }
-  const discardIndex = chooseBotDiscard(room, player);
-  if (discardIndex >= 0) placeDiscard(room, player, player.hand[discardIndex].id);
-  if (game.capturedThisTurn) refillToNine(game, player);
-  player.offlineColor = null;
-  nextPlayer(room);
-}
 
-function runBotsUntilHuman(room) {
-  const game = room.game;
-  let guard = 0;
-  while (game && game.phase !== 'gameover' && currentPlayer(room)?.type === 'bot' && guard < 12) {
-    guard += 1;
-    runBotTurn(room, currentPlayer(room));
+  if (game.phase === 'play') {
+    const options = allOptions(game, player);
+    if (options.length) {
+      const option = options[crypto.randomInt(0, options.length)];
+      const selected = option.indices.map((index) => player.hand[index]);
+      applyCapture(room, player, selected, option.pattern);
+      room.updatedAt = Date.now();
+      return { action: game.phase === 'gameover' ? 'win' : 'capture', playerId: player.id };
+    }
+
+    const discardIndex = chooseBotDiscard(room, player);
+    if (discardIndex >= 0) placeDiscard(room, player, player.hand[discardIndex].id);
+    if (game.capturedThisTurn) refillToNine(game, player);
+    player.offlineColor = null;
+    nextPlayer(room);
+    room.updatedAt = Date.now();
+    return { action: 'discard', playerId: player.id, turnEnded: true };
   }
+
+  return { action: 'none', playerId: player.id };
 }
 
 function requestRestart(room, playerId) {
@@ -814,6 +829,8 @@ module.exports = {
   playerRefresh,
   playerCapture,
   playerDiscard,
+  isBotTurn,
+  runBotAction,
   requestRestart,
   respondRestart,
   sanitizeRoomCode,

@@ -448,9 +448,11 @@
     }
     if (!isMyTurn()) {
       const current = gamePlayer(game.currentPlayerId);
-      setTurnPrompt(`Aguarde: é o turno de ${current?.name || 'outro jogador'}.`, 'wait');
+      const latest = Array.isArray(game.logs) && game.logs.length ? game.logs[game.logs.length - 1]?.text : '';
+      const botAction = current?.type === 'bot' && latest ? latest : '';
+      setTurnPrompt(botAction || `Aguarde: é o turno de ${current?.name || 'outro jogador'}.`, 'wait');
       msg.className = 'msg';
-      msg.textContent = `Turno de ${current?.name || 'outro jogador'}.`;
+      msg.textContent = current?.type === 'bot' ? `${current.name} está jogando...` : `Turno de ${current?.name || 'outro jogador'}.`;
       return;
     }
     if (game.phase === 'draw') {
