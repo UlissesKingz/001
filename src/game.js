@@ -49,6 +49,10 @@ function allPlayers(room) {
   return room.players.slice().sort((a, b) => a.seat - b.seat);
 }
 
+function allViewers(room) {
+  return [...room.players, ...(room.spectators || [])];
+}
+
 function memberCount(room) {
   return room.players.length;
 }
@@ -63,18 +67,24 @@ function findPlayer(room, id) {
   return room.players.find((player) => player.id === id) || null;
 }
 
+function findViewer(room, id) {
+  return findPlayer(room, id) || room.spectators?.find((viewer) => viewer.id === id) || null;
+}
+
 function findHumanByToken(token) {
   if (!token || typeof token !== 'string' || token.length > 256) return null;
   for (const room of rooms.values()) {
     const player = room.players.find((candidate) => candidate.type === 'human' && candidate.resumeToken === token);
     if (player) return { room, player };
+    const spectator = room.spectators?.find((candidate) => candidate.type === 'spectator' && candidate.resumeToken === token);
+    if (spectator) return { room, player: spectator };
   }
   return null;
 }
 
 function nicknameTaken(room, name) {
   const key = name.toLocaleLowerCase('pt-BR');
-  return room.players.some((player) => player.name.toLocaleLowerCase('pt-BR') === key);
+  return allViewers(room).some((player) => player.name.toLocaleLowerCase('pt-BR') === key);
 }
 
 function createRoom({ name, device, socketId }) {
@@ -98,6 +108,7 @@ function createRoom({ name, device, socketId }) {
     createdAt: now,
     updatedAt: now,
     players: [player],
+    spectators: [],
     restart: null,
     game: null,
     gameNo: 0
@@ -110,25 +121,46 @@ function joinRoom({ code, name, device, socketId }) {
   const safeCode = sanitizeRoomCode(code);
   const room = rooms.get(safeCode);
   if (!room) throw new Error('Sala não encontrada.');
-  if (room.status !== 'lobby') throw new Error('A partida desta sala já começou.');
-  if (memberCount(room) >= 4) throw new Error('A sala está cheia.');
   const safeName = sanitizeName(name);
   if (nicknameTaken(room, safeName)) throw new Error('Este nickname já está sendo usado nesta sala.');
-  const seat = nextSeat(room);
-  if (seat < 0) throw new Error('A sala está cheia.');
-  const player = {
-    id: crypto.randomUUID(),
-    name: safeName,
-    device: sanitizeDevice(device),
-    type: 'human',
-    seat,
-    connected: true,
-    socketId,
-    resumeToken: randomId(24)
-  };
-  room.players.push(player);
-  room.updatedAt = Date.now();
-  return { room, player };
+
+  if (room.status === 'lobby') {
+    if (memberCount(room) >= 4) throw new Error('A sala está cheia.');
+    const seat = nextSeat(room);
+    if (seat < 0) throw new Error('A sala está cheia.');
+    const player = {
+      id: crypto.randomUUID(),
+      name: safeName,
+      device: sanitizeDevice(device),
+      type: 'human',
+      seat,
+      connected: true,
+      socketId,
+      resumeToken: randomId(24)
+    };
+    room.players.push(player);
+    room.updatedAt = Date.now();
+    return { room, player };
+  }
+
+  if (room.status === 'game') {
+    const player = {
+      id: crypto.randomUUID(),
+      name: safeName,
+      device: sanitizeDevice(device),
+      type: 'spectator',
+      seat: null,
+      connected: true,
+      socketId,
+      resumeToken: randomId(24)
+    };
+    room.spectators = room.spectators || [];
+    room.spectators.push(player);
+    room.updatedAt = Date.now();
+    return { room, player };
+  }
+
+  throw new Error('A sala não está disponível para entrada.');
 }
 
 function resumePlayer({ token, socketId, device }) {
@@ -178,6 +210,12 @@ function transferHost(room) {
 }
 
 function leaveRoom(room, playerId) {
+  const spectatorIndex = (room.spectators || []).findIndex((viewer) => viewer.id === playerId);
+  if (spectatorIndex >= 0) {
+    room.spectators.splice(spectatorIndex, 1);
+    room.updatedAt = Date.now();
+    return;
+  }
   const player = findPlayer(room, playerId);
   if (!player || player.type !== 'human') return;
   if (room.status === 'lobby') {
@@ -196,12 +234,20 @@ function markDisconnected(socketId) {
   const changed = [];
   for (const room of rooms.values()) {
     const player = room.players.find((candidate) => candidate.type === 'human' && candidate.socketId === socketId);
-    if (!player) continue;
-    player.connected = false;
-    player.socketId = null;
-    if (room.hostId === player.id) transferHost(room);
-    room.updatedAt = Date.now();
-    changed.push(room);
+    if (player) {
+      player.connected = false;
+      player.socketId = null;
+      if (room.hostId === player.id) transferHost(room);
+      room.updatedAt = Date.now();
+      changed.push(room);
+      continue;
+    }
+    const spectatorIndex = (room.spectators || []).findIndex((candidate) => candidate.socketId === socketId);
+    if (spectatorIndex >= 0) {
+      room.spectators.splice(spectatorIndex, 1);
+      room.updatedAt = Date.now();
+      changed.push(room);
+    }
   }
   return changed;
 }
@@ -780,6 +826,7 @@ function publicRoom(room, viewerId = null) {
     status: room.status,
     hostId: room.hostId,
     viewerId,
+    viewerIsSpectator: Boolean(room.spectators?.some((viewer) => viewer.id === viewerId)),
     gameNo: room.gameNo,
     createdAt: room.createdAt,
     updatedAt: room.updatedAt,
@@ -792,6 +839,15 @@ function publicRoom(room, viewerId = null) {
       seat: player.seat,
       connected: player.type === 'bot' ? true : Boolean(player.connected),
       isHost: player.id === room.hostId
+    })),
+    spectators: (room.spectators || []).map((viewer) => ({
+      id: viewer.id,
+      name: viewer.name,
+      nickname: viewer.name,
+      type: viewer.type,
+      device: viewer.device,
+      seat: null,
+      connected: Boolean(viewer.connected)
     })),
     restart: room.restart ? {
       requestedBy: room.restart.requestedBy,
@@ -811,8 +867,10 @@ function liveRoomSummaries() {
     updatedAt: room.updatedAt,
     gameNo: room.gameNo,
     playerCount: room.players.length,
+    spectatorCount: (room.spectators || []).length,
     humansConnected: room.players.filter((player) => player.type === 'human' && player.connected).length,
-    players: allPlayers(room).map((player) => ({ name: player.name, type: player.type, seat: player.seat, connected: player.connected }))
+    players: allPlayers(room).map((player) => ({ name: player.name, type: player.type, seat: player.seat, connected: player.connected })),
+    spectators: (room.spectators || []).map((viewer) => ({ name: viewer.name, type: viewer.type, connected: viewer.connected }))
   }));
 }
 
@@ -827,6 +885,7 @@ module.exports = {
   leaveRoom,
   markDisconnected,
   findPlayer,
+  findViewer,
   publicRoom,
   liveRoomSummaries,
   startGame,

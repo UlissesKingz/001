@@ -4,12 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>001 — Um jogo de cartas e bits</title>
-<link rel="stylesheet" href="/styles.css?v=50">
+<link rel="stylesheet" href="/styles.css">
 </head>
 <body data-device="mobile" class="device-mobile">
 <div class="online-note" id="onlineNote"></div>
 <div class="preapp" id="preApp">
-<section class="pre-screen active" id="entryScreen">
+<section class="pre-screen active pre-screen-decor" id="entryScreen">
+    <div class="screen-stripes" aria-hidden="true"></div>
     <div class="brand-hero"><div class="brand-title"><span class="preBits">001</span></div><div class="brand-tagline">Um jogo de cartas e bits</div></div>
     <div class="pre-panel">
       <div class="field entry-nick"><label for="nicknameInput">Nickname</label><input id="nicknameInput" maxlength="18" autocomplete="nickname" placeholder="Seu nome no jogo"></div>
@@ -20,9 +21,11 @@
       <div class="pre-status" id="entryStatus"></div>
       <div class="pre-toolbar"><button class="pre-link" id="changeDeviceBtn" type="button">← TROCAR DEVICE</button><button class="pre-link openRules" type="button">REGRAS</button></div>
     </div>
+    <div class="creator-signature">CRIADOR POR ULISSES REIS</div>
   </section>
 
-  <section class="pre-screen" id="lobbyScreen">
+  <section class="pre-screen pre-screen-decor" id="lobbyScreen">
+    <div class="screen-stripes" aria-hidden="true"></div>
     <div class="brand-hero"><div class="brand-title"><span class="preBits">001</span></div><div class="brand-tagline">Um jogo de cartas e bits</div></div>
     <div class="pre-panel">
       <div class="lobby-head"><div><div style="font-size:11px;letter-spacing:1px;color:#8fa3ba;text-transform:uppercase">Lobby</div><h2 style="margin:4px 0 0">AGUARDANDO JOGADORES</h2><div class="connection-pill" id="connectionPill">conectando...</div></div><div class="room-code-box"><div class="room-code-label">Código da sala</div><div class="room-code" id="lobbyCode">------</div><button class="pre-link" id="copyRoomCode" type="button">COPIAR</button></div></div>
@@ -30,11 +33,13 @@
       <div class="pre-status" id="lobbyStatus"></div>
       <div class="lobby-controls"><button class="btn" id="addBotBtn" type="button">+ BOT</button><button class="btn primary" id="startRoomBtn" type="button">INICIAR PARTIDA</button><button class="btn" id="leaveRoomBtn" type="button">SAIR</button><button class="btn openRules" type="button">REGRAS</button></div>
     </div>
+    <div class="creator-signature">CRIADOR POR ULISSES REIS</div>
   </section>
 </div>
 
 <div class="app" id="gameApp">
   <header class="top"><div></div><div class="titleWrap"><div class="title" id="mainTitle"><span id="titleBits">001</span><span class="titleTagline">Um jogo de cartas e bits</span></div></div><div class="top-actions"><button class="btn" id="fitBtn" type="button" title="Ajustar à janela" data-help="Ajusta o jogo para caber melhor na janela.">□</button> <button class="btn" id="rulesBtn" data-help="Abre o manual resumido desta versão digital.">REGRAS</button> <button class="btn" id="newBtn" title="Nova partida" data-help="Começa uma nova partida.">↻</button></div></header>
+  <div class="viewer-banner" id="viewerBanner"></div>
 
   <section class="stats">
     <div class="stat"><b>Turno</b><span id="turnText">—</span></div>
@@ -83,7 +88,6 @@
   </main>
   <div class="helpbar" id="helpBar"><span class="label">INFO</span><span id="helpText">Passe o mouse sobre <b>cartas</b>, <b>botões</b> e <b>áreas</b> do jogo para ver o que cada item faz.</span></div>
 </div>
-<a class="physical-manual-link" href="https://drive.google.com/file/d/12i0FPjL79dPumXRwTyfql8Pu1JBw0dxc/view?usp=sharing" target="_blank" rel="noopener noreferrer" aria-label="Abrir manual do jogo físico">Manual Jogo Físico</a>
 <footer class="legal-footer">Jogo criado por Ulisses Reis © 2026 — Propriedade intelectual protegida. Reprodução, distribuição ou uso não autorizado são proibidos. Contato: designerulissesreis@gmail.com</footer>
 
 <div class="rules" id="rules"><div class="rules-card"><h2>Regras desta versão</h2><ul>
@@ -154,6 +158,6 @@
 
 
 <script src="/socket.io/socket.io.js"></script>
-<script src="/common-ui.js?v=50"></script>
+<script src="/common-ui.js"></script>
 <script src="/client.js"></script>
 </body></html>

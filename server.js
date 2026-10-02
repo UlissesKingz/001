@@ -121,7 +121,7 @@ function contextFor(socket) {
   if (!ref) return null;
   const room = game.rooms.get(ref.roomCode);
   if (!room) return null;
-  const player = game.findPlayer(room, ref.playerId);
+  const player = game.findViewer(room, ref.playerId);
   if (!player) return null;
   return { room, player };
 }
@@ -133,8 +133,9 @@ function bindSocket(socket, room, player) {
 }
 
 function emitRoom(room) {
-  for (const player of room.players) {
-    if (player.type !== 'human' || !player.socketId || !player.connected) continue;
+  const viewers = [...room.players, ...(room.spectators || [])];
+  for (const player of viewers) {
+    if ((player.type !== 'human' && player.type !== 'spectator') || !player.socketId || !player.connected) continue;
     io.to(player.socketId).emit('room:state', game.publicRoom(room, player.id));
   }
 }

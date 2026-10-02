@@ -39,8 +39,10 @@
     else localStorage.removeItem('001_room_token');
   }
   function myLobbyPlayer() { return state.room?.players?.find((player) => player.id === state.room.viewerId) || null; }
-  function isHost() { return Boolean(state.room && state.room.hostId === state.room.viewerId); }
-  function playerName(id) { return state.room?.players?.find((player) => player.id === id)?.name || 'Jogador'; }
+  function viewerEntry() { return state.room?.players?.find((player) => player.id === state.room.viewerId) || state.room?.spectators?.find((viewer) => viewer.id === state.room.viewerId) || null; }
+  function viewerIsSpectator() { return Boolean(state.room?.viewerIsSpectator); }
+  function isHost() { return Boolean(state.room && !viewerIsSpectator() && state.room.hostId === state.room.viewerId); }
+  function playerName(id) { return state.room?.players?.find((player) => player.id === id)?.name || state.room?.spectators?.find((viewer) => viewer.id === id)?.name || 'Jogador'; }
   function isSpecial(card) { return Boolean(card?.special); }
   function colorInfo(id) { return COLORS[id] || { name: id || 'Cor', abbr: '???', css: '#7f8a99' }; }
   function cardCode(card) { return isSpecial(card) ? card.pair : `${colorInfo(card.color).abbr}${card.value}`; }
@@ -109,8 +111,9 @@
       list.appendChild(row);
     }
     const myVote = restart.votes?.[state.room.viewerId];
-    $('#restartVoteYes').disabled = myVote === true;
-    $('#restartVoteNo').disabled = myVote === false;
+    $('#restartVoteYes').disabled = viewerIsSpectator() || myVote === true;
+    $('#restartVoteNo').disabled = viewerIsSpectator() || myVote === false;
+    if (viewerIsSpectator()) $('#restartVoteText').textContent += ' Você está assistindo como espectador.';
     $('#restartVoteModal').classList.add('open');
   }
 
@@ -297,7 +300,7 @@
       const pill = document.createElement('span');
       pill.className = 'pill';
       const bold = document.createElement('b');
-      bold.textContent = `${player.id === state.room.viewerId ? 'Você' : player.name}:`;
+      bold.textContent = `${(!viewerIsSpectator() && player.id === state.room.viewerId) ? 'Você' : player.name}:`;
       pill.appendChild(bold);
       if (player.offlineColor) {
         const dot = document.createElement('span');
@@ -318,8 +321,19 @@
     $('#restartVoteModal')?.classList.toggle('open', Boolean(room.restart));
 
     const viewer = me();
-    const opponents = game.players.filter((player) => player.id !== room.viewerId).sort((a, b) => a.seat - b.seat);
-    const display = [viewer, ...opponents].filter(Boolean);
+    const spectator = viewerIsSpectator();
+    document.body.classList.toggle('viewer-spectator', spectator);
+    const participants = [...game.players].sort((a, b) => a.seat - b.seat);
+    const display = spectator ? participants : [viewer, ...participants.filter((player) => player.id !== room.viewerId)].filter(Boolean);
+    const banner = $('#viewerBanner');
+    if (banner) {
+      const spectators = room.spectators?.length || 0;
+      banner.textContent = spectator
+        ? `Você entrou como espectador • sala ${room.code} • espectadores: ${spectators}`
+        : (spectators ? `Espectadores conectados: ${spectators}` : '');
+      banner.classList.toggle('show', Boolean(banner.textContent));
+    }
+    if ($('#newBtn')) $('#newBtn').disabled = spectator;
     for (let slot = 0; slot < 4; slot += 1) {
       const player = display[slot];
       const seat = $(`#seat${slot}`);
@@ -327,12 +341,13 @@
       seat.style.display = player ? '' : 'none';
       if (!player) continue;
       const title = seat.querySelector('h3 > span');
-      if (title) title.textContent = slot === 0 ? 'VOCÊ' : player.name.toUpperCase();
+      if (title) title.textContent = (!spectator && slot === 0) ? 'VOCÊ' : player.name.toUpperCase();
       const handBox = $(`#hand${slot}`);
       handBox.innerHTML = '';
-      const cards = orderedHand(player, slot === 0);
-      for (const card of cards) handBox.appendChild(makeCard(card, player, slot === 0));
-      handBox.classList.toggle('selecting', slot === 0 && isMyTurn() && game.phase === 'play');
+      const allowInteract = !spectator && slot === 0;
+      const cards = orderedHand(player, allowInteract);
+      for (const card of cards) handBox.appendChild(makeCard(card, player, allowInteract));
+      handBox.classList.toggle('selecting', allowInteract && isMyTurn() && game.phase === 'play');
       $(`#meta${slot}`).textContent = `${player.hand.length} cartas • ${player.captures}/4 capturas • ${player.refresh} atualizações`;
       renderMarkers($(`#melds${slot}`), player);
       seat.classList.toggle('active', game.currentPlayerId === player.id && !game.winnerId);
@@ -353,14 +368,14 @@
 
     const current = gamePlayer(game.currentPlayerId);
     const winner = gamePlayer(game.winnerId);
-    $('#turnText').textContent = winner ? `${winner.name} venceu` : `${current?.id === room.viewerId ? 'Você' : current?.name || '—'} • turno ${game.turnNo}`;
+    $('#turnText').textContent = winner ? `${winner.name} venceu` : `${(!spectator && current?.id === room.viewerId) ? 'Você' : current?.name || '—'} • turno ${game.turnNo}`;
     const order = $('#turnOrder');
     order.innerHTML = '';
     game.turnOrder.forEach((id, index) => {
       const player = gamePlayer(id);
       const chip = document.createElement('span');
       chip.className = `turn-chip${id === game.currentPlayerId && !game.winnerId ? ' active' : ''}`;
-      chip.textContent = id === room.viewerId ? 'Você' : player?.name || 'Jogador';
+      chip.textContent = (!spectator && id === room.viewerId) ? 'Você' : player?.name || 'Jogador';
       order.appendChild(chip);
       if (index < game.turnOrder.length - 1) { const arrow = document.createElement('span'); arrow.className = 'turn-arrow'; arrow.textContent = '→'; order.appendChild(arrow); }
     });
@@ -429,6 +444,7 @@
     Object.entries(map).forEach(([mode, selector]) => $(selector)?.classList.toggle('active', state.sortMode === mode));
     const hint = $('#sortHint');
     if (!hint) return;
+    if (viewerIsSpectator()) { hint.textContent = 'Modo espectador: acompanhando a partida em tempo real.'; return; }
     hint.textContent = state.sortMode === 'number'
       ? 'Ordenado por números: 0 e depois 1; dentro de cada grupo, vermelho → azul → verde → amarelo.'
       : state.sortMode === 'color'
@@ -454,7 +470,15 @@
     draw.disabled = true; refresh.disabled = true; capture.disabled = true; discard.disabled = true;
     capture.classList.remove('meld-ready', 'meld-invalid');
     hint.textContent = '';
-    if (!game || !player) { setTurnPrompt('Aguarde o início da partida.'); return; }
+    if (!game) { setTurnPrompt('Aguarde o início da partida.'); return; }
+    if (viewerIsSpectator()) {
+      setTurnPrompt('Você entrou como espectador. Acompanhe a partida em tempo real.', 'wait');
+      msg.className = 'msg';
+      const current = gamePlayer(game.currentPlayerId);
+      msg.textContent = current ? `Observando: turno de ${current.name}.` : 'Observando a partida.';
+      return;
+    }
+    if (!player) { setTurnPrompt('Aguarde o início da partida.'); return; }
     if (game.phase === 'gameover') {
       const winner = gamePlayer(game.winnerId);
       setTurnPrompt(winner ? `${winner.id === state.room.viewerId ? 'Você venceu!' : `${winner.name} venceu!`} Partida encerrada.` : 'Partida encerrada.', 'done');
@@ -519,7 +543,9 @@
       showScreen('#lobbyScreen');
       renderGame();
     } else {
-      document.body.classList.remove('in-game');
+      document.body.classList.remove('in-game', 'viewer-spectator');
+      const banner = $('#viewerBanner');
+      if (banner) { banner.textContent = ''; banner.classList.remove('show'); }
       showScreen('#lobbyScreen');
       renderLobby();
     }
@@ -579,6 +605,7 @@
     emitAck('room:join', { nickname, code, device: DEVICE }, (res) => {
       if (!res.ok) return setEntryStatus(res.error || 'Não foi possível entrar na sala.');
       saveToken(res.token); enterRoomState(res.room);
+      if (res.room?.viewerIsSpectator) UI001.note('Você entrou como espectador.');
     });
   });
   $('#copyRoomCode')?.addEventListener('click', async () => {
@@ -587,7 +614,9 @@
   });
   $('#addBotBtn')?.addEventListener('click', () => emitAck('room:addBot', {}, (res) => { if (!res.ok) setLobbyStatus(res.error); }));
   $('#startRoomBtn')?.addEventListener('click', () => emitAck('room:start', {}, (res) => { if (!res.ok) setLobbyStatus(res.error); }));
-  $('#leaveRoomBtn')?.addEventListener('click', () => emitAck('room:leave', {}, () => { saveToken(''); state.room = null; document.body.classList.remove('in-game'); showScreen('#entryScreen'); }));
+  function leaveCurrentRoom() { emitAck('room:leave', {}, () => { saveToken(''); state.room = null; document.body.classList.remove('in-game', 'viewer-spectator'); showScreen('#entryScreen'); }); }
+  $('#leaveRoomBtn')?.addEventListener('click', leaveCurrentRoom);
+  $('#exitRoomBtn')?.addEventListener('click', leaveCurrentRoom);
 
   $('#drawBtn')?.addEventListener('click', () => emitAck('game:draw', {}, (res) => { if (!res.ok) UI001.note(res.error); }));
   $('#refreshBtn')?.addEventListener('click', () => emitAck('game:refresh', {}, (res) => { if (!res.ok) UI001.note(res.error); }));
@@ -606,6 +635,7 @@
   });
 
   function setSortMode(mode) {
+    if (viewerIsSpectator() || !me()) return;
     const currentVisibleOrder = orderedHand(me(), true).map((card) => card.id);
     state.sortMode = mode;
     state.selected.clear();
@@ -619,7 +649,7 @@
 
   function clearDragMarks() { $$('#hand0 .card').forEach((card) => card.classList.remove('dragging', 'drag-over-left', 'drag-over-right')); }
   $('#hand0')?.addEventListener('pointerdown', (event) => {
-    if (DEVICE === 'mobile' || state.sortMode !== 'free' || event.button !== 0) return;
+    if (viewerIsSpectator() || DEVICE === 'mobile' || state.sortMode !== 'free' || event.button !== 0) return;
     const card = event.target.closest('#hand0 .card');
     if (!card) return;
     state.drag = { id: Number(card.dataset.cardId), startX: event.clientX, startY: event.clientY, dragging: false, targetId: null, after: false, pointerId: event.pointerId, suppressClick: false };
