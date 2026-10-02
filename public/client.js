@@ -405,7 +405,10 @@
       UI001.showWinner(winner?.name || 'Jogador', game.winnerId === room.viewerId);
     }
     if (room.restart) renderRestartVote();
-    requestAnimationFrame(() => UI001.updateFitScale?.());
+    // Mobile keeps one stable scale for the whole match. Re-rendering cards or
+    // bot actions must never temporarily expose the unscaled layout.
+    if (DEVICE === 'mobile') UI001.updateMobileStageScale?.();
+    else requestAnimationFrame(() => UI001.updateFitScale?.());
   }
 
   function renderSortButtons() {

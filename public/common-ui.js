@@ -4,6 +4,8 @@
   const $$ = (selector) => [...document.querySelectorAll(selector)];
   let fitActive = false;
   let mobileFitKey = '';
+  let mobileViewport = null;
+  let mobileResizeTimer = null;
 
   function note(text, ms = 2200) {
     const el = $('#onlineNote');
@@ -56,6 +58,8 @@
     const mobileGame = document.body.classList.contains('device-mobile') && document.body.classList.contains('in-game');
     if (!mobileGame) {
       mobileFitKey = '';
+      mobileViewport = null;
+      app.dataset.mobileFitReady = '';
       app.style.width = '';
       app.style.maxWidth = '';
       app.style.left = '';
@@ -68,44 +72,48 @@
 
     const footer = $('.legal-footer');
     const footerH = footer?.offsetHeight || 0;
-    const availableH = Math.max(320, window.innerHeight - footerH - 8);
-    const availableW = Math.max(280, window.innerWidth - 8);
+    const measuredW = Math.max(280, window.innerWidth - 8);
+    const measuredH = Math.max(320, window.innerHeight - footerH - 8);
+
+    // Keep the viewport reference stable while the browser's address/navigation
+    // bars appear or disappear. Height-only changes from browser chrome must not
+    // rescale the board between game actions.
+    if (!mobileViewport || force) mobileViewport = { w: measuredW, h: measuredH };
+    const widthChanged = Math.abs(measuredW - mobileViewport.w) > 36;
+    if (widthChanged) mobileViewport = { w: measuredW, h: measuredH };
+
+    const availableW = mobileViewport.w;
+    const availableH = mobileViewport.h;
     const key = `${Math.round(availableW)}x${Math.round(availableH)}`;
+    if (!force && !widthChanged && mobileFitKey === key && app.dataset.mobileFitReady === '1') return;
 
-    // During the match, card/action state updates should not reset the whole
-    // stage to scale(1). Recalculate only on first entry or viewport resize.
-    if (!force && mobileFitKey === key && app.dataset.mobileFitReady === '1') return;
-
-    // Pin the scaled mobile stage to the visual viewport. This prevents an old
-    // scroll position from leaving the title/top of the game above the screen.
     app.style.position = 'fixed';
     app.style.top = '2px';
     app.style.left = '50%';
-    if (window.scrollY !== 0) window.scrollTo(0, 0);
     app.style.maxWidth = 'none';
     app.style.transformOrigin = 'top center';
 
     const currentScaleMatch = app.style.transform.match(/scale\(([^)]+)\)/);
     const currentScale = currentScaleMatch ? Number(currentScaleMatch[1]) || 1 : 1;
-    const baseWidth = Number.parseFloat(app.style.width) || availableW;
-    const currentNaturalH = Math.max(1, app.scrollHeight);
-    let scale = Math.min(1, availableH / currentNaturalH);
-
+    const naturalBefore = Math.max(1, app.scrollHeight);
+    const initialScale = Math.min(1, availableH / naturalBefore);
     const compensation = 0.72;
-    let layoutW = Math.min(availableW / Math.max(scale, 0.01), availableW * (1 + (1 - scale) * compensation));
-    if (!Number.isFinite(layoutW) || layoutW <= 0) layoutW = baseWidth;
-    app.style.width = `${Math.round(layoutW)}px`;
+    let layoutW = Math.min(
+      availableW / Math.max(initialScale, 0.01),
+      availableW * (1 + (1 - initialScale) * compensation)
+    );
+    if (!Number.isFinite(layoutW) || layoutW <= 0) layoutW = availableW;
 
-    // A single frame is enough for width reflow; keep the previous transform
-    // while measuring so the user never sees a full-size/black flash.
-    requestAnimationFrame(() => {
-      const naturalH = Math.max(1, app.scrollHeight);
-      const finalScale = Math.min(1, availableH / naturalH, availableW / Math.max(1, layoutW));
-      const safeScale = Number.isFinite(finalScale) ? finalScale : currentScale;
-      app.style.transform = `translateX(-50%) scale(${safeScale.toFixed(3)})`;
-      app.dataset.mobileFitReady = '1';
-      mobileFitKey = key;
-    });
+    // IMPORTANT: width, measurement and transform are applied synchronously in
+    // the same JS task. There is no requestAnimationFrame with an unscaled
+    // intermediate state, so the user never sees the giant one-frame layout.
+    app.style.width = `${Math.round(layoutW)}px`;
+    const naturalH = Math.max(1, app.scrollHeight); // force layout before paint
+    const finalScale = Math.min(1, availableH / naturalH, availableW / Math.max(1, layoutW));
+    const safeScale = Number.isFinite(finalScale) ? finalScale : currentScale;
+    app.style.transform = `translateX(-50%) scale(${safeScale.toFixed(3)})`;
+    app.dataset.mobileFitReady = '1';
+    mobileFitKey = key;
   }
 
   function showWinner(name, isMe) {
@@ -142,7 +150,13 @@
   $('#invalidMeldOk')?.addEventListener('click', hideInvalid);
   $('#invalidMeldModal')?.addEventListener('click', (event) => { if (event.target.id === 'invalidMeldModal') hideInvalid(); });
   $('#fitBtn')?.addEventListener('click', toggleFit);
-  window.addEventListener('resize', () => { if (fitActive) updateFitScale(); else { mobileFitKey = ''; updateMobileStageScale(true); } });
+  window.addEventListener('resize', () => {
+    clearTimeout(mobileResizeTimer);
+    mobileResizeTimer = setTimeout(() => {
+      if (fitActive) updateFitScale();
+      else updateMobileStageScale(false);
+    }, 180);
+  });
   $('#changeDeviceBtn')?.addEventListener('click', () => { location.href = '/device.html'; });
 
   $('#newBtn')?.addEventListener('click', () => $('#restartModal')?.classList.add('open'));
