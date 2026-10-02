@@ -1006,4 +1006,48 @@ body.device-mobile .human .controls .msg.bad{
 body.device-mobile .title #titleBits{min-width:0!important}
 body.device-mobile .titleTagline{margin-left:3px!important;font-size:20%!important;letter-spacing:0!important}
 body.device-mobile.in-game #gameApp{backface-visibility:hidden;-webkit-backface-visibility:hidden}
-\n\n/* ===== v42 — keep the complete mobile stage anchored to the top ===== */\nbody.device-mobile.in-game{\n  height:100dvh!important;\n  min-height:100dvh!important;\n  overflow:hidden!important;\n  overscroll-behavior:none!important;\n}\nbody.device-mobile.in-game #gameApp{\n  position:fixed!important;\n  top:2px!important;\n  left:50%!important;\n  margin:0!important;\n  transform-origin:top center!important;\n}\n
+
+
+/* ===== v42 — keep the complete mobile stage anchored to the top ===== */
+body.device-mobile.in-game{
+  height:100dvh!important;
+  min-height:100dvh!important;
+  overflow:hidden!important;
+  overscroll-behavior:none!important;
+}
+body.device-mobile.in-game #gameApp{
+  position:fixed!important;
+  top:2px!important;
+  left:50%!important;
+  margin:0!important;
+  transform-origin:top center!important;
+}
+
+
+/* ===== v43 — tighter mobile title/subtitle fit ===== */
+body.device-mobile .top{gap:3px!important}
+body.device-mobile .titleWrap{overflow:visible!important;min-width:0!important}
+body.device-mobile .title{
+  display:flex!important;
+  align-items:baseline!important;
+  gap:0!important;
+  min-width:0!important;
+  overflow:visible!important;
+  text-overflow:clip!important;
+}
+body.device-mobile .title #titleBits{
+  flex:0 0 auto!important;
+  margin:0!important;
+  min-width:0!important;
+}
+body.device-mobile .titleTagline{
+  flex:0 1 auto!important;
+  margin-left:2px!important;
+  font-size:17%!important;
+  letter-spacing:-.1px!important;
+  white-space:nowrap!important;
+  overflow:visible!important;
+  transform:translateY(-1px)!important;
+}
+body.device-mobile .top-actions{gap:3px!important;margin-left:2px!important}
+body.device-mobile #rulesBtn{padding-left:5px!important;padding-right:5px!important}
