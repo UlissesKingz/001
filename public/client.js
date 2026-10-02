@@ -614,9 +614,27 @@
   });
   $('#addBotBtn')?.addEventListener('click', () => emitAck('room:addBot', {}, (res) => { if (!res.ok) setLobbyStatus(res.error); }));
   $('#startRoomBtn')?.addEventListener('click', () => emitAck('room:start', {}, (res) => { if (!res.ok) setLobbyStatus(res.error); }));
-  function leaveCurrentRoom() { emitAck('room:leave', {}, () => { saveToken(''); state.room = null; document.body.classList.remove('in-game', 'viewer-spectator'); showScreen('#entryScreen'); }); }
-  $('#leaveRoomBtn')?.addEventListener('click', leaveCurrentRoom);
-  $('#exitRoomBtn')?.addEventListener('click', leaveCurrentRoom);
+  function returnToRoomCreation() {
+    // Send the leave request, but never make the UI wait for the server ack.
+    if (state.socket?.connected && state.room) state.socket.emit('room:leave', {}, () => {});
+    saveToken('');
+    state.room = null;
+    state.selected.clear();
+    state.handOrder = [];
+    state.shownWinnerMatch = null;
+    state.flowMatchId = null;
+    state.flowCardIds = null;
+    document.body.classList.remove('in-game', 'viewer-spectator', 'mobile-landscape');
+    $('#restartVoteModal')?.classList.remove('open');
+    $('#restartModal')?.classList.remove('open');
+    $('#winnerModal')?.classList.remove('open');
+    showScreen('#entryScreen');
+    setEntryStatus('');
+    UI001.updateMobileStageScale?.(true);
+  }
+  $('#leaveRoomBtn')?.addEventListener('click', returnToRoomCreation);
+  $('#lobbyBackBtn')?.addEventListener('click', returnToRoomCreation);
+  $('#exitRoomBtn')?.addEventListener('click', returnToRoomCreation);
 
   $('#drawBtn')?.addEventListener('click', () => emitAck('game:draw', {}, (res) => { if (!res.ok) UI001.note(res.error); }));
   $('#refreshBtn')?.addEventListener('click', () => emitAck('game:refresh', {}, (res) => { if (!res.ok) UI001.note(res.error); }));

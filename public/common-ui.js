@@ -93,16 +93,16 @@
     const currentScale = currentScaleMatch ? Number(currentScaleMatch[1]) || 1 : 1;
 
     if (landscape) {
-      const stageW = Math.max(760, Math.min(availableW, availableH * 16 / 9, 1280));
-      app.style.width = `${Math.round(stageW)}px`;
-      requestAnimationFrame(() => {
-        const naturalH = Math.max(1, app.scrollHeight);
-        const finalScale = Math.min(1, availableH / naturalH, availableW / Math.max(1, stageW));
-        const safeScale = Number.isFinite(finalScale) ? finalScale : currentScale;
-        app.style.transform = `translateX(-50%) scale(${safeScale.toFixed(3)})`;
-        app.dataset.mobileFitReady = '1';
-        mobileFitKey = key;
-      });
+      // Landscape uses a desktop-like responsive layout at the viewport width.
+      // Do not shrink the entire stage to fit height, which made the game tiny.
+      app.style.width = `${Math.round(availableW)}px`;
+      app.style.maxWidth = `${Math.round(availableW)}px`;
+      app.style.position = 'relative';
+      app.style.left = '50%';
+      app.style.transformOrigin = 'top center';
+      app.style.transform = 'translateX(-50%) scale(1)';
+      app.dataset.mobileFitReady = '1';
+      mobileFitKey = key;
       return;
     }
 
@@ -163,6 +163,7 @@
   $('#fitBtn')?.addEventListener('click', toggleFit);
   window.addEventListener('resize', () => { syncMobileOrientationClass(); if (fitActive) updateFitScale(); else { mobileFitKey = ''; updateMobileStageScale(true); } });
   $('#changeDeviceBtn')?.addEventListener('click', () => { location.href = '/device.html'; });
+  $('#changeDeviceTopBtn')?.addEventListener('click', () => { location.href = '/device.html'; });
 
   $('#newBtn')?.addEventListener('click', () => $('#restartModal')?.classList.add('open'));
   $('#restartCancel')?.addEventListener('click', () => $('#restartModal')?.classList.remove('open'));

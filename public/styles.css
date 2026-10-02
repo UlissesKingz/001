@@ -1410,3 +1410,181 @@ body.device-mobile .top-actions #exitRoomBtn{width:31px!important;min-width:31px
   body.device-mobile.mobile-landscape .helpbar{display:flex!important;min-height:26px!important;font-size:10px!important;padding:5px 7px!important;margin-top:4px!important}
   body.device-mobile.mobile-landscape .legal-footer{font-size:6px!important;padding:3px 6px 4px!important}
 }
+
+/* ===== v53 — reliable back controls + true full-width mobile landscape ===== */
+.pre-screen-decor{padding-top:34px}
+.pre-back-floating{
+  position:absolute;
+  top:4px;
+  left:4px;
+  z-index:6;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:26px;
+  padding:5px 8px;
+  border:1px solid #355272;
+  border-radius:5px;
+  background:rgba(9,17,26,.96);
+  color:#dce6f2;
+  font:900 9px/1 var(--retro-font,Consolas,"Lucida Console","Courier New",monospace);
+  letter-spacing:.5px;
+  cursor:pointer;
+}
+.pre-back-floating:hover,.pre-back-floating:focus{border-color:#f2ca68;color:#f2ca68;outline:none}
+
+@media (orientation: landscape) {
+  body.device-mobile.mobile-landscape.in-game{
+    width:100%!important;
+    height:auto!important;
+    min-height:100dvh!important;
+    overflow-x:hidden!important;
+    overflow-y:auto!important;
+    overscroll-behavior:auto!important;
+  }
+  body.device-mobile.mobile-landscape.in-game #gameApp{
+    position:relative!important;
+    top:0!important;
+    left:50%!important;
+    width:calc(100vw - 8px)!important;
+    max-width:calc(100vw - 8px)!important;
+    margin:0!important;
+    padding:4px 6px 24px!important;
+    transform:translateX(-50%)!important;
+    transform-origin:top center!important;
+    gap:5px!important;
+    overflow:visible!important;
+  }
+  body.device-mobile.mobile-landscape .top{
+    min-height:34px!important;
+    padding:3px 6px!important;
+    grid-template-columns:1fr auto 1fr!important;
+    align-items:center!important;
+  }
+  body.device-mobile.mobile-landscape .titleWrap{
+    grid-column:2!important;
+    justify-self:center!important;
+    overflow:visible!important;
+    gap:6px!important;
+  }
+  body.device-mobile.mobile-landscape .title-stripes{width:24px!important;height:25px!important}
+  body.device-mobile.mobile-landscape .title{font-size:30px!important;overflow:visible!important}
+  body.device-mobile.mobile-landscape .title #titleBits{min-width:57px!important}
+  body.device-mobile.mobile-landscape .titleTagline{font-size:22%!important;margin-left:4px!important}
+  body.device-mobile.mobile-landscape .top-actions{grid-column:3!important;justify-self:end!important;gap:4px!important}
+  body.device-mobile.mobile-landscape .top-actions .btn{height:25px!important;min-width:30px!important;width:30px!important;padding:0!important;font-size:9px!important}
+  body.device-mobile.mobile-landscape #rulesBtn{width:auto!important;min-width:58px!important;padding:0 7px!important}
+
+  body.device-mobile.mobile-landscape .viewer-banner{font-size:8px!important;padding:4px 6px!important;margin:0!important}
+  body.device-mobile.mobile-landscape .board{
+    display:grid!important;
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    grid-template-rows:auto auto auto auto!important;
+    gap:4px!important;
+    width:100%!important;
+  }
+  body.device-mobile.mobile-landscape .bot1{grid-column:1!important;grid-row:1!important;order:unset!important}
+  body.device-mobile.mobile-landscape .bot2{grid-column:2!important;grid-row:1!important;order:unset!important}
+  body.device-mobile.mobile-landscape .bot3{grid-column:3!important;grid-row:1!important;order:unset!important}
+  body.device-mobile.mobile-landscape .center{grid-column:1/4!important;grid-row:2!important;order:unset!important;width:100%!important;min-height:0!important}
+  body.device-mobile.mobile-landscape .human{grid-column:1/4!important;grid-row:3!important;order:unset!important;width:100%!important}
+  body.device-mobile.mobile-landscape .turn-prompt{grid-column:1/4!important;grid-row:4!important;order:unset!important}
+
+  body.device-mobile.mobile-landscape .center,
+  body.device-mobile.mobile-landscape .human,
+  body.device-mobile.mobile-landscape .bot1,
+  body.device-mobile.mobile-landscape .bot2,
+  body.device-mobile.mobile-landscape .bot3{padding:4px 5px!important;border-radius:5px!important}
+  body.device-mobile.mobile-landscape .seat h3{font-size:8px!important;margin:0 0 2px!important}
+  body.device-mobile.mobile-landscape .seat small{font-size:6.5px!important}
+
+  body.device-mobile.mobile-landscape .bot1 .hand,
+  body.device-mobile.mobile-landscape .bot2 .hand,
+  body.device-mobile.mobile-landscape .bot3 .hand,
+  body.device-mobile.mobile-landscape .human .hand{
+    display:grid!important;
+    grid-template-columns:repeat(9,minmax(0,1fr))!important;
+    gap:3px!important;
+    width:100%!important;
+    min-height:0!important;
+    padding:2px 0!important;
+    overflow:hidden!important;
+  }
+  body.device-mobile.mobile-landscape .bot1 .card,
+  body.device-mobile.mobile-landscape .bot2 .card,
+  body.device-mobile.mobile-landscape .bot3 .card,
+  body.device-mobile.mobile-landscape .human button.card{
+    width:100%!important;
+    min-width:0!important;
+    height:48px!important;
+    min-height:48px!important;
+    aspect-ratio:auto!important;
+    border-radius:3px!important;
+    font-size:18px!important;
+  }
+  body.device-mobile.mobile-landscape .bot1 .card::before,
+  body.device-mobile.mobile-landscape .bot2 .card::before,
+  body.device-mobile.mobile-landscape .bot3 .card::before,
+  body.device-mobile.mobile-landscape .human button.card::before{width:5px!important}
+  body.device-mobile.mobile-landscape .bot1 .card::after,
+  body.device-mobile.mobile-landscape .bot2 .card::after,
+  body.device-mobile.mobile-landscape .bot3 .card::after,
+  body.device-mobile.mobile-landscape .human button.card::after{display:block!important;font-size:4px!important;top:2px!important;right:2px!important}
+
+  body.device-mobile.mobile-landscape .melds{margin-top:2px!important;gap:2px!important;min-height:12px!important}
+  body.device-mobile.mobile-landscape .meldmark{width:13px!important;height:4px!important}
+  body.device-mobile.mobile-landscape .caplabel,
+  body.device-mobile.mobile-landscape .updlabel{font-size:6px!important}
+  body.device-mobile.mobile-landscape .refreshmark{width:12px!important;height:12px!important;font-size:8px!important}
+
+  body.device-mobile.mobile-landscape .middle-row{
+    display:grid!important;
+    grid-template-columns:82px minmax(0,1fr)!important;
+    gap:5px!important;
+    align-items:stretch!important;
+    width:100%!important;
+  }
+  body.device-mobile.mobile-landscape .deckbox{
+    display:grid!important;
+    grid-template-columns:1fr 1fr!important;
+    grid-template-areas:"label label" "pile pile" "buy refresh" "hint hint"!important;
+    width:82px!important;
+    min-height:0!important;
+    padding:4px!important;
+    gap:3px!important;
+    margin:0!important;
+  }
+  body.device-mobile.mobile-landscape .decktoplabel{font-size:7px!important;text-align:center!important}
+  body.device-mobile.mobile-landscape .deckpile{width:42px!important;height:57px!important;margin:0 auto!important}
+  body.device-mobile.mobile-landscape .deckpile::before,
+  body.device-mobile.mobile-landscape .deckpile::after,
+  body.device-mobile.mobile-landscape .deckcard,
+  body.device-mobile.mobile-landscape .deckpile>.card{width:39px!important;height:55px!important}
+  body.device-mobile.mobile-landscape #drawBtn{width:100%!important;height:22px!important;font-size:7px!important;padding:0 2px!important}
+  body.device-mobile.mobile-landscape #refreshBtn{width:100%!important;height:22px!important;font-size:8px!important;padding:0!important}
+  body.device-mobile.mobile-landscape #deckHint{font-size:5.5px!important;line-height:1.05!important;text-align:center!important}
+
+  body.device-mobile.mobile-landscape .conveyor-wrap{width:100%!important;padding:10px 0 13px!important;margin:0!important}
+  body.device-mobile.mobile-landscape .conveyorlabel{font-size:7px!important;margin:0 0 2px 2px!important}
+  body.device-mobile.mobile-landscape .conveyor{display:grid!important;grid-template-columns:repeat(9,minmax(0,1fr))!important;gap:4px!important;width:100%!important}
+  body.device-mobile.mobile-landscape .slot{height:62px!important;min-height:62px!important;padding:2px!important;border-radius:4px!important}
+  body.device-mobile.mobile-landscape .slot .card.flowcard{height:58px!important;min-height:58px!important;border-radius:3px!important}
+  body.device-mobile.mobile-landscape .slot .card.flowcard .bitpair{font-size:30px!important;bottom:4px!important}
+  body.device-mobile.mobile-landscape .slot .card.flowcard .bitpair.small{font-size:22px!important}
+  body.device-mobile.mobile-landscape .slot .card.flowcard::before{width:6px!important}
+  body.device-mobile.mobile-landscape .slot .card.flowcard::after{font-size:5px!important;left:8px!important;top:3px!important}
+  body.device-mobile.mobile-landscape .slot.current-discard::after{top:-14px!important;font-size:11px!important}
+  body.device-mobile.mobile-landscape .slot.used-space::before{bottom:-14px!important;font-size:11px!important}
+
+  body.device-mobile.mobile-landscape .human-top{display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:space-between!important;gap:6px!important;margin:0!important}
+  body.device-mobile.mobile-landscape .sort-box{width:auto!important;justify-content:flex-end!important;gap:3px!important}
+  body.device-mobile.mobile-landscape .sort-label{font-size:6px!important}
+  body.device-mobile.mobile-landscape .sort-btn{font-size:7px!important;padding:2px 4px!important;min-height:20px!important}
+  body.device-mobile.mobile-landscape .controls{display:grid!important;grid-template-columns:90px 90px minmax(0,1fr)!important;gap:4px!important;margin-top:3px!important}
+  body.device-mobile.mobile-landscape .controls .btn{min-height:24px!important;height:24px!important;font-size:8px!important;padding:2px 4px!important}
+  body.device-mobile.mobile-landscape .controls .msg{grid-column:3!important;min-height:24px!important;font-size:7px!important;line-height:1.15!important;padding:3px 5px!important}
+  body.device-mobile.mobile-landscape .turn-prompt{min-height:20px!important;font-size:8px!important;padding:3px 6px!important;margin:0!important}
+  body.device-mobile.mobile-landscape .helpbar{display:flex!important;min-height:22px!important;font-size:8px!important;padding:3px 6px!important;margin-top:2px!important}
+  body.device-mobile.mobile-landscape .helpbar .label{font-size:7px!important}
+  body.device-mobile.mobile-landscape .legal-footer{font-size:5px!important;padding:2px 4px 3px!important}
+}

@@ -10,6 +10,7 @@
 <div class="online-note" id="onlineNote"></div>
 <div class="preapp" id="preApp">
 <section class="pre-screen active pre-screen-decor" id="entryScreen">
+    <button class="pre-back-floating" id="changeDeviceTopBtn" type="button">← DEVICE</button>
     <div class="screen-stripes" aria-hidden="true"></div>
     <div class="brand-hero"><div class="brand-title"><span class="preBits">001</span></div><div class="brand-tagline">Um jogo de cartas e bits</div></div>
     <div class="pre-panel">
@@ -25,6 +26,7 @@
   </section>
 
   <section class="pre-screen pre-screen-decor" id="lobbyScreen">
+    <button class="pre-back-floating" id="lobbyBackBtn" type="button">← CRIAR / ENTRAR</button>
     <div class="screen-stripes" aria-hidden="true"></div>
     <div class="brand-hero"><div class="brand-title"><span class="preBits">001</span></div><div class="brand-tagline">Um jogo de cartas e bits</div></div>
     <div class="pre-panel">
@@ -38,7 +40,7 @@
 </div>
 
 <div class="app" id="gameApp">
-  <header class="top"><div></div><div class="titleWrap"><div class="title" id="mainTitle"><span id="titleBits">001</span><span class="titleTagline">Um jogo de cartas e bits</span></div></div><div class="top-actions"><button class="btn" id="fitBtn" type="button" title="Ajustar à janela" data-help="Ajusta o jogo para caber melhor na janela.">□</button> <button class="btn" id="rulesBtn" data-help="Abre o manual resumido desta versão digital.">REGRAS</button> <button class="btn" id="newBtn" title="Nova partida" data-help="Começa uma nova partida.">↻</button></div></header>
+  <header class="top"><div></div><div class="titleWrap"><span class="title-stripes" aria-hidden="true"></span><div class="title" id="mainTitle"><span id="titleBits">001</span><span class="titleTagline">Um jogo de cartas e bits</span></div></div><div class="top-actions"><button class="btn" id="exitRoomBtn" type="button" title="Sair da sala" data-help="Sai da sala atual e volta para criar ou entrar em outra sala.">←</button> <button class="btn" id="fitBtn" type="button" title="Ajustar à janela" data-help="Ajusta o jogo para caber melhor na janela.">□</button> <button class="btn" id="rulesBtn" data-help="Abre o manual resumido desta versão digital.">REGRAS</button> <button class="btn" id="newBtn" title="Nova partida" data-help="Começa uma nova partida.">↻</button></div></header>
   <div class="viewer-banner" id="viewerBanner"></div>
 
   <section class="stats">
@@ -158,6 +160,6 @@
 
 
 <script src="/socket.io/socket.io.js"></script>
-<script src="/common-ui.js"></script>
-<script src="/client.js"></script>
+<script src="/common-ui.js?v=53"></script>
+<script src="/client.js?v=53"></script>
 </body></html>
