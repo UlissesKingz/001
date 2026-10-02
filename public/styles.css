@@ -1051,7 +1051,23 @@ body.device-mobile .titleTagline{
 }
 body.device-mobile .top-actions{gap:3px!important;margin-left:2px!important}
 body.device-mobile #rulesBtn{padding-left:5px!important;padding-right:5px!important}
-\n\n/* ===== v45 — flow card entry animation ===== */\n.slot .card.flowcard.flow-enter{\n  animation:flowCardRise 1s cubic-bezier(.22,.72,.2,1) both!important;\n  transform-origin:50% 100%;\n  will-change:transform,opacity,clip-path;\n}\n@keyframes flowCardRise{\n  0%{opacity:0;transform:translateY(58%);clip-path:inset(100% 0 0 0 round 5px)}\n  38%{opacity:.82}\n  100%{opacity:1;transform:translateY(0);clip-path:inset(0 0 0 0 round 5px)}\n}\n@media (prefers-reduced-motion:reduce){\n  .slot .card.flowcard.flow-enter{animation-duration:.01ms!important}\n}\n
+
+
+/* ===== v45 — flow card entry animation ===== */
+.slot .card.flowcard.flow-enter{
+  animation:flowCardRise 1s cubic-bezier(.22,.72,.2,1) both!important;
+  transform-origin:50% 100%;
+  will-change:transform,opacity,clip-path;
+}
+@keyframes flowCardRise{
+  0%{opacity:0;transform:translateY(58%);clip-path:inset(100% 0 0 0 round 5px)}
+  38%{opacity:.82}
+  100%{opacity:1;transform:translateY(0);clip-path:inset(0 0 0 0 round 5px)}
+}
+@media (prefers-reduced-motion:reduce){
+  .slot .card.flowcard.flow-enter{animation-duration:.01ms!important}
+}
+
 
 /* ===== v46 — physical manual link ===== */
 .physical-manual-link{
@@ -1103,6 +1119,46 @@ body.device-mobile .physical-manual-link{
   font:900 8px/1.1 monospace!important;
   letter-spacing:.45px!important;
   text-decoration:none!important;
+  white-space:nowrap!important;
+  box-shadow:0 2px 10px rgba(0,0,0,.28)!important;
+}
+.physical-manual-link:hover,.physical-manual-link:focus{
+  border-color:#f2ca68!important;
+  color:#f2ca68!important;
+  outline:none!important;
+}
+body.device-mobile .physical-manual-link{
+  right:6px!important;
+  bottom:22px!important;
+  padding:4px 6px!important;
+  font-size:7px!important;
+}
+
+
+/* ===== v48 — physical manual button: definitive ===== */
+.physical-manual-link{
+  position:fixed!important;
+  right:10px!important;
+  bottom:27px!important;
+  z-index:1250!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  width:auto!important;
+  max-width:max-content!important;
+  margin:0!important;
+  padding:5px 8px!important;
+  border:1px solid #355272!important;
+  border-radius:5px!important;
+  background:#09111a!important;
+  color:#dce6f2!important;
+  font-family:monospace!important;
+  font-size:8px!important;
+  font-weight:900!important;
+  line-height:1.1!important;
+  letter-spacing:.45px!important;
+  text-decoration:none!important;
+  text-transform:none!important;
   white-space:nowrap!important;
   box-shadow:0 2px 10px rgba(0,0,0,.28)!important;
 }
