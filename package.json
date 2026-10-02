@@ -1,6 +1,6 @@
 {
   "name": "001-online",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "private": true,
   "description": "001 — jogo de cartas e bits. Multiplayer em tempo real com salas, bots, reconexão e persistência opcional no MongoDB.",
   "main": "server.js",

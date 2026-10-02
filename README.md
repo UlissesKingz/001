@@ -94,3 +94,17 @@ Health check:
 ```text
 /health
 ```
+
+## v37 — mobile e atualização
+
+- layout mobile reorganizado para retrato, sem rolagem horizontal no fluxo ou na área de jogo;
+- fluxo exibido em grade 3×3 no celular;
+- área do jogador em grade de 5 cartas por linha e oponentes compactados;
+- arraste de cartas desativado no mobile para priorizar toque/seleção imediata;
+- seleção de cartas atualiza apenas o necessário na interface, reduzindo a sensação de atraso;
+- cada jogador continua com 3 marcadores de `<atualização>` e agora pode gastar os 3 no mesmo turno antes da compra.
+
+## v38 — mobile em uma linha
+- O `<fluxo>` móvel mantém as 9 posições em uma única linha, sem rolagem horizontal; espaços e cartas ficaram mais estreitos.
+- A área do jogador mantém as 9 cartas em uma única linha, também sem rolagem horizontal.
+- Oponentes, faixa de `<entrada>`, toque rápido e limite de 3 `<atualização>` por turno permanecem como na v37.

@@ -658,3 +658,257 @@ body.device-mobile .top-actions{grid-column:2!important}
 @media(max-width:460px){.lobby-grid{grid-template-columns:1fr 1fr}.room-code{font-size:21px}.device-card,.entry-card{padding:16px;min-height:130px}}
 
 
+
+
+/* ===== v37 — mobile portrait layout + faster touch ===== */
+body.device-mobile{
+  width:100%;
+  max-width:100%;
+  overflow-x:hidden!important;
+  overscroll-behavior-x:none;
+}
+body.device-mobile *{min-width:0}
+body.device-mobile button,
+body.device-mobile [role="button"],
+body.device-mobile input{
+  touch-action:manipulation;
+  -webkit-tap-highlight-color:transparent;
+}
+body.device-mobile #gameApp{
+  width:100%;
+  max-width:100%!important;
+  padding:6px 6px 30px!important;
+  gap:6px!important;
+  overflow-x:hidden!important;
+}
+body.device-mobile .top{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) auto!important;
+  align-items:center!important;
+  gap:6px!important;
+  width:100%!important;
+}
+body.device-mobile .titleWrap{min-width:0!important;overflow:hidden!important}
+body.device-mobile .title{
+  font-size:clamp(25px,9vw,36px)!important;
+  line-height:1!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+body.device-mobile .titleTagline{font-size:22%!important;letter-spacing:0!important}
+body.device-mobile .top-actions{display:flex!important;gap:4px!important;flex-wrap:nowrap!important}
+body.device-mobile .top-actions .btn{width:31px!important;height:30px!important;min-width:31px!important;padding:0!important;font-size:11px!important}
+body.device-mobile #rulesBtn{width:auto!important;padding:0 6px!important}
+
+/* Main order: flow first, your area second, compact opponents last. */
+body.device-mobile .board{
+  display:flex!important;
+  flex-direction:column!important;
+  width:100%!important;
+  gap:6px!important;
+  overflow:visible!important;
+}
+body.device-mobile .center{order:1!important;width:100%!important}
+body.device-mobile .human{order:2!important;width:100%!important}
+body.device-mobile .bot1,body.device-mobile .bot2,body.device-mobile .bot3{order:3!important;width:100%!important}
+
+/* Entry + top card becomes a compact horizontal control strip. */
+body.device-mobile .middle-row{
+  display:flex!important;
+  flex-direction:column!important;
+  width:100%!important;
+  gap:5px!important;
+}
+body.device-mobile .deckbox{
+  width:100%!important;
+  min-height:0!important;
+  display:grid!important;
+  grid-template-columns:58px minmax(0,1fr) 46px!important;
+  grid-template-areas:
+    "label label label"
+    "pile buy refresh"
+    "hint hint hint"!important;
+  align-items:center!important;
+  gap:5px!important;
+  padding:5px!important;
+  border:1px solid #1f3852!important;
+  background:rgba(8,16,25,.82)!important;
+}
+body.device-mobile .decktoplabel{grid-area:label!important;margin:0!important}
+body.device-mobile .deckpile{grid-area:pile!important;width:52px!important;height:72px!important;margin:0!important}
+body.device-mobile .deckpile::before,
+body.device-mobile .deckpile::after,
+body.device-mobile .deckcard,
+body.device-mobile .deckpile>.card{width:48px!important;height:68px!important}
+body.device-mobile #drawBtn{
+  grid-area:buy!important;
+  width:100%!important;
+  height:42px!important;
+  margin:0!important;
+  font-size:11px!important;
+}
+body.device-mobile #refreshBtn{
+  grid-area:refresh!important;
+  width:46px!important;
+  height:42px!important;
+  margin:0!important;
+}
+body.device-mobile #deckHint{
+  grid-area:hint!important;
+  display:block!important;
+  font-size:8px!important;
+  line-height:1.25!important;
+  text-align:center!important;
+  white-space:normal!important;
+}
+
+/* v38 — the complete 9-space <fluxo> stays on one portrait row. */
+body.device-mobile .conveyor-wrap{
+  width:100%!important;
+  overflow:visible!important;
+  padding:24px 0 28px!important;
+  margin:0!important;
+}
+body.device-mobile .conveyor{
+  display:grid!important;
+  grid-template-columns:repeat(9,minmax(0,1fr))!important;
+  gap:2px!important;
+  width:100%!important;
+  min-width:0!important;
+  overflow:visible!important;
+}
+body.device-mobile .slot{
+  width:100%!important;
+  min-width:0!important;
+  min-height:64px!important;
+  height:64px!important;
+  padding:1px!important;
+  border-radius:6px!important;
+}
+body.device-mobile .slot .card.flowcard{
+  width:100%!important;
+  height:60px!important;
+  min-height:60px!important;
+  border-radius:5px!important;
+  border-width:1px!important;
+}
+body.device-mobile .slot .card.flowcard .bitpair{font-size:24px!important;bottom:6px!important;letter-spacing:0!important}
+body.device-mobile .slot .card.flowcard .bitpair.small{font-size:18px!important}
+body.device-mobile .slot .card.flowcard::before{width:5px!important}
+body.device-mobile .slot .card.flowcard::after{
+  left:6px!important;
+  right:1px!important;
+  top:3px!important;
+  font-size:4.5px!important;
+  letter-spacing:0!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+}
+body.device-mobile .slotnum{top:2px!important;left:2px!important;font-size:5.5px!important;z-index:10!important}
+body.device-mobile .stack{right:1px!important;bottom:1px!important;font-size:5px!important;padding:0 1px!important}
+body.device-mobile .slot.latest-discard::before{display:none!important}
+body.device-mobile .slot.current-discard{border-width:2px!important;box-shadow:0 0 0 2px #f2ca6828,0 0 10px #f2ca6838!important;transform:none!important}
+body.device-mobile .slot.current-discard::after{top:-20px!important;font-size:15px!important}
+body.device-mobile .slot.used-space::before{bottom:-20px!important;font-size:15px!important}
+body.device-mobile .slot.current-discard.used-space::after{top:-20px!important}
+body.device-mobile .slot.current-discard.used-space::before{bottom:-20px!important}
+
+/* v38 — all 9 cards in the player's area stay on one row as narrow cards. */
+body.device-mobile .human{padding:6px!important}
+body.device-mobile .human-top{display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:5px!important}
+body.device-mobile .sort-box{justify-content:flex-start!important;width:100%!important}
+body.device-mobile .human .hand{
+  display:grid!important;
+  grid-template-columns:repeat(9,minmax(0,1fr))!important;
+  gap:2px!important;
+  width:100%!important;
+  min-height:0!important;
+  padding:5px 0!important;
+  overflow:visible!important;
+  touch-action:manipulation!important;
+}
+body.device-mobile .human button.card{
+  width:100%!important;
+  max-width:none!important;
+  height:auto!important;
+  aspect-ratio:.56!important;
+  min-height:54px!important;
+  border-radius:5px!important;
+  border-width:1px!important;
+  font-size:clamp(16px,5.2vw,20px)!important;
+  cursor:pointer!important;
+  touch-action:manipulation!important;
+}
+body.device-mobile .human button.card::before{width:4px!important}
+body.device-mobile .human button.card::after{right:1px!important;top:2px!important;font-size:5px!important;letter-spacing:0!important}
+body.device-mobile .human button.card.special::after{font-size:4.5px!important}
+body.device-mobile .human button.card.selected{transform:translateY(-4px)!important;outline-width:2px!important;outline-offset:1px!important}
+body.device-mobile .human button.card.dragging,
+body.device-mobile .human button.card.drag-over-left::before,
+body.device-mobile .human button.card.drag-over-right::before{display:none!important}
+body.device-mobile .controls{
+  display:grid!important;
+  grid-template-columns:1fr 1fr!important;
+  gap:6px!important;
+  width:100%!important;
+  margin-top:5px!important;
+}
+body.device-mobile .controls .btn{
+  width:100%!important;
+  min-height:42px!important;
+  padding:8px 6px!important;
+  font-size:11px!important;
+  touch-action:manipulation!important;
+}
+body.device-mobile .controls .msg{
+  grid-column:1/-1!important;
+  white-space:normal!important;
+  overflow:visible!important;
+  text-overflow:clip!important;
+  font-size:9px!important;
+  line-height:1.3!important;
+  min-height:0!important;
+}
+
+/* Opponents stay readable but occupy a single compact card row. */
+body.device-mobile .bot1,body.device-mobile .bot2,body.device-mobile .bot3{min-height:0!important;padding:5px!important}
+body.device-mobile .bot1 .hand,body.device-mobile .bot2 .hand,body.device-mobile .bot3 .hand{
+  display:grid!important;
+  grid-template-columns:repeat(9,minmax(0,1fr))!important;
+  gap:2px!important;
+  width:100%!important;
+  min-height:0!important;
+  overflow:visible!important;
+}
+body.device-mobile .bot1 .card,body.device-mobile .bot2 .card,body.device-mobile .bot3 .card{
+  width:100%!important;
+  height:auto!important;
+  aspect-ratio:.70!important;
+  min-height:38px!important;
+  font-size:clamp(13px,4vw,18px)!important;
+}
+body.device-mobile .bot1 .card::before,body.device-mobile .bot2 .card::before,body.device-mobile .bot3 .card::before{width:4px!important}
+body.device-mobile .bot1 .card::after,body.device-mobile .bot2 .card::after,body.device-mobile .bot3 .card::after{display:none!important}
+
+body.device-mobile .helpbar{display:none!important}
+body.device-mobile .legal-footer{font-size:6.5px!important;padding:4px 5px 5px!important}
+body.device-mobile .preapp{width:100%!important;padding:18px 10px 44px!important;overflow-x:hidden!important}
+body.device-mobile .pre-panel{width:100%!important;padding:14px!important}
+body.device-mobile .brand-hero{margin-bottom:18px!important}
+body.device-mobile .brand-title{font-size:56px!important}
+body.device-mobile .lobby-head{display:grid!important;grid-template-columns:1fr!important}
+body.device-mobile .room-code-box{width:100%!important;text-align:center!important}
+body.device-mobile .lobby-controls{display:grid!important;grid-template-columns:1fr 1fr!important}
+body.device-mobile .lobby-controls .btn{width:100%!important;min-height:42px!important}
+
+@media(max-width:360px){
+  body.device-mobile #gameApp{padding-left:4px!important;padding-right:4px!important}
+  body.device-mobile .conveyor{gap:1px!important}
+  body.device-mobile .human .hand{gap:1px!important}
+  body.device-mobile .slot{height:60px!important;min-height:60px!important}
+  body.device-mobile .slot .card.flowcard{height:56px!important;min-height:56px!important}
+  body.device-mobile .slot .card.flowcard .bitpair{font-size:21px!important}
+  body.device-mobile .slot .card.flowcard .bitpair.small{font-size:16px!important}
+  body.device-mobile .human button.card{min-height:50px!important;font-size:16px!important}
+}
