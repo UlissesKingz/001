@@ -981,3 +981,22 @@ body.device-mobile .legal-footer{font-size:6px!important;line-height:1.15!import
   body.device-mobile .slot .card.flowcard{height:52px!important;min-height:52px!important}
   body.device-mobile .human button.card{min-height:46px!important;font-size:16px!important}
 }
+
+
+/* ===== v40 — mobile a little larger + yellow action hint ===== */
+body.device-mobile.in-game #gameApp{
+  margin-left:0!important;
+  margin-right:0!important;
+}
+/* The action/help line at the bottom of the yellow player panel uses the same accent yellow. */
+body.device-mobile .human .controls .msg{
+  color:var(--accent)!important;
+  border-color:rgba(242,202,104,.38)!important;
+  text-shadow:0 0 7px rgba(242,202,104,.16)!important;
+}
+body.device-mobile .human .controls .msg.good{
+  color:#a7f2c4!important;
+}
+body.device-mobile .human .controls .msg.bad{
+  color:#ff9c9c!important;
+}

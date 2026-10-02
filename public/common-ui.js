@@ -56,24 +56,44 @@
     if (!mobileGame) {
       app.style.width = '';
       app.style.maxWidth = '';
+      app.style.left = '';
+      app.style.position = '';
       if (!fitActive) app.style.transform = '';
       app.style.transformOrigin = '';
       return;
     }
+
     const footer = $('.legal-footer');
     const footerH = footer?.offsetHeight || 0;
     const availableH = Math.max(320, window.innerHeight - footerH - 8);
     const availableW = Math.max(280, window.innerWidth - 8);
-    const stageW = Math.min(availableW, Math.max(280, availableH * (9 / 16)));
-    app.style.width = `${Math.round(stageW)}px`;
-    app.style.maxWidth = 'calc(100vw - 8px)';
-    if (fitActive) return;
+
+    // Start from the full phone width. If height forces the board to shrink,
+    // widen its unscaled canvas so the scaled result still uses more of the
+    // horizontal screen instead of leaving large empty side margins.
+    app.style.position = 'relative';
+    app.style.left = '50%';
+    app.style.maxWidth = 'none';
     app.style.transformOrigin = 'top center';
-    app.style.transform = 'scale(1)';
+    app.style.width = `${Math.round(availableW)}px`;
+    if (fitActive) return;
+
+    app.style.transform = 'translateX(-50%) scale(1)';
     requestAnimationFrame(() => {
-      const naturalH = app.scrollHeight;
-      const scale = Math.max(0.74, Math.min(1, availableH / Math.max(1, naturalH)));
-      app.style.transform = `scale(${scale.toFixed(3)})`;
+      let naturalH = Math.max(1, app.scrollHeight);
+      let scale = Math.min(1, availableH / naturalH);
+
+      // Compensate part of the vertical scale in the layout width. This makes
+      // the mobile table visibly larger while keeping the whole board fitted.
+      const compensation = 0.72;
+      let layoutW = Math.min(availableW / Math.max(scale, 0.01), availableW * (1 + (1 - scale) * compensation));
+      app.style.width = `${Math.round(layoutW)}px`;
+
+      requestAnimationFrame(() => {
+        naturalH = Math.max(1, app.scrollHeight);
+        scale = Math.min(1, availableH / naturalH, availableW / Math.max(1, layoutW));
+        app.style.transform = `translateX(-50%) scale(${scale.toFixed(3)})`;
+      });
     });
   }
 
