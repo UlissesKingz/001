@@ -1006,3 +1006,4 @@ body.device-mobile .human .controls .msg.bad{
 body.device-mobile .title #titleBits{min-width:0!important}
 body.device-mobile .titleTagline{margin-left:3px!important;font-size:20%!important;letter-spacing:0!important}
 body.device-mobile.in-game #gameApp{backface-visibility:hidden;-webkit-backface-visibility:hidden}
+\n\n/* ===== v42 — keep the complete mobile stage anchored to the top ===== */\nbody.device-mobile.in-game{\n  height:100dvh!important;\n  min-height:100dvh!important;\n  overflow:hidden!important;\n  overscroll-behavior:none!important;\n}\nbody.device-mobile.in-game #gameApp{\n  position:fixed!important;\n  top:2px!important;\n  left:50%!important;\n  margin:0!important;\n  transform-origin:top center!important;\n}\n

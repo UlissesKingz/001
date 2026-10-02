@@ -59,6 +59,7 @@
       app.style.width = '';
       app.style.maxWidth = '';
       app.style.left = '';
+      app.style.top = '';
       app.style.position = '';
       if (!fitActive) app.style.transform = '';
       app.style.transformOrigin = '';
@@ -75,8 +76,12 @@
     // stage to scale(1). Recalculate only on first entry or viewport resize.
     if (!force && mobileFitKey === key && app.dataset.mobileFitReady === '1') return;
 
-    app.style.position = 'relative';
+    // Pin the scaled mobile stage to the visual viewport. This prevents an old
+    // scroll position from leaving the title/top of the game above the screen.
+    app.style.position = 'fixed';
+    app.style.top = '2px';
     app.style.left = '50%';
+    if (window.scrollY !== 0) window.scrollTo(0, 0);
     app.style.maxWidth = 'none';
     app.style.transformOrigin = 'top center';
 
