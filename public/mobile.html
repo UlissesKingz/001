@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>001 — Um jogo de cartas e bits</title>
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body data-device="mobile" class="device-mobile">
+<div class="online-note" id="onlineNote"></div>
+<div class="preapp" id="preApp">
+<section class="pre-screen active" id="entryScreen">
+    <div class="brand-hero"><div class="brand-title"><span class="preBits">001</span></div><div class="brand-tagline">Um jogo de cartas e bits</div></div>
+    <div class="pre-panel">
+      <div class="field entry-nick"><label for="nicknameInput">Nickname</label><input id="nicknameInput" maxlength="18" autocomplete="nickname" placeholder="Seu nome no jogo"></div>
+      <div class="entry-grid">
+        <div class="entry-card"><h2>Criar sala</h2><p>Crie uma sala nova e aguarde jogadores ou adicione bots no lobby.</p><div style="margin-top:18px"><button class="btn primary" id="createRoomBtn" type="button">CRIAR SALA</button></div></div>
+        <div class="entry-card"><h2>Entrar em sala</h2><div class="form-stack"><div class="field"><label for="roomCodeInput">Código da sala</label><input id="roomCodeInput" maxlength="6" autocomplete="off" placeholder="ABC123"></div><button class="btn" id="joinRoomBtn" type="button">ENTRAR</button></div></div>
+      </div>
+      <div class="pre-status" id="entryStatus"></div>
+      <div class="pre-toolbar"><button class="pre-link" id="changeDeviceBtn" type="button">← TROCAR DEVICE</button><button class="pre-link openRules" type="button">REGRAS</button></div>
+    </div>
+  </section>
+
+  <section class="pre-screen" id="lobbyScreen">
+    <div class="brand-hero"><div class="brand-title"><span class="preBits">001</span></div><div class="brand-tagline">Um jogo de cartas e bits</div></div>
+    <div class="pre-panel">
+      <div class="lobby-head"><div><div style="font-size:11px;letter-spacing:1px;color:#8fa3ba;text-transform:uppercase">Lobby</div><h2 style="margin:4px 0 0">AGUARDANDO JOGADORES</h2><div class="connection-pill" id="connectionPill">conectando...</div></div><div class="room-code-box"><div class="room-code-label">Código da sala</div><div class="room-code" id="lobbyCode">------</div><button class="pre-link" id="copyRoomCode" type="button">COPIAR</button></div></div>
+      <div class="lobby-grid" id="lobbyGrid"></div>
+      <div class="pre-status" id="lobbyStatus"></div>
+      <div class="lobby-controls"><button class="btn" id="addBotBtn" type="button">+ BOT</button><button class="btn primary" id="startRoomBtn" type="button">INICIAR PARTIDA</button><button class="btn" id="leaveRoomBtn" type="button">SAIR</button><button class="btn openRules" type="button">REGRAS</button></div>
+    </div>
+  </section>
+</div>
+
+<div class="app" id="gameApp">
+  <header class="top"><div></div><div class="titleWrap"><div class="title" id="mainTitle"><span id="titleBits">001</span><span class="titleTagline"> - Um jogo de cartas e bits</span></div></div><div class="top-actions"><button class="btn" id="fitBtn" type="button" title="Ajustar à janela" data-help="Ajusta o jogo para caber melhor na janela.">□</button> <button class="btn" id="rulesBtn" data-help="Abre o manual resumido desta versão digital.">REGRAS</button> <button class="btn" id="newBtn" title="Nova partida" data-help="Começa uma nova partida.">↻</button></div></header>
+
+  <section class="stats">
+    <div class="stat"><b>Turno</b><span id="turnText">—</span></div>
+    <div class="stat"><b>OFFLINE neste turno</b><div class="blocked" id="blocked"></div></div>
+    <div class="stat"><b>&lt;entrada&gt;</b><span id="deckCount">—</span> cartas</div>
+  </section>
+
+  <div class="turn-order" id="turnOrder"></div>
+
+  <main class="board">
+    <section class="seat bot1" id="seat1"><h3><span>R1</span><small id="meta1"></small></h3><div class="hand" id="hand1"></div><div class="melds" id="melds1"></div></section>
+    <section class="seat bot2" id="seat2"><h3><span>R2</span><small id="meta2"></small></h3><div class="hand" id="hand2"></div><div class="melds" id="melds2"></div></section>
+    <section class="seat bot3" id="seat3"><h3><span>R3</span><small id="meta3"></small></h3><div class="hand" id="hand3"></div><div class="melds" id="melds3"></div></section>
+
+    <section class="center">
+      <div class="conveyor-title"><div><b>&lt;fluxo&gt;</b><div class="sub">9 posições</div></div></div>
+      <div class="middle-row">
+        <div class="deckbox" data-help="&lt;entrada&gt;: deck de compra. Você sempre compra do topo visível."><span class="decktoplabel">&lt;entrada&gt;</span><div class="deckpile" id="deckPile" data-help="Carta do topo da &lt;entrada&gt;. Esta é a próxima carta que pode ser comprada."></div><button class="btn primary" id="drawBtn" data-help="Compra a carta do topo visível da &lt;entrada&gt;.">COMPRA</button><button class="btn" id="refreshBtn" data-help="&lt;atualização&gt;: envia o topo da &lt;entrada&gt; para o &lt;fluxo&gt; sem desconectar cor. A nova carta cobre a anterior e libera o espaço se ele estiver com &lt;bloqueio&gt;. Você pode usar até 2 por turno e tem 3 na partida."><span class="refresh-button-icon"><span>↻</span></span>↻</button><span class="sub" id="deckHint"></span></div>
+        <div class="conveyor-wrap" data-help="&lt;fluxo&gt;: linha circular de 9 posições. É dele que você captura fragmentos."><span class="conveyorlabel">&lt;fluxo&gt;</span><div class="conveyor" id="conveyor"></div></div>
+      </div>
+      <div class="patterns-title">FRAGMENTOS</div><div class="patterns" id="patterns"></div>
+      <aside class="log center-log"><h3>Registro</h3><div id="log"></div></aside>
+    </section>
+
+    <section class="seat human" id="seat0" data-sort-mode="free">
+      <div class="human-top">
+        <h3><span>VOCÊ</span><small id="meta0"></small></h3>
+        <div class="sort-box" aria-label="Organização da área de jogo">
+          <span class="sort-label">ORDENAR:</span>
+          <button class="btn sort-btn" id="sortNumberBtn" type="button" data-help="Organiza sua área por números: primeiro 0, depois 1; em cada grupo, vermelho, azul, verde e amarelo.">0/1</button>
+          <button class="btn sort-btn" id="sortColorBtn" type="button" data-help="Organiza sua área por cores: vermelho, azul, verde e amarelo; em cada cor, 0 antes de 1.">COR</button>
+          <button class="btn sort-btn active" id="sortFreeBtn" type="button" data-help="Modo livre: você pode arrastar as cartas e deixá-las na ordem que quiser.">LIVRE</button>
+        </div>
+      </div>
+      <div class="sub sort-hint" id="sortHint"></div>
+      <div class="hand" id="hand0" data-help="Sua área de jogo. Clique para selecionar cartas; arraste para reorganizar."></div><div class="melds" id="melds0"></div>
+      <div class="controls">
+        <button class="btn good" id="meldBtn" disabled data-help="Captura um fragmento do &lt;fluxo&gt; quando as cartas selecionadas formarem uma sequência válida.">CAPTURAR</button>
+        <button class="btn" id="passBtn" disabled hidden aria-hidden="true">Ir para o descarte</button>
+        <button class="btn bad" id="discardBtn" disabled data-help="Descarta a carta selecionada no próximo espaço do &lt;fluxo&gt;.">DESCARTAR</button>
+        <div class="msg" id="humanMsg"></div>
+      </div>
+    </section>
+  </main>
+  <div class="helpbar" id="helpBar"><span class="label">INFO</span><span id="helpText">Passe o mouse sobre <b>cartas</b>, <b>botões</b> e <b>áreas</b> do jogo para ver o que cada item faz.</span></div>
+</div>
+<footer class="legal-footer">Jogo criado por Ulisses Reis © 2026 — Propriedade intelectual protegida. Reprodução, distribuição ou uso não autorizado são proibidos. Contato: designerulissesreis@gmail.com</footer>
+
+<div class="rules" id="rules"><div class="rules-card"><h2>Regras desta versão</h2><ul>
+<li><b>2 a 4 jogadores.</b> Cada jogador começa com <b>9 cartas abertas</b> em sua área de jogo, <b>3 marcadores de &lt;atualização&gt;</b> e <b>4 marcadores de &lt;captura&gt;</b>.</li>
+<li>O baralho tem 96 cartas normais: 4 cores, cada uma com 12 cartas <b>0</b> e 12 cartas <b>1</b>, além das especiais <b>00, 01, 10 e 11</b>.</li>
+<li>Na preparação, abra <b>3 cartas normais</b> nas posições 1, 2 e 3 do <b>&lt;fluxo&gt;</b>. Se uma especial aparecer nessa abertura, coloque-a no fundo do deck de <b>&lt;entrada&gt;</b> e revele outra. A próxima carta entra na posição 4.</li>
+<li>Antes da compra, o jogador pode gastar <b>1 ou 2 marcadores de &lt;atualização&gt;</b>. Cada atualização envia a carta visível do topo da <b>&lt;entrada&gt;</b> diretamente para a próxima posição do <b>&lt;fluxo&gt;</b> e avança o ponteiro. Essa carta <b>não &lt;desconecta&gt; nenhuma cor</b>.</li>
+<li>Depois das atualizações, compre a carta visível do topo da <b>&lt;entrada&gt;</b>.</li>
+<li>Para <b>&lt;capturar&gt;</b> um fragmento, reproduza 3 posições consecutivas e disponíveis do <b>&lt;fluxo&gt;</b>. Com cartas normais, devem coincidir <b>bit e cor</b>. O &lt;fluxo&gt; é circular: <b>8–9–1</b> e <b>9–1–2</b> também são válidos.</li>
+<li>Ao capturar um fragmento, os <b>3 espaços do &lt;fluxo&gt;</b> recebem &lt;bloqueio&gt; e não podem participar de outra captura. Um bloqueio sai quando <b>qualquer nova carta entra</b> naquele espaço, seja por descarte normal ou por &lt;atualização&gt;.</li>
+<li>As especiais <b>00, 01, 10 e 11</b> podem substituir <b>duas posições consecutivas</b> de um fragmento, preservando a ordem dos dois bits e ignorando as cores dessas duas posições. Não é permitido usar duas especiais na mesma captura.</li>
+<li>Se uma carta especial estiver no <b>&lt;fluxo&gt;</b>, aquela posição pode valer por <b>apenas um</b> dos dois bits impressos nela durante uma captura.</li>
+<li>O jogador pode capturar <b>mais de um fragmento no mesmo turno</b>. Após cada captura, sua área é reposta com cartas da &lt;entrada&gt; até voltar a ter 9 cartas, se necessário.</li>
+<li>Depois das capturas, descarte 1 carta no próximo espaço do <b>&lt;fluxo&gt;</b>. Cartas especiais só podem ser descartadas se nenhuma outra carta disponível da sua área puder ser descartada.</li>
+<li>O descarte normal de uma carta colorida faz o <b>próximo jogador</b> &lt;desconectar&gt; essa cor: as cartas dessa cor ficam viradas para baixo, não podem ser usadas nem descartadas durante o turno dele e voltam a ficar ativas ao final desse turno.</li>
+<li>Se você capturou pelo menos um fragmento no turno, depois do descarte reponha novamente sua área até <b>9 cartas</b>.</li>
+<li>Se o deck de <b>&lt;entrada&gt;</b> acabar, recolha todas as cartas que estiverem ocultas sob as cartas visíveis do &lt;fluxo&gt;, embaralhe-as e forme uma nova &lt;entrada&gt;. Os topos visíveis permanecem onde estão.</li>
+<li><b>Vitória imediata:</b> o primeiro jogador que capturar o <b>4º fragmento</b> completa seu pacote de <b>12 bits</b> e vence.</li>
+</ul><button class="btn primary" id="closeRules">Fechar</button></div></div>
+
+<div class="notice-modal" id="invalidMeldModal" role="dialog" aria-modal="true" aria-labelledby="invalidMeldTitle">
+  <div class="notice-card">
+    <h2 id="invalidMeldTitle">Sequência inválida</h2>
+    <p>Essas cartas não capturam nenhum fragmento disponível do &lt;fluxo&gt;. Volte e tente outras cartas ou siga com a partida descartando uma carta.</p>
+    <div class="notice-actions"><button class="btn primary" id="invalidMeldOk" type="button">OK</button></div>
+  </div>
+</div>
+
+<div class="notice-modal" id="restartModal" role="dialog" aria-modal="true" aria-labelledby="restartTitle">
+  <div class="notice-card">
+    <h2 id="restartTitle">Reiniciar partida?</h2>
+    <p>Tem certeza de que deseja começar uma nova partida de <b>001</b>? O jogo atual será perdido.</p>
+    <div class="notice-actions" style="gap:8px">
+      <button class="btn" id="restartCancel">Cancelar</button>
+      <button class="btn bad" id="restartConfirm">Reiniciar</button>
+    </div>
+  </div>
+</div>
+
+
+<div class="notice-modal" id="winnerModal" role="dialog" aria-modal="true" aria-labelledby="winnerTitle">
+  <div class="notice-card winner-card">
+    <span class="winner-big" id="winnerBig">PARTIDA ENCERRADA</span>
+    <span class="winner-sub">4 fragmentos capturados • pacote de 12 bits concluído</span>
+    <h2 id="winnerTitle">Vitória</h2>
+    <p id="winnerText">Um jogador venceu a partida.</p>
+    <div class="winner-actions">
+      <button class="btn primary" id="winnerNewGame" type="button">Nova partida</button>
+      <button class="btn" id="winnerClose" type="button">Fechar</button>
+    </div>
+  </div>
+</div>
+
+
+<div class="notice-modal" id="restartVoteModal" role="dialog" aria-modal="true" aria-labelledby="restartVoteTitle">
+  <div class="notice-card">
+    <h2 id="restartVoteTitle">Reiniciar partida?</h2>
+    <p id="restartVoteText">Outro jogador pediu para reiniciar a partida.</p>
+    <div class="restart-votes" id="restartVotes"></div>
+    <div class="notice-actions" style="gap:8px"><button class="btn bad" id="restartVoteNo" type="button">RECUSAR</button><button class="btn primary" id="restartVoteYes" type="button">ACEITAR</button></div>
+  </div>
+</div>
+
+
+
+
+
+
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="/common-ui.js"></script>
+<script src="/client.js"></script>
+</body></html>

@@ -1,96 +1,96 @@
-# 001 Online — base segura
+# 001 — Um jogo de cartas e bits
 
-Base inicial para publicar o jogo **001 — Um jogo de cartas e bits** com:
+Versão online reorganizada seguindo a mesma arquitetura simples usada no Carpa Diem Online.
 
-- Node.js 24
-- Express
-- Socket.IO
-- MongoDB Atlas / Mongoose
-- GitHub
-- Render
+## Rodar localmente
 
-A interface atual parte da versão `v34` e inclui o novo fluxo online de device → entrada → lobby → jogo.
+Com Node.js 20+:
 
-## 1. Desenvolvimento local
+```powershell
+npm.cmd install
+npm.cmd start
+```
 
-```bash
+Depois abra:
+
+- http://localhost:3000
+
+**Não é necessário criar `.env` para testar localmente.** O MongoDB é opcional: se `MONGODB_URI` não estiver configurada, o servidor avisa no terminal e continua funcionando em memória.
+
+## Fluxo
+
+1. `/device.html` — escolha Desktop ou Mobile.
+2. `/desktop.html` ou `/mobile.html` — nickname, criar sala ou entrar por código.
+3. Lobby — até 4 participantes; host pode adicionar/remover bots.
+4. Partida — estado do jogo fica no servidor e é sincronizado por Socket.IO.
+5. Reinício — todos os jogadores humanos precisam aceitar; bots não votam.
+
+## MongoDB opcional
+
+No Render, configure `MONGODB_URI` se quiser registrar partidas. Sem MongoDB, o jogo continua funcionando normalmente; apenas o histórico persistente fica desativado.
+
+Variáveis opcionais estão em `.env.example`.
+
+## Admin
+
+Se `ADMIN_PASSWORD` estiver configurada, abra:
+
+- `/dev-salas`
+
+O painel mostra salas vivas e, se MongoDB estiver ativo, partidas recentes.
+
+## Estrutura
+
+```text
+admin/
+  dev-salas.html
+public/
+  device.html
+  desktop.html
+  mobile.html
+  manual.html
+  client.js
+  common-ui.js
+  styles.css
+src/
+  game.js
+  storage.js
+test/
+  game.test.js
+server.js
+package.json
+package-lock.json
+render.yaml
+```
+
+## Segurança
+
+- servidor valida nickname, código, host e todas as jogadas;
+- o cliente nunca envia o estado inteiro da partida;
+- compra, atualização, captura, descarte, bloqueios, desconexão, bots e vitória são resolvidos no servidor;
+- tokens aleatórios de reconexão ficam no navegador e na memória da sala;
+- rate limit de eventos Socket.IO;
+- limite de payload;
+- restrição de origem opcional via `ALLOWED_ORIGINS` / `APP_ORIGINS`;
+- `X-Powered-By` removido e headers básicos de segurança;
+- MongoDB é usado apenas pelo servidor.
+
+## Deploy no Render
+
+Build:
+
+```text
 npm install
-cp .env.example .env
-# preencha MONGODB_URI e SESSION_SECRET
-npm run dev
 ```
 
-Abra `http://localhost:3000`.
+Start:
 
-## 2. GitHub
-
-Crie um repositório privado inicialmente e envie estes arquivos.
-Nunca envie `.env`.
-
-Sugestões:
-- branch principal protegida;
-- MFA;
-- Dependabot;
-- secret scanning;
-- revisão antes de merge.
-
-## 3. MongoDB Atlas
-
-Crie um banco exclusivo para o projeto e um usuário de aplicação com
-o menor privilégio necessário. Coloque a URI apenas no Render.
-
-O Atlas exige uma lista de acesso de rede e usa TLS nas conexões.
-Em produção, restrinja a lista de acesso ao menor conjunto possível.
-
-## 4. Render
-
-O `render.yaml` já inclui:
-- runtime Node;
-- `npm ci`;
-- `npm start`;
-- `/health`;
-- segredo gerado para sessão;
-- placeholders para `APP_ORIGINS` e `MONGODB_URI`.
-
-No Render, configure:
-
-`APP_ORIGINS`
 ```text
-https://SEU-SERVICO.onrender.com
+npm start
 ```
 
-Se houver domínio próprio:
+Health check:
+
 ```text
-https://SEU-SERVICO.onrender.com,https://seu-dominio.com.br
+/health
 ```
-
-`MONGODB_URI`
-```text
-mongodb+srv://...
-```
-
-Depois do primeiro deploy, teste:
-- `/`
-- `/health`
-- `/api/status`
-
-## Arquitetura recomendada para a etapa multiplayer
-
-Frontend
-→ HTTPS / Socket.IO
-→ Express + servidor autoritativo
-→ MongoDB Atlas
-
-O MongoDB ficará responsável por dados persistentes. O estado de cada jogada
-será validado no servidor antes de qualquer atualização enviada aos clientes.
-
-## Nota importante
-
-A base atual ainda mantém o jogo local da v31. O próximo passo é migrar a
-lógica de partidas online para o servidor: criar/entrar em sala, lobby,
-turnos, validação de capturas, reconexão e encerramento.
-
-
-## Multiplayer
-
-A estrutura de salas, lobby, bots, reconexão e votação de reinício está documentada em `ARCHITECTURE.md`. A próxima etapa é migrar o motor de regras do jogo para o servidor, tornando cada jogada autoritativa.

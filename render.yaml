@@ -2,21 +2,10 @@ services:
   - type: web
     name: game001
     runtime: node
-    plan: free
-    autoDeploy: true
-    buildCommand: npm install --omit=dev
+    buildCommand: npm install
     startCommand: npm start
     healthCheckPath: /health
+    autoDeploy: true
     envVars:
       - key: NODE_ENV
         value: production
-      - key: SESSION_SECRET
-        generateValue: true
-      - key: APP_ORIGINS
-        sync: false
-      - key: MONGODB_URI
-        sync: false
-      - key: HTTP_RATE_LIMIT_MAX
-        value: "180"
-      - key: SOCKET_RATE_LIMIT_MAX
-        value: "90"

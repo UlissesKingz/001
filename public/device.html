@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>001 — Um jogo de cartas e bits</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="preapp">
+    <section class="pre-screen active">
+      <div class="brand-hero">
+        <div class="brand-title"><span class="preBits">001</span></div>
+        <div class="brand-tagline">Um jogo de cartas e bits</div>
+      </div>
+      <div class="pre-panel">
+        <div class="device-grid">
+          <button class="device-card" type="button" data-device="desktop">
+            <div class="device-icon">▣</div><b>Desktop</b>
+            <p>Interface completa para computador, notebook ou telas maiores.</p>
+          </button>
+          <button class="device-card" type="button" data-device="mobile">
+            <div class="device-icon">▯</div><b>Mobile</b>
+            <p>Interface reorganizada para toque e telas estreitas.</p>
+          </button>
+        </div>
+        <div class="pre-toolbar"><span></span><a class="pre-link" href="/manual.html">REGRAS</a></div>
+      </div>
+    </section>
+  </div>
+  <footer class="legal-footer">Jogo criado por Ulisses Reis © 2026 — Propriedade intelectual protegida. Reprodução, distribuição ou uso não autorizado são proibidos. Contato: designerulissesreis@gmail.com</footer>
+  <script>
+  (()=>{
+    document.querySelectorAll('[data-device]').forEach((button)=>button.addEventListener('click',()=>{
+      const device=button.dataset.device==='mobile'?'mobile':'desktop';
+      localStorage.setItem('001_device',device);
+      location.href=device==='mobile'?'/mobile.html':'/desktop.html';
+    }));
+    const seq=['101','000','001','110','100','111','010'];
+    setInterval(()=>document.querySelectorAll('.preBits').forEach((el)=>{let i=0;const t=setInterval(()=>{if(i<seq.length)el.textContent=seq[i++];else{clearInterval(t);el.textContent='001'}},250)}),10000);
+  })();
+  </script>
+</body>
+</html>
