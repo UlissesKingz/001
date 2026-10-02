@@ -59,6 +59,7 @@
     if (!mobileGame) {
       mobileFitKey = '';
       mobileViewport = null;
+      document.body.classList.remove('mobile-landscape');
       app.dataset.mobileFitReady = '';
       app.style.width = '';
       app.style.maxWidth = '';
@@ -84,7 +85,9 @@
 
     const availableW = mobileViewport.w;
     const availableH = mobileViewport.h;
-    const key = `${Math.round(availableW)}x${Math.round(availableH)}`;
+    const landscape = availableW > availableH;
+    document.body.classList.toggle('mobile-landscape', landscape);
+    const key = `${landscape ? 'L' : 'P'}:${Math.round(availableW)}x${Math.round(availableH)}`;
     if (!force && !widthChanged && mobileFitKey === key && app.dataset.mobileFitReady === '1') return;
 
     app.style.position = 'fixed';
@@ -95,20 +98,28 @@
 
     const currentScaleMatch = app.style.transform.match(/scale\(([^)]+)\)/);
     const currentScale = currentScaleMatch ? Number(currentScaleMatch[1]) || 1 : 1;
-    const naturalBefore = Math.max(1, app.scrollHeight);
-    const initialScale = Math.min(1, availableH / naturalBefore);
-    const compensation = 0.72;
-    let layoutW = Math.min(
-      availableW / Math.max(initialScale, 0.01),
-      availableW * (1 + (1 - initialScale) * compensation)
-    );
-    if (!Number.isFinite(layoutW) || layoutW <= 0) layoutW = availableW;
 
-    // IMPORTANT: width, measurement and transform are applied synchronously in
-    // the same JS task. There is no requestAnimationFrame with an unscaled
-    // intermediate state, so the user never sees the giant one-frame layout.
+    let layoutW;
+    if (landscape) {
+      // Use a desktop-like canvas in phone landscape, then scale the complete
+      // composition to the available screen. This keeps the desktop hierarchy
+      // instead of stretching the portrait layout.
+      layoutW = 1180;
+    } else {
+      const naturalBefore = Math.max(1, app.scrollHeight);
+      const initialScale = Math.min(1, availableH / naturalBefore);
+      const compensation = 0.72;
+      layoutW = Math.min(
+        availableW / Math.max(initialScale, 0.01),
+        availableW * (1 + (1 - initialScale) * compensation)
+      );
+      if (!Number.isFinite(layoutW) || layoutW <= 0) layoutW = availableW;
+    }
+
+    // Width, measurement and transform are applied synchronously in the same
+    // task so there is no unscaled intermediate frame between game actions.
     app.style.width = `${Math.round(layoutW)}px`;
-    const naturalH = Math.max(1, app.scrollHeight); // force layout before paint
+    const naturalH = Math.max(1, app.scrollHeight);
     const finalScale = Math.min(1, availableH / naturalH, availableW / Math.max(1, layoutW));
     const safeScale = Number.isFinite(finalScale) ? finalScale : currentScale;
     app.style.transform = `translateX(-50%) scale(${safeScale.toFixed(3)})`;

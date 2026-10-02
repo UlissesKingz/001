@@ -88,7 +88,7 @@ const emptyRoomTimers = new Map();
 const botTurnTimers = new Map();
 const rateBuckets = new Map();
 const EMPTY_ROOM_CLOSE_MS = 10 * 60 * 1000;
-const BOT_ACTION_DELAY_MS = Math.max(250, Math.min(1000, Number(process.env.BOT_ACTION_DELAY_MS || 430)));
+const BOT_ACTION_DELAY_MS = Math.max(250, Math.min(1000, Number(process.env.BOT_ACTION_DELAY_MS || 500)));
 
 function clientIp(socket) {
   const forwarded = String(socket.handshake.headers['x-forwarded-for'] || '').split(',')[0].trim();
