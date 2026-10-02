@@ -1084,3 +1084,36 @@ body.device-mobile .physical-manual-link{
   padding:4px 6px;
   font-size:7px;
 }
+
+
+/* ===== v47 — robust physical manual button ===== */
+.physical-manual-link{
+  position:fixed!important;
+  right:8px!important;
+  bottom:28px!important;
+  z-index:1250!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  padding:5px 8px!important;
+  border:1px solid #355272!important;
+  border-radius:5px!important;
+  background:#09111a!important;
+  color:#dce6f2!important;
+  font:900 8px/1.1 monospace!important;
+  letter-spacing:.45px!important;
+  text-decoration:none!important;
+  white-space:nowrap!important;
+  box-shadow:0 2px 10px rgba(0,0,0,.28)!important;
+}
+.physical-manual-link:hover,.physical-manual-link:focus{
+  border-color:#f2ca68!important;
+  color:#f2ca68!important;
+  outline:none!important;
+}
+body.device-mobile .physical-manual-link{
+  right:6px!important;
+  bottom:22px!important;
+  padding:4px 6px!important;
+  font-size:7px!important;
+}
