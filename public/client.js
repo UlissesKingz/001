@@ -626,6 +626,7 @@
     state.flowCardIds = null;
     document.body.classList.remove('in-game', 'viewer-spectator', 'mobile-landscape');
     $('#restartVoteModal')?.classList.remove('open');
+    $('#leaveGameModal')?.classList.remove('open');
     $('#restartModal')?.classList.remove('open');
     $('#winnerModal')?.classList.remove('open');
     showScreen('#entryScreen');
@@ -634,7 +635,22 @@
   }
   $('#leaveRoomBtn')?.addEventListener('click', returnToRoomCreation);
   $('#lobbyBackBtn')?.addEventListener('click', returnToRoomCreation);
-  $('#exitRoomBtn')?.addEventListener('click', returnToRoomCreation);
+
+  function openLeaveGameConfirm() {
+    $('#leaveGameModal')?.classList.add('open');
+  }
+  function closeLeaveGameConfirm() {
+    $('#leaveGameModal')?.classList.remove('open');
+  }
+  $('#exitRoomBtn')?.addEventListener('click', openLeaveGameConfirm);
+  $('#leaveGameCancel')?.addEventListener('click', closeLeaveGameConfirm);
+  $('#leaveGameConfirm')?.addEventListener('click', () => {
+    closeLeaveGameConfirm();
+    returnToRoomCreation();
+  });
+  $('#leaveGameModal')?.addEventListener('click', (event) => {
+    if (event.target.id === 'leaveGameModal') closeLeaveGameConfirm();
+  });
 
   $('#drawBtn')?.addEventListener('click', () => emitAck('game:draw', {}, (res) => { if (!res.ok) UI001.note(res.error); }));
   $('#refreshBtn')?.addEventListener('click', () => emitAck('game:refresh', {}, (res) => { if (!res.ok) UI001.note(res.error); }));
