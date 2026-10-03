@@ -143,7 +143,18 @@
   }
 
   const sequence = ['101', '000', '001', '110', '100', '111', '010'];
+  function pulseGlitch() {
+    const targets = [...$$('.brand-hero'), ...$$('.titleWrap')];
+    targets.forEach((el) => {
+      el.classList.remove('glitch-pulse');
+      void el.offsetWidth;
+      el.classList.add('glitch-pulse');
+      setTimeout(() => el.classList.remove('glitch-pulse'), 380);
+    });
+  }
+
   function pulseBits() {
+    pulseGlitch();
     const targets = [...$$('.preBits'), ...($$('#titleBits'))];
     targets.forEach((el) => {
       let index = 0;

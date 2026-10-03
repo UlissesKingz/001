@@ -21,6 +21,9 @@
     shownWinnerMatch: null,
     flowMatchId: null,
     flowCardIds: null,
+    sfxMatchId: null,
+    sfxSeq: 0,
+    soundMuted: localStorage.getItem('001_sound_muted') === '1',
     drag: { id: null, startX: 0, startY: 0, dragging: false, targetId: null, after: false, pointerId: null, suppressClick: false }
   };
 
@@ -51,6 +54,65 @@
   function me() { return gamePlayer(state.room?.viewerId); }
   function isMyTurn() { return state.room?.game?.currentPlayerId === state.room?.viewerId && state.room?.game?.phase !== 'gameover'; }
   function blockedFor(player, card) { return Boolean(player?.offlineColor && card && !isSpecial(card) && card.color === player.offlineColor); }
+
+  const SOUND_VOLUME = 0.5;
+  const sounds = {
+    flow: new Audio('/assets/sounds/flow.wav'),
+    refresh: new Audio('/assets/sounds/refresh.wav'),
+    capture: new Audio('/assets/sounds/capture.wav')
+  };
+  Object.values(sounds).forEach((audio) => {
+    audio.preload = 'auto';
+    audio.volume = SOUND_VOLUME;
+  });
+
+  function renderSoundToggle() {
+    const button = $('#soundToggle');
+    if (!button) return;
+    button.textContent = state.soundMuted ? '🔇' : '🔊';
+    button.classList.toggle('muted', state.soundMuted);
+    button.setAttribute('aria-pressed', state.soundMuted ? 'true' : 'false');
+    button.title = state.soundMuted ? 'Ativar sons do jogo' : 'Desativar sons do jogo';
+  }
+
+  function setSoundMuted(muted) {
+    state.soundMuted = Boolean(muted);
+    localStorage.setItem('001_sound_muted', state.soundMuted ? '1' : '0');
+    renderSoundToggle();
+  }
+
+  function playSound(name) {
+    if (state.soundMuted) return;
+    const source = sounds[name];
+    if (!source) return;
+    try {
+      source.pause();
+      source.currentTime = 0;
+      source.volume = SOUND_VOLUME;
+      const promise = source.play();
+      promise?.catch?.(() => {});
+    } catch {}
+  }
+
+  function handleSfx(game) {
+    if (!game?.matchId) return;
+    const event = game.sfxEvent;
+    if (state.sfxMatchId !== game.matchId) {
+      state.sfxMatchId = game.matchId;
+      state.sfxSeq = event?.seq || 0;
+      return;
+    }
+    if (!event || event.seq <= state.sfxSeq) return;
+    state.sfxSeq = event.seq;
+    if (event.type === 'capture') {
+      playSound('capture');
+      return;
+    }
+    if (!viewerIsSpectator() && event.actorId === state.room?.viewerId) {
+      if (event.type === 'flow') playSound('flow');
+      if (event.type === 'refresh') playSound('refresh');
+    }
+  }
 
   function renderLobby() {
     const room = state.room;
@@ -316,6 +378,7 @@
     const room = state.room;
     const game = room?.game;
     if (!room || !game) return;
+    handleSfx(game);
     updateHandOrder();
     document.body.classList.add('in-game');
     $('#restartVoteModal')?.classList.toggle('open', Boolean(room.restart));

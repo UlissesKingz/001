@@ -298,6 +298,11 @@ function addLog(game, text) {
   game.logs = game.logs.slice(0, 80);
 }
 
+function setSfxEvent(game, type, actorId) {
+  game.sfxSeq = (game.sfxSeq || 0) + 1;
+  game.lastSfxEvent = { seq: game.sfxSeq, type, actorId, at: Date.now() };
+}
+
 function refreshSlot(game, pos) {
   const stack = game.stacks[pos];
   game.conveyor[pos] = stack.length ? stack[stack.length - 1] : null;
@@ -527,7 +532,9 @@ function startGame(room) {
     lastDiscardPos: null,
     winnerId: null,
     logs: [],
-    recorded: false
+    recorded: false,
+    sfxSeq: 0,
+    lastSfxEvent: null
   };
   room.game = game;
   for (let round = 0; round < 9; round += 1) {
@@ -557,6 +564,7 @@ function useRefresh(room, player) {
   game.discardIndex += 1;
   game.lastDiscardPos = pos;
   addLog(game, `${player.name} gastou 1 <atualização> e enviou ${cardLabel(card)} ao espaço ${pos + 1} do <fluxo>.`);
+  setSfxEvent(game, 'refresh', player.id);
   if (!game.deck.length) recycleDeck(game);
   return card;
 }
@@ -576,6 +584,7 @@ function placeDiscard(room, player, cardId) {
   game.lastDiscardPos = pos;
   addLog(game, `${player.name} descartou ${cardLabel(card)} no espaço ${pos + 1} do <fluxo>.`);
   if (!isSpecial(card)) {
+    setSfxEvent(game, 'flow', player.id);
     const nextIndex = (game.currentIndex + 1) % game.turnOrder.length;
     const next = game.players[game.turnOrder[nextIndex]];
     if (next) {
@@ -596,6 +605,7 @@ function applyCapture(room, player, selectedCards, match) {
   const flowName = match.indices.map((index) => index + 1).join('–');
   if (match.specialUse) addLog(game, `${player.name} <capturou> o fragmento ${flowName} usando a especial ${match.pair}.`);
   else addLog(game, `${player.name} <capturou> ${selectedCards.map(cardCode).join(' / ')} no fragmento ${flowName}.`);
+  setSfxEvent(game, 'capture', player.id);
   if (player.captures >= 4) {
     game.winnerId = player.id;
     game.phase = 'gameover';
@@ -816,7 +826,8 @@ function publicGame(room) {
     winnerId: game.winnerId,
     turnOrder: [...game.turnOrder],
     players: game.turnOrder.map((id) => ({ ...game.players[id], hand: game.players[id].hand.map((card) => ({ ...card })) })),
-    logs: game.logs.map((entry) => ({ ...entry }))
+    logs: game.logs.map((entry) => ({ ...entry })),
+    sfxEvent: game.lastSfxEvent ? { ...game.lastSfxEvent } : null
   };
 }
 
