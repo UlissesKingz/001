@@ -583,8 +583,8 @@ function placeDiscard(room, player, cardId) {
   game.discardIndex += 1;
   game.lastDiscardPos = pos;
   addLog(game, `${player.name} descartou ${cardLabel(card)} no espaço ${pos + 1} do <fluxo>.`);
+  setSfxEvent(game, 'flow', player.id);
   if (!isSpecial(card)) {
-    setSfxEvent(game, 'flow', player.id);
     const nextIndex = (game.currentIndex + 1) % game.turnOrder.length;
     const next = game.players[game.turnOrder[nextIndex]];
     if (next) {

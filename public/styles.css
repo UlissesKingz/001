@@ -1616,18 +1616,22 @@ body.device-mobile .top-actions #exitRoomBtn{width:31px!important;min-width:31px
 .sound-toggle.muted{opacity:.55!important}
 body.device-mobile .sound-toggle{left:6px!important;bottom:22px!important;width:28px!important;height:22px!important;min-width:28px!important;font-size:11px!important}
 
-@keyframes titleGlitchLight{
-  0%,100%{transform:translate3d(0,0,0);text-shadow:inherit}
-  18%{transform:translate3d(-1px,0,0);text-shadow:2px 0 rgba(255,0,80,.40),-2px 0 rgba(0,255,255,.36)}
-  34%{transform:translate3d(1px,0,0);text-shadow:-2px 0 rgba(255,0,80,.35),2px 0 rgba(0,255,255,.32)}
-  52%{transform:translate3d(0,-.5px,0);text-shadow:1px 0 rgba(255,0,80,.28),-1px 0 rgba(0,255,255,.28)}
-  70%{transform:translate3d(.5px,0,0);text-shadow:-1px 0 rgba(255,0,80,.22),1px 0 rgba(0,255,255,.22)}
+@keyframes titleGlitchStrong{
+  0%,100%{transform:translate3d(0,0,0) skewX(0);filter:none;clip-path:inset(0 0 0 0);text-shadow:inherit}
+  10%{transform:translate3d(-3px,1px,0) skewX(-5deg);filter:contrast(1.45) brightness(1.08);text-shadow:5px 0 rgba(255,0,80,.68),-5px 0 rgba(0,255,255,.62)}
+  20%{transform:translate3d(4px,-1px,0) skewX(4deg);clip-path:inset(0 0 48% 0);text-shadow:-5px 0 rgba(255,0,80,.60),5px 0 rgba(0,255,255,.58)}
+  28%{transform:translate3d(-2px,0,0) skewX(-3deg);clip-path:inset(43% 0 20% 0);filter:contrast(1.55);text-shadow:4px 0 rgba(255,0,80,.72),-4px 0 rgba(0,255,255,.66)}
+  38%{transform:translate3d(3px,1px,0) skewX(3deg);clip-path:inset(17% 0 42% 0);text-shadow:-6px 0 rgba(255,0,80,.68),6px 0 rgba(0,255,255,.62)}
+  48%{transform:translate3d(0,0,0) skewX(0);clip-path:inset(0 0 0 0);filter:none;text-shadow:inherit}
+  62%{transform:translate3d(-2px,-1px,0) scaleX(1.025);filter:brightness(1.18);text-shadow:3px 0 rgba(255,0,80,.48),-3px 0 rgba(0,255,255,.48)}
+  76%{transform:translate3d(2px,0,0) skewX(-2deg);text-shadow:-3px 0 rgba(255,0,80,.42),3px 0 rgba(0,255,255,.42)}
+  88%{transform:translate3d(-1px,0,0);filter:contrast(1.15);text-shadow:2px 0 rgba(255,0,80,.30),-2px 0 rgba(0,255,255,.30)}
 }
 .brand-hero.glitch-pulse .brand-title,
 .brand-hero.glitch-pulse .brand-tagline,
 .titleWrap.glitch-pulse .title{
-  animation:titleGlitchLight .34s steps(2,end) 1;
-  will-change:transform,text-shadow;
+  animation:titleGlitchStrong .46s steps(2,end) 1;
+  will-change:transform,text-shadow,filter,clip-path;
 }
 @media(prefers-reduced-motion:reduce){
   .brand-hero.glitch-pulse .brand-title,

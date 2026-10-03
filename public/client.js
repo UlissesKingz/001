@@ -55,15 +55,23 @@
   function isMyTurn() { return state.room?.game?.currentPlayerId === state.room?.viewerId && state.room?.game?.phase !== 'gameover'; }
   function blockedFor(player, card) { return Boolean(player?.offlineColor && card && !isSpecial(card) && card.color === player.offlineColor); }
 
-  const SOUND_VOLUME = 0.5;
+  const SOUND_VOLUMES = {
+    flow: 0.35,
+    refresh: 0.50,
+    capture: 0.50,
+    ui: 0.45,
+    select: 0.34
+  };
   const sounds = {
     flow: new Audio('/assets/sounds/flow.wav'),
     refresh: new Audio('/assets/sounds/refresh.wav'),
-    capture: new Audio('/assets/sounds/capture.wav')
+    capture: new Audio('/assets/sounds/capture.wav'),
+    ui: new Audio('/assets/sounds/ui-confirm.wav'),
+    select: new Audio('/assets/sounds/card-select.wav')
   };
-  Object.values(sounds).forEach((audio) => {
+  Object.entries(sounds).forEach(([name, audio]) => {
     audio.preload = 'auto';
-    audio.volume = SOUND_VOLUME;
+    audio.volume = SOUND_VOLUMES[name] ?? 0.5;
   });
 
   function renderSoundToggle() {
@@ -88,7 +96,7 @@
     try {
       source.pause();
       source.currentTime = 0;
-      source.volume = SOUND_VOLUME;
+      source.volume = SOUND_VOLUMES[name] ?? 0.5;
       const promise = source.play();
       promise?.catch?.(() => {});
     } catch {}
@@ -108,9 +116,11 @@
       playSound('capture');
       return;
     }
-    if (!viewerIsSpectator() && event.actorId === state.room?.viewerId) {
-      if (event.type === 'flow') playSound('flow');
-      if (event.type === 'refresh') playSound('refresh');
+    // Toda carta que entra no <fluxo> é audível para a sala em volume menor.
+    if (event.type === 'flow' || event.type === 'refresh') playSound('flow');
+    // O detalhe de <atualização> continua local para quem usou o marcador.
+    if (!viewerIsSpectator() && event.actorId === state.room?.viewerId && event.type === 'refresh') {
+      setTimeout(() => playSound('refresh'), 45);
     }
   }
 
@@ -328,7 +338,10 @@
     const game = state.room?.game;
     if (!game || !isMyTurn() || game.phase !== 'play') return;
     if (state.selected.has(cardId)) state.selected.delete(cardId);
-    else if (state.selected.size < 3) state.selected.add(cardId);
+    else if (state.selected.size < 3) {
+      state.selected.add(cardId);
+      playSound('select');
+    }
     syncSelectionUI();
   }
 
@@ -639,7 +652,7 @@
       if (pill) { pill.textContent = 'reconectando...'; pill.classList.remove('online'); }
     });
     socket.on('room:state', (room) => enterRoomState(room));
-    socket.on('game:start', (room) => { enterRoomState(room); UI001.note('Partida iniciada.'); });
+    socket.on('game:start', (room) => { playSound('ui'); enterRoomState(room); UI001.note('Partida iniciada.'); });
     socket.on('restart:requested', () => renderRestartVote());
     socket.on('restart:rejected', ({ by }) => { $('#restartVoteModal')?.classList.remove('open'); UI001.note(`${playerName(by)} recusou o reinício.`); });
     socket.on('game:restart', () => { $('#restartVoteModal')?.classList.remove('open'); state.selected.clear(); state.handOrder = []; state.shownWinnerMatch = null; UI001.note('Todos aceitaram. Nova partida iniciada.'); });
@@ -657,6 +670,7 @@
     setEntryStatus('');
     emitAck('room:create', { nickname, device: DEVICE }, (res) => {
       if (!res.ok) return setEntryStatus(res.error || 'Não foi possível criar a sala.');
+      playSound('ui');
       saveToken(res.token); enterRoomState(res.room);
     });
   });

@@ -149,7 +149,7 @@
       el.classList.remove('glitch-pulse');
       void el.offsetWidth;
       el.classList.add('glitch-pulse');
-      setTimeout(() => el.classList.remove('glitch-pulse'), 380);
+      setTimeout(() => el.classList.remove('glitch-pulse'), 520);
     });
   }
 
