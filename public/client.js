@@ -669,7 +669,7 @@
     if (!game) { setTurnPrompt('Aguarde o início da partida.'); return; }
     if (game.introEndsAt && Date.now() < Number(game.introEndsAt)) {
       const starter = gamePlayer(game.starterId || game.turnOrder?.[0]);
-      setTurnPrompt('Entrando usuários no sistema... definindo o primeiro jogador.', 'wait');
+      setTurnPrompt('Conectando usuários do sistema... Definindo o 1º jogador...', 'wait');
       msg.className = 'msg';
       msg.textContent = starter ? `Primeiro acesso: ${starter.name}. A partida começa após a sincronização.` : 'Sincronizando jogadores...';
       return;

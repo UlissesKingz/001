@@ -1724,3 +1724,108 @@ body.device-mobile .sound-toggle{left:6px!important;bottom:22px!important;width:
   .startup-player{min-height:23px;padding:5px 7px;font-size:10px;letter-spacing:1.7px}
 }
 @media(prefers-reduced-motion:reduce){.startup-card h2{width:100%;animation:none}.startup-dots{animation:none}}
+
+
+/* ===== v61 — texto de conexão + marcador de invasão visível junto à <memória> ===== */
+
+/* O aviso de início agora ocupa duas linhas, com entrada rápida em sequência. */
+.startup-card h2{
+  width:100%!important;
+  overflow:visible!important;
+  white-space:normal!important;
+  animation:none!important;
+}
+.startup-card h2 .startup-line{
+  display:block;
+  width:0;
+  max-width:100%;
+  overflow:hidden;
+  white-space:nowrap;
+  animation:startupTyping .62s steps(32,end) forwards;
+}
+.startup-card h2 .startup-line-2{
+  margin-top:4px;
+  color:#9fdff5;
+  animation-delay:.42s;
+}
+
+/* Triângulo amarelo da <memória> levemente deslocado para a direita. */
+.slot.has-invasion-marker.current-discard::after{
+  left:calc(50% + 15px)!important;
+}
+
+/* Retângulo vermelho da invasão, alinhado à esquerda do triângulo amarelo. */
+.invasion-marker{
+  top:-27px!important;
+  bottom:auto!important;
+  left:calc(50% - 23px)!important;
+  transform:translateX(-50%)!important;
+  z-index:30!important;
+  min-width:30px!important;
+  height:16px!important;
+  padding:0 5px!important;
+  border:1px solid #ff7d84!important;
+  border-radius:3px!important;
+  background:#b51f2a!important;
+  color:#fff!important;
+  box-shadow:0 0 0 1px rgba(0,0,0,.35),0 0 10px rgba(255,64,76,.5)!important;
+  font-size:7px!important;
+  line-height:1!important;
+  font-weight:1000!important;
+  letter-spacing:.2px!important;
+  opacity:1!important;
+  visibility:visible!important;
+}
+.invasion-marker.invasion-2{
+  min-width:40px!important;
+  left:calc(50% - 28px)!important;
+}
+.invasion-marker.invasion-3{
+  min-width:28px!important;
+  left:calc(50% - 20px)!important;
+}
+
+/* Mobile vertical */
+body.device-mobile:not(.mobile-landscape) .slot.has-invasion-marker.current-discard::after{
+  left:calc(50% + 11px)!important;
+}
+body.device-mobile:not(.mobile-landscape) .invasion-marker{
+  top:-22px!important;
+  height:13px!important;
+  min-width:24px!important;
+  padding:0 3px!important;
+  font-size:5.5px!important;
+}
+body.device-mobile:not(.mobile-landscape) .invasion-marker.invasion-2{
+  min-width:32px!important;
+  left:calc(50% - 22px)!important;
+}
+body.device-mobile:not(.mobile-landscape) .invasion-marker.invasion-3{
+  min-width:23px!important;
+  left:calc(50% - 16px)!important;
+}
+
+/* Mobile horizontal */
+body.device-mobile.mobile-landscape .slot.has-invasion-marker.current-discard::after{
+  left:calc(50% + 9px)!important;
+}
+body.device-mobile.mobile-landscape .invasion-marker{
+  top:-16px!important;
+  height:10px!important;
+  min-width:20px!important;
+  padding:0 2px!important;
+  font-size:4.5px!important;
+  border-radius:2px!important;
+}
+body.device-mobile.mobile-landscape .invasion-marker.invasion-2{
+  min-width:27px!important;
+  left:calc(50% - 18px)!important;
+}
+body.device-mobile.mobile-landscape .invasion-marker.invasion-3{
+  min-width:19px!important;
+  left:calc(50% - 13px)!important;
+}
+
+@media(prefers-reduced-motion:reduce){
+  .startup-card h2 .startup-line{width:100%;animation:none!important}
+}
