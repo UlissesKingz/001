@@ -8,6 +8,7 @@ const COLORS = [
 ];
 
 const ROOM_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const START_INTRO_MS = 7000;
 const rooms = new Map();
 
 function randomId(bytes = 12) {
@@ -499,6 +500,9 @@ function startGame(room) {
   room.status = 'game';
   room.restart = null;
   const ordered = allPlayers(room);
+  const starterOffset = crypto.randomInt(0, ordered.length);
+  const turnOrdered = [...ordered.slice(starterOffset), ...ordered.slice(0, starterOffset)];
+  const startedAt = Date.now();
   const gamePlayers = {};
   for (const member of ordered) {
     gamePlayers[member.id] = {
@@ -514,12 +518,14 @@ function startGame(room) {
   }
   const game = {
     matchId: crypto.randomUUID(),
-    startedAt: Date.now(),
+    startedAt,
+    introEndsAt: startedAt + START_INTRO_MS,
+    starterId: turnOrdered[0]?.id || null,
     finishedAt: null,
     deck: makeDeck(),
     players: gamePlayers,
     playerCount: ordered.length,
-    turnOrder: ordered.map((member) => member.id),
+    turnOrder: turnOrdered.map((member) => member.id),
     currentIndex: 0,
     phase: 'setup',
     turnNo: 0,
@@ -545,6 +551,7 @@ function startGame(room) {
   if (game.playerCount === 2) addLog(game, 'Modo 2 jogadores — O Duelo: <invasão 2> ativa por mesma cor ou mesmo valor do espaço anterior.');
   if (game.playerCount === 3) addLog(game, 'Modo 3 jogadores — O Triângulo: <invasão 3> ativa por mesma cor do espaço anterior.');
   addLog(game, 'Nova partida: 9 cartas abertas, 3 <atualização> e 4 marcadores de <capturados> por jogador.');
+  addLog(game, `${game.players[game.starterId]?.name || 'Jogador'} foi selecionado aleatoriamente para iniciar a partida.`);
   startTurn(room);
   room.updatedAt = Date.now();
   return game;
@@ -668,6 +675,7 @@ function validateTurn(room, playerId, phase = null) {
   if (!room || room.status !== 'game' || !room.game) throw new Error('A partida ainda não começou.');
   const game = room.game;
   if (game.phase === 'gameover') throw new Error('A partida já terminou.');
+  if (game.introEndsAt && Date.now() < game.introEndsAt) throw new Error('O sistema ainda está definindo o primeiro jogador.');
   const player = game.players[playerId];
   if (!player) throw new Error('Jogador inválido.');
   const current = currentPlayer(room);
@@ -764,6 +772,7 @@ function runBotAction(room) {
   const game = room?.game;
   const player = currentPlayer(room);
   if (!game || game.phase === 'gameover' || !player || player.type !== 'bot') return { action: 'none', turnEnded: true };
+  if (game.introEndsAt && Date.now() < game.introEndsAt) return { action: 'intro', playerId: player.id };
 
   if (game.phase === 'draw') {
     const used = game.refreshesThisTurn || 0;
@@ -857,6 +866,8 @@ function publicGame(room) {
   return {
     matchId: game.matchId,
     startedAt: game.startedAt,
+    introEndsAt: game.introEndsAt || null,
+    starterId: game.starterId || game.turnOrder[0] || null,
     finishedAt: game.finishedAt,
     phase: game.phase,
     turnNo: game.turnNo,

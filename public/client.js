@@ -20,6 +20,9 @@
     handOrder: [],
     shownWinnerMatch: null,
     shownModeMatch: null,
+    shownIntroMatch: null,
+    introTimers: [],
+    introInterval: null,
     flowMatchId: null,
     flowCardIds: null,
     sfxMatchId: null,
@@ -388,6 +391,90 @@
     }
   }
 
+  function binary12() {
+    let value = '';
+    for (let i = 0; i < 12; i += 1) value += Math.random() < 0.5 ? '0' : '1';
+    return value;
+  }
+
+  function clearStartupSequence(close = true) {
+    for (const timer of state.introTimers) clearTimeout(timer);
+    state.introTimers = [];
+    if (state.introInterval) clearInterval(state.introInterval);
+    state.introInterval = null;
+    if (close) $('#startupModal')?.classList.remove('open');
+  }
+
+  function maybeShowStartupSequence(game) {
+    if (!game?.matchId || !game?.introEndsAt) return false;
+    const remaining = Number(game.introEndsAt) - Date.now();
+    const modal = $('#startupModal');
+    const list = $('#startupPlayers');
+    const progress = $('#startupProgress');
+    if (remaining <= 0) {
+      if (state.shownIntroMatch === game.matchId) clearStartupSequence(true);
+      return false;
+    }
+    if (!modal || !list) return false;
+    if (state.shownIntroMatch === game.matchId) return modal.classList.contains('open');
+
+    clearStartupSequence(true);
+    state.shownIntroMatch = game.matchId;
+    modal.classList.add('open');
+    list.innerHTML = '';
+    const orderedPlayers = (game.turnOrder || []).map((id) => gamePlayer(id)).filter(Boolean);
+    const rows = [];
+    for (let index = 0; index < orderedPlayers.length; index += 1) {
+      const row = document.createElement('div');
+      row.className = `startup-player${index === 0 ? ' first' : ''}`;
+      const bits = document.createElement('span');
+      bits.className = 'startup-bits';
+      bits.textContent = binary12();
+      row.appendChild(bits);
+      list.appendChild(row);
+      rows.push({ row, bits, player: orderedPlayers[index], resolved: false, index });
+    }
+
+    const total = 7000;
+    const elapsed = Math.max(0, total - remaining);
+    const firstResolveAt = 1100;
+    const lastResolveAt = 5000;
+    const resolveAt = (index) => orderedPlayers.length <= 1
+      ? firstResolveAt
+      : firstResolveAt + ((lastResolveAt - firstResolveAt) * index / (orderedPlayers.length - 1));
+    const resolveRow = (item) => {
+      if (!item || item.resolved) return;
+      item.resolved = true;
+      item.row.classList.add('resolved');
+      item.bits.textContent = item.index === 0 ? `${item.player.name} — 1º jogador` : item.player.name;
+    };
+
+    rows.forEach((item) => {
+      const wait = resolveAt(item.index) - elapsed;
+      if (wait <= 0) resolveRow(item);
+      else state.introTimers.push(setTimeout(() => resolveRow(item), wait));
+    });
+
+    state.introInterval = setInterval(() => {
+      rows.forEach((item) => { if (!item.resolved) item.bits.textContent = binary12(); });
+      if (progress) {
+        const pct = Math.min(100, Math.max(0, ((Date.now() - (Number(game.introEndsAt) - total)) / total) * 100));
+        progress.style.width = `${pct}%`;
+      }
+    }, 72);
+
+    if (progress) progress.style.width = `${Math.min(100, Math.max(0, (elapsed / total) * 100))}%`;
+    state.introTimers.push(setTimeout(() => {
+      rows.forEach(resolveRow);
+      clearStartupSequence(true);
+      if (state.room?.game?.matchId === game.matchId) {
+        maybeShowPlayerModeNotice(state.room.game);
+        renderControls();
+      }
+    }, Math.max(0, remaining)));
+    return true;
+  }
+
   function maybeShowPlayerModeNotice(game) {
     const count = Number(game?.playerCount || game?.turnOrder?.length || 0);
     if (![2, 3].includes(count) || !game?.matchId || state.shownModeMatch === game.matchId) return;
@@ -415,7 +502,8 @@
     updateHandOrder();
     document.body.classList.add('in-game');
     $('#restartVoteModal')?.classList.toggle('open', Boolean(room.restart));
-    maybeShowPlayerModeNotice(game);
+    const startupOpen = maybeShowStartupSequence(game);
+    if (!startupOpen) maybeShowPlayerModeNotice(game);
 
     const viewer = me();
     const spectator = viewerIsSpectator();
@@ -579,6 +667,13 @@
     capture.classList.remove('meld-ready', 'meld-invalid');
     hint.textContent = '';
     if (!game) { setTurnPrompt('Aguarde o início da partida.'); return; }
+    if (game.introEndsAt && Date.now() < Number(game.introEndsAt)) {
+      const starter = gamePlayer(game.starterId || game.turnOrder?.[0]);
+      setTurnPrompt('Entrando usuários no sistema... definindo o primeiro jogador.', 'wait');
+      msg.className = 'msg';
+      msg.textContent = starter ? `Primeiro acesso: ${starter.name}. A partida começa após a sincronização.` : 'Sincronizando jogadores...';
+      return;
+    }
     if (viewerIsSpectator()) {
       setTurnPrompt('Você entrou como espectador. Acompanhe a partida em tempo real.', 'wait');
       msg.className = 'msg';
@@ -687,7 +782,7 @@
     socket.on('game:start', (room) => { playSound('ui'); enterRoomState(room); UI001.note('Partida iniciada.'); });
     socket.on('restart:requested', () => renderRestartVote());
     socket.on('restart:rejected', ({ by }) => { $('#restartVoteModal')?.classList.remove('open'); UI001.note(`${playerName(by)} recusou o reinício.`); });
-    socket.on('game:restart', () => { $('#restartVoteModal')?.classList.remove('open'); state.selected.clear(); state.handOrder = []; state.shownWinnerMatch = null; UI001.note('Todos aceitaram. Nova partida iniciada.'); });
+    socket.on('game:restart', () => { $('#restartVoteModal')?.classList.remove('open'); clearStartupSequence(true); state.selected.clear(); state.handOrder = []; state.shownWinnerMatch = null; state.shownModeMatch = null; state.shownIntroMatch = null; UI001.note('Todos aceitaram. Nova partida iniciada.'); });
   }
 
   $('#roomCodeInput')?.setAttribute('maxlength', '4');
@@ -726,6 +821,8 @@
   function returnToRoomCreation() {
     // Send the leave request, but never make the UI wait for the server ack.
     if (state.socket?.connected && state.room) state.socket.emit('room:leave', {}, () => {});
+    clearStartupSequence(true);
+    state.shownIntroMatch = null;
     saveToken('');
     state.room = null;
     state.selected.clear();

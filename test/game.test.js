@@ -26,11 +26,14 @@ test('inicia partida autoritativa com 9 cartas por jogador e 3 cartas no fluxo',
   assert.equal(room.game.conveyor.filter(Boolean).length, 3);
   assert.equal(room.game.discardIndex, 3);
   assert.equal(room.game.phase, 'draw');
+  assert.equal(room.game.starterId, room.game.turnOrder[0]);
+  assert.ok(room.game.introEndsAt > room.game.startedAt);
 });
 
 test('atualização libera bloqueio e permite usar os 3 marcadores no mesmo turno', () => {
   const { room, player } = freshRoom();
   game.startGame(room);
+  room.game.introEndsAt = 0;
 
   for (let use = 1; use <= 3; use += 1) {
     const pos = room.game.discardIndex % 9;
@@ -49,6 +52,7 @@ test('atualização libera bloqueio e permite usar os 3 marcadores no mesmo turn
 test('permite apenas uma captura por turno', () => {
   const { room, player } = freshRoom();
   game.startGame(room);
+  room.game.introEndsAt = 0;
   room.game.currentIndex = room.game.turnOrder.indexOf(player.id);
   room.game.phase = 'play';
   room.game.capturedThisTurn = true;
@@ -61,6 +65,7 @@ test('permite apenas uma captura por turno', () => {
 test('2 jogadores: invasão ativa por mesmo valor e empurra o descarte para o espaço seguinte', () => {
   const { room, player } = freshRoom();
   game.startGame(room);
+  room.game.introEndsAt = 0;
   const state = room.game;
   state.currentIndex = state.turnOrder.indexOf(player.id);
   state.phase = 'play';
@@ -90,6 +95,7 @@ test('3 jogadores: mesmo valor sem mesma cor não ativa invasão', () => {
   game.addBot(room, player.id);
   game.addBot(room, player.id);
   game.startGame(room);
+  room.game.introEndsAt = 0;
   const state = room.game;
   state.currentIndex = state.turnOrder.indexOf(player.id);
   state.phase = 'play';
@@ -117,6 +123,7 @@ test('3 jogadores: mesma cor ativa invasão', () => {
   game.addBot(room, player.id);
   game.addBot(room, player.id);
   game.startGame(room);
+  room.game.introEndsAt = 0;
   const state = room.game;
   state.currentIndex = state.turnOrder.indexOf(player.id);
   state.phase = 'play';
@@ -137,4 +144,26 @@ test('3 jogadores: mesma cor ativa invasão', () => {
   assert.equal(state.conveyor[3].id, invader.id);
   assert.equal(state.conveyor[4].id, discarded.id);
   assert.equal(state.discardIndex, 5);
+});
+
+
+test('bloqueia ações durante a sequência inicial de 7 segundos', () => {
+  const { room, player } = freshRoom();
+  game.startGame(room);
+  room.game.currentIndex = room.game.turnOrder.indexOf(player.id);
+  assert.throws(
+    () => game.playerDraw(room, player.id),
+    /definindo o primeiro jogador/
+  );
+  room.game.introEndsAt = 0;
+  assert.doesNotThrow(() => game.playerDraw(room, player.id));
+});
+
+test('primeiro jogador é definido pela ordem aleatória e inicia a rotação', () => {
+  const { room } = freshRoom();
+  game.startGame(room);
+  assert.equal(room.game.turnOrder.length, 2);
+  assert.equal(room.game.starterId, room.game.turnOrder[0]);
+  assert.equal(room.game.currentIndex, 0);
+  assert.ok(room.game.players[room.game.starterId]);
 });

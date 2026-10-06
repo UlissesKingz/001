@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>001 — Um jogo de cartas e bits</title>
-<link rel="stylesheet" href="/styles.css?v=58">
+<link rel="stylesheet" href="/styles.css?v=60">
 </head>
 <body data-device="mobile" class="device-mobile">
 <div class="online-note" id="onlineNote"></div>
@@ -114,6 +114,16 @@
 </ul><button class="btn primary" id="closeRules">Fechar</button></div></div>
 
 
+
+<div class="notice-modal startup-modal" id="startupModal" role="dialog" aria-modal="true" aria-labelledby="startupTitle">
+  <div class="notice-card startup-card">
+    <div class="startup-system">SISTEMA 001 // ACESSO</div>
+    <h2 id="startupTitle">Entrando usuários no sistema<span class="startup-dots">...</span></h2>
+    <div class="startup-list" id="startupPlayers"></div>
+    <div class="startup-progress"><span id="startupProgress"></span></div>
+  </div>
+</div>
+
 <div class="notice-modal" id="playerModeModal" role="dialog" aria-modal="true" aria-labelledby="playerModeTitle">
   <div class="notice-card player-mode-card">
     <h2 id="playerModeTitle">Modo da partida</h2>
@@ -184,6 +194,6 @@
 
 
 <script src="/socket.io/socket.io.js"></script>
-<script src="/common-ui.js?v=58"></script>
-<script src="/client.js?v=58"></script>
+<script src="/common-ui.js?v=60"></script>
+<script src="/client.js?v=60"></script>
 </body></html>
