@@ -57,3 +57,84 @@ test('permite apenas uma captura por turno', () => {
     /já capturou um fragmento neste turno/
   );
 });
+
+test('2 jogadores: invasão ativa por mesmo valor e empurra o descarte para o espaço seguinte', () => {
+  const { room, player } = freshRoom();
+  game.startGame(room);
+  const state = room.game;
+  state.currentIndex = state.turnOrder.indexOf(player.id);
+  state.phase = 'play';
+  state.discardIndex = 3; // memória no espaço 4; compara com o espaço 3
+
+  const previous = { id: 9001, color: 'red', value: 1 };
+  state.stacks[2] = [previous];
+  state.conveyor[2] = previous;
+  state.covers[2] = 1;
+
+  const discarded = { id: 9002, color: 'blue', value: 1 };
+  state.players[player.id].hand[0] = discarded;
+  const invader = { id: 9003, color: 'green', value: 0 };
+  state.deck.push(invader);
+
+  game.playerDiscard(room, player.id, discarded.id);
+
+  assert.equal(state.conveyor[3].id, invader.id);
+  assert.equal(state.conveyor[4].id, discarded.id);
+  assert.equal(state.discardIndex, 5);
+  assert.equal(state.lastDiscardPos, 4);
+});
+
+test('3 jogadores: mesmo valor sem mesma cor não ativa invasão', () => {
+  game.rooms.clear();
+  const { room, player } = game.createRoom({ name: 'Ulisses', device: 'desktop', socketId: 's1' });
+  game.addBot(room, player.id);
+  game.addBot(room, player.id);
+  game.startGame(room);
+  const state = room.game;
+  state.currentIndex = state.turnOrder.indexOf(player.id);
+  state.phase = 'play';
+  state.discardIndex = 3;
+
+  const previous = { id: 9101, color: 'red', value: 1 };
+  state.stacks[2] = [previous];
+  state.conveyor[2] = previous;
+  state.covers[2] = 1;
+
+  const discarded = { id: 9102, color: 'blue', value: 1 };
+  state.players[player.id].hand[0] = discarded;
+  const deckTopBefore = state.deck[state.deck.length - 1].id;
+
+  game.playerDiscard(room, player.id, discarded.id);
+
+  assert.equal(state.conveyor[3].id, discarded.id);
+  assert.equal(state.discardIndex, 4);
+  assert.equal(state.deck[state.deck.length - 1].id, deckTopBefore);
+});
+
+test('3 jogadores: mesma cor ativa invasão', () => {
+  game.rooms.clear();
+  const { room, player } = game.createRoom({ name: 'Ulisses', device: 'desktop', socketId: 's1' });
+  game.addBot(room, player.id);
+  game.addBot(room, player.id);
+  game.startGame(room);
+  const state = room.game;
+  state.currentIndex = state.turnOrder.indexOf(player.id);
+  state.phase = 'play';
+  state.discardIndex = 3;
+
+  const previous = { id: 9201, color: 'yellow', value: 0 };
+  state.stacks[2] = [previous];
+  state.conveyor[2] = previous;
+  state.covers[2] = 1;
+
+  const discarded = { id: 9202, color: 'yellow', value: 1 };
+  state.players[player.id].hand[0] = discarded;
+  const invader = { id: 9203, color: 'red', value: 0 };
+  state.deck.push(invader);
+
+  game.playerDiscard(room, player.id, discarded.id);
+
+  assert.equal(state.conveyor[3].id, invader.id);
+  assert.equal(state.conveyor[4].id, discarded.id);
+  assert.equal(state.discardIndex, 5);
+});

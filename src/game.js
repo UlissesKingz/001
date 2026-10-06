@@ -518,6 +518,7 @@ function startGame(room) {
     finishedAt: null,
     deck: makeDeck(),
     players: gamePlayers,
+    playerCount: ordered.length,
     turnOrder: ordered.map((member) => member.id),
     currentIndex: 0,
     phase: 'setup',
@@ -541,6 +542,8 @@ function startGame(room) {
     for (const member of ordered) drawCard(game, game.players[member.id]);
   }
   seedConveyor(game);
+  if (game.playerCount === 2) addLog(game, 'Modo 2 jogadores — O Duelo: <invasão 2> ativa por mesma cor ou mesmo valor do espaço anterior.');
+  if (game.playerCount === 3) addLog(game, 'Modo 3 jogadores — O Triângulo: <invasão 3> ativa por mesma cor do espaço anterior.');
   addLog(game, 'Nova partida: 9 cartas abertas, 3 <atualização> e 4 marcadores de <capturados> por jogador.');
   startTurn(room);
   room.updatedAt = Date.now();
@@ -569,20 +572,65 @@ function useRefresh(room, player) {
   return card;
 }
 
+function invasionRuleFor(game) {
+  const count = game?.playerCount || game?.turnOrder?.length || 0;
+  if (count === 2) return 'color-or-value';
+  if (count === 3) return 'color';
+  return null;
+}
+
+function invasionMatches(game, discardCard) {
+  const rule = invasionRuleFor(game);
+  if (!rule || !discardCard || isSpecial(discardCard)) return false;
+  const currentPos = game.discardIndex % 9;
+  const previousPos = (currentPos + 8) % 9;
+  const previousCard = game.conveyor[previousPos];
+  if (!previousCard || isSpecial(previousCard)) return false;
+  if (rule === 'color') return discardCard.color === previousCard.color;
+  return discardCard.color === previousCard.color || discardCard.value === previousCard.value;
+}
+
+function takeCardForInvasion(game) {
+  if (!game.deck.length && !recycleDeck(game)) return null;
+  return game.deck.pop() || null;
+}
+
 function placeDiscard(room, player, cardId) {
   const game = room.game;
   const index = player.hand.findIndex((card) => card.id === cardId);
   if (index < 0) throw new Error('Carta não encontrada.');
   const card = player.hand[index];
   if (!canDiscardCard(player, card)) throw new Error('Essa carta não pode ser descartada neste turno.');
+
+  const triggersInvasion = invasionMatches(game, card);
+  const currentPos = game.discardIndex % 9;
+  const invasionCard = triggersInvasion ? takeCardForInvasion(game) : null;
+
   player.hand.splice(index, 1);
-  const pos = game.discardIndex % 9;
-  game.stacks[pos].push(card);
-  refreshSlot(game, pos);
-  refreshUsedSlot(game, pos);
-  game.discardIndex += 1;
-  game.lastDiscardPos = pos;
-  addLog(game, `${player.name} descartou ${cardLabel(card)} no espaço ${pos + 1} do <fluxo>.`);
+
+  if (invasionCard) {
+    game.stacks[currentPos].push(invasionCard);
+    refreshSlot(game, currentPos);
+    refreshUsedSlot(game, currentPos);
+
+    const discardPos = (currentPos + 1) % 9;
+    game.stacks[discardPos].push(card);
+    refreshSlot(game, discardPos);
+    refreshUsedSlot(game, discardPos);
+    game.discardIndex += 2;
+    game.lastDiscardPos = discardPos;
+
+    const invasionName = (game.playerCount || game.turnOrder.length) === 2 ? '<invasão 2>' : '<invasão 3>';
+    addLog(game, `${player.name} ativou ${invasionName}: ${cardLabel(invasionCard)} da <entrada> invadiu o espaço ${currentPos + 1} e o descarte ${cardLabel(card)} seguiu para o espaço ${discardPos + 1}.`);
+  } else {
+    game.stacks[currentPos].push(card);
+    refreshSlot(game, currentPos);
+    refreshUsedSlot(game, currentPos);
+    game.discardIndex += 1;
+    game.lastDiscardPos = currentPos;
+    addLog(game, `${player.name} descartou ${cardLabel(card)} no espaço ${currentPos + 1} do <fluxo>.`);
+  }
+
   setSfxEvent(game, 'flow', player.id);
   if (!isSpecial(card)) {
     const nextIndex = (game.currentIndex + 1) % game.turnOrder.length;
@@ -824,6 +872,8 @@ function publicGame(room) {
     discardIndex: game.discardIndex,
     lastDiscardPos: game.lastDiscardPos,
     winnerId: game.winnerId,
+    playerCount: game.playerCount || game.turnOrder.length,
+    invasionRule: invasionRuleFor(game),
     turnOrder: [...game.turnOrder],
     players: game.turnOrder.map((id) => ({ ...game.players[id], hand: game.players[id].hand.map((card) => ({ ...card })) })),
     logs: game.logs.map((entry) => ({ ...entry })),
@@ -910,5 +960,5 @@ module.exports = {
   respondRestart,
   sanitizeRoomCode,
   sanitizeName,
-  _engine: { makeDeck, matchFor, patterns, canDiscardCard, isSpecial, cardCode, startGame }
+  _engine: { makeDeck, matchFor, patterns, canDiscardCard, isSpecial, cardCode, startGame, invasionRuleFor, invasionMatches }
 };

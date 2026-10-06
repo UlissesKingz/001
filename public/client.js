@@ -19,6 +19,7 @@
     sortMode: 'free',
     handOrder: [],
     shownWinnerMatch: null,
+    shownModeMatch: null,
     flowMatchId: null,
     flowCardIds: null,
     sfxMatchId: null,
@@ -387,6 +388,25 @@
     }
   }
 
+  function maybeShowPlayerModeNotice(game) {
+    const count = Number(game?.playerCount || game?.turnOrder?.length || 0);
+    if (![2, 3].includes(count) || !game?.matchId || state.shownModeMatch === game.matchId) return;
+    state.shownModeMatch = game.matchId;
+    const modal = $('#playerModeModal');
+    const title = $('#playerModeTitle');
+    const text = $('#playerModeText');
+    if (!modal || !title || !text) return;
+
+    if (count === 2) {
+      title.textContent = '2 jogadores — O Duelo';
+      text.innerHTML = 'O marcador vermelho <b>cor/val</b> acompanha a &lt;memória&gt;. Quando uma carta for descartada e tiver a <b>mesma cor OU o mesmo valor (0 ou 1)</b> da carta do espaço imediatamente anterior, a carta do topo da &lt;entrada&gt; invade o espaço atual. O seu descarte entra no espaço seguinte e os marcadores avançam <b>duas posições</b>, ficando no espaço seguinte ao descarte.';
+    } else {
+      title.textContent = '3 jogadores — O Triângulo';
+      text.innerHTML = 'O marcador vermelho <b>cor</b> acompanha a &lt;memória&gt;. Quando uma carta for descartada e tiver a <b>mesma cor</b> da carta do espaço imediatamente anterior, a carta do topo da &lt;entrada&gt; invade o espaço atual. O seu descarte entra no espaço seguinte e os marcadores avançam <b>duas posições</b>, ficando no espaço seguinte ao descarte.';
+    }
+    modal.classList.add('open');
+  }
+
   function renderGame() {
     const room = state.room;
     const game = room?.game;
@@ -395,6 +415,7 @@
     updateHandOrder();
     document.body.classList.add('in-game');
     $('#restartVoteModal')?.classList.toggle('open', Boolean(room.restart));
+    maybeShowPlayerModeNotice(game);
 
     const viewer = me();
     const spectator = viewerIsSpectator();
@@ -476,6 +497,17 @@
       const slot = document.createElement('div');
       slot.className = `slot${index === nextPos ? ' current-discard' : ''}${index === game.lastDiscardPos ? ' latest-discard' : ''}${used.has(index) ? ' used-space' : ''}`;
       const num = document.createElement('span'); num.className = 'slotnum'; num.textContent = index + 1; slot.appendChild(num);
+      const playerCount = Number(game.playerCount || game.turnOrder?.length || 0);
+      if (index === nextPos && (playerCount === 2 || playerCount === 3)) {
+        slot.classList.add('has-invasion-marker');
+        const invasion = document.createElement('span');
+        invasion.className = `invasion-marker invasion-${playerCount}`;
+        invasion.textContent = playerCount === 2 ? 'cor/val' : 'cor';
+        invasion.title = playerCount === 2
+          ? '<invasão 2>: ativa por mesma cor ou mesmo valor do espaço anterior.'
+          : '<invasão 3>: ativa por mesma cor do espaço anterior.';
+        slot.appendChild(invasion);
+      }
       if (card) {
         const cardEl = makeCard(card, null, false);
         cardEl.classList.add('flowcard');
@@ -699,6 +731,7 @@
     state.selected.clear();
     state.handOrder = [];
     state.shownWinnerMatch = null;
+    state.shownModeMatch = null;
     state.flowMatchId = null;
     state.flowCardIds = null;
     document.body.classList.remove('in-game', 'viewer-spectator', 'mobile-landscape');
@@ -712,6 +745,7 @@
   }
   $('#leaveRoomBtn')?.addEventListener('click', returnToRoomCreation);
   $('#lobbyBackBtn')?.addEventListener('click', returnToRoomCreation);
+  $('#playerModeOk')?.addEventListener('click', () => $('#playerModeModal')?.classList.remove('open'));
 
   function openLeaveGameConfirm() {
     $('#leaveGameModal')?.classList.add('open');

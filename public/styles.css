@@ -1638,3 +1638,43 @@ body.device-mobile .sound-toggle{left:6px!important;bottom:22px!important;width:
   .brand-hero.glitch-pulse .brand-tagline,
   .titleWrap.glitch-pulse .title{animation:none!important}
 }
+
+/* ===== v58 — modos 2/3 jogadores: marcador de invasão junto à <memória> ===== */
+.slot.has-invasion-marker.current-discard::after{
+  left:calc(50% + 13px)!important;
+}
+.invasion-marker{
+  position:absolute;
+  z-index:14;
+  top:-16px;
+  left:calc(50% - 18px);
+  transform:translateX(-50%);
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  height:14px;
+  min-width:26px;
+  padding:0 4px;
+  box-sizing:border-box;
+  border:1px solid #ff7474;
+  border-radius:2px;
+  background:#b51f2a;
+  color:#fff;
+  box-shadow:0 0 8px rgba(255,64,76,.28);
+  font-size:6px;
+  line-height:1;
+  font-weight:950;
+  letter-spacing:.2px;
+  white-space:nowrap;
+  text-transform:lowercase;
+  pointer-events:auto;
+}
+.invasion-marker.invasion-2{min-width:34px;left:calc(50% - 22px)}
+.invasion-marker.invasion-3{min-width:25px;left:calc(50% - 16px)}
+.player-mode-card p b{color:#fff}
+.player-mode-card{border-color:#6b3d45}
+
+@media (max-width:700px){
+  .invasion-marker{top:-15px;font-size:5.5px;height:13px;padding:0 3px}
+  .slot.has-invasion-marker.current-discard::after{left:calc(50% + 12px)!important}
+}
