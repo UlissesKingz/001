@@ -44,12 +44,12 @@
   <div class="viewer-banner" id="viewerBanner"></div>
 
   <section class="stats">
-    <div class="stat"><b>Turno</b><span id="turnText">—</span></div>
-    <div class="stat"><b>OFFLINE neste turno</b><div class="blocked" id="blocked"></div></div>
-    <div class="stat"><b>&lt;entrada&gt;</b><span id="deckCount">—</span> cartas</div>
+    <div class="stat" data-help="<b>Turno atual</b>: mostra quem está jogando agora e o número do turno."><b>Turno</b><span id="turnText">—</span></div>
+    <div class="stat" data-help="<b>OFFLINE neste turno</b>: mostra quais cores estão &lt;desconectadas&gt; para cada jogador no turno atual."><b>OFFLINE neste turno</b><div class="blocked" id="blocked"></div></div>
+    <div class="stat" data-help="<b>&lt;entrada&gt;</b>: quantidade de cartas restantes no deck de compra. Quando ele acaba, as cartas cobertas sob o &lt;fluxo&gt; podem formar uma nova &lt;entrada&gt;."><b>&lt;entrada&gt;</b><span id="deckCount">—</span> cartas</div>
   </section>
 
-  <div class="turn-order" id="turnOrder"></div>
+  <div class="turn-order" id="turnOrder" data-help="<b>Ordem de turno</b>: mostra a sequência circular em que os jogadores agem."></div>
 
   <main class="board">
     <section class="seat bot1" id="seat1"><h3><span>R1</span><small id="meta1"></small></h3><div class="hand" id="hand1"></div><div class="melds" id="melds1"></div></section>
@@ -57,13 +57,13 @@
     <section class="seat bot3" id="seat3"><h3><span>R3</span><small id="meta3"></small></h3><div class="hand" id="hand3"></div><div class="melds" id="melds3"></div></section>
 
     <section class="center">
-      <div class="conveyor-title"><div><b>&lt;fluxo&gt;</b><div class="sub">9 posições</div></div></div>
+      <div class="conveyor-title" data-help="<b>&lt;fluxo&gt;</b>: área circular de 9 posições onde as cartas entram e onde os fragmentos são encontrados."><div><b>&lt;fluxo&gt;</b><div class="sub">9 posições</div></div></div>
       <div class="middle-row">
         <div class="deckbox" data-help="&lt;entrada&gt;: deck de compra. Você sempre compra do topo visível."><span class="decktoplabel">&lt;entrada&gt;</span><div class="deckpile" id="deckPile" data-help="Carta do topo da &lt;entrada&gt;. Esta é a próxima carta que pode ser comprada."></div><button class="btn primary" id="drawBtn" data-help="Compra a carta do topo visível da &lt;entrada&gt;.">COMPRA</button><button class="btn" id="refreshBtn" data-help="&lt;atualização&gt;: envia o topo da &lt;entrada&gt; para o &lt;fluxo&gt; sem desconectar cor. A nova carta cobre a anterior e libera o espaço se ele estiver com &lt;bloqueio&gt;. Você pode usar até 3 por turno e tem 3 na partida."><span class="refresh-button-icon"><span>↻</span></span>↻</button><span class="sub" id="deckHint"></span></div>
         <div class="conveyor-wrap" data-help="&lt;fluxo&gt;: linha circular de 9 posições. É dele que você captura fragmentos."><span class="conveyorlabel">&lt;fluxo&gt;</span><div class="conveyor" id="conveyor"></div></div>
       </div>
-      <div class="patterns-title">FRAGMENTOS</div><div class="patterns" id="patterns"></div>
-      <aside class="log center-log"><h3>Registro</h3><div id="log"></div></aside>
+      <div class="patterns-title" data-help="<b>Fragmentos</b>: mostra as sequências de três posições consecutivas atualmente formadas no &lt;fluxo&gt;.">FRAGMENTOS</div><div class="patterns" id="patterns" data-help="Passe o mouse sobre cada fragmento para ver se ele está disponível ou bloqueado."></div>
+      <aside class="log center-log" data-help="<b>Registro</b>: histórico das ações mais recentes da partida, como compras, atualizações, capturas, descartes, invasões e desconexões."><h3>Registro</h3><div id="log"></div></aside>
     </section>
 
     <div class="turn-prompt" id="turnPrompt" data-help="Mensagem de objetivo do turno. Ela mostra a próxima ação obrigatória ou recomendada para você.">É o seu turno: compre na &lt;entrada&gt; ou use &lt;atualização&gt;.</div>
@@ -84,13 +84,13 @@
         <button class="btn good" id="meldBtn" disabled data-help="Captura um fragmento do &lt;fluxo&gt; quando as cartas selecionadas formarem uma sequência válida.">CAPTURAR</button>
         <button class="btn" id="passBtn" disabled hidden aria-hidden="true">Ir para o descarte</button>
         <button class="btn bad" id="discardBtn" disabled data-help="Descarta a carta selecionada no próximo espaço do &lt;fluxo&gt;.">DESCARTAR</button>
-        <div class="msg" id="humanMsg"></div>
+        <div class="msg" id="humanMsg" data-help="Mensagem contextual da sua jogada atual: informa o que você pode ou precisa fazer neste momento."></div>
       </div>
     </section>
   </main>
-  <div class="helpbar" id="helpBar"><span class="label">INFO</span><span id="helpText">Passe o mouse sobre <b>cartas</b>, <b>botões</b> e <b>áreas</b> do jogo para ver o que cada item faz.</span></div>
+  <div class="helpbar" id="helpBar"><span class="label">INFO</span><span id="helpText">Passe o mouse sobre <b>cartas</b>, <b>botões</b>, <b>marcadores</b>, <b>ícones</b> e <b>áreas</b> para ver o que cada item faz.</span></div>
 </div>
-<button class="sound-toggle" id="soundToggle" type="button" aria-pressed="false" title="Ativar ou desativar os sons do jogo" aria-label="Ativar ou desativar os sons do jogo">🔊</button>
+<button class="sound-toggle" id="soundToggle" type="button" aria-pressed="false" title="Ativar ou desativar os sons do jogo" aria-label="Ativar ou desativar os sons do jogo" data-help="Ativa ou silencia os efeitos sonoros do jogo neste navegador.">🔊</button>
 <footer class="legal-footer">Jogo criado por Ulisses Reis © 2026 — Propriedade intelectual protegida. Reprodução, distribuição ou uso não autorizado são proibidos. Contato: designerulissesreis@gmail.com</footer>
 
 <div class="rules" id="rules"><div class="rules-card"><h2>Regras desta versão</h2><ul>
@@ -198,5 +198,5 @@
 
 <script src="/socket.io/socket.io.js"></script>
 <script src="/common-ui.js?v=60"></script>
-<script src="/client.js?v=62"></script>
+<script src="/client.js?v=63"></script>
 </body></html>

@@ -354,19 +354,25 @@
     const capturedLabel = document.createElement('span');
     capturedLabel.className = 'caplabel';
     capturedLabel.textContent = '<capturados>';
+    capturedLabel.dataset.help = `<b>&lt;capturados&gt; de ${player.name}</b>: ${player.captures}/4 fragmentos. Cada disquete aceso representa um fragmento capturado; ao completar os 4, o jogador conclui 12 bits e vence.`;
     container.appendChild(capturedLabel);
     for (let i = 0; i < 4; i += 1) {
+      const active = i < player.captures;
       const marker = document.createElement('span');
-      marker.className = `meldmark${i < player.captures ? ' on' : ''}`;
+      marker.className = `meldmark${active ? ' on' : ''}`;
+      marker.dataset.help = `<b>Disquete ${i + 1} de ${player.name}</b>: ${active ? 'fragmento já capturado.' : 'ainda vazio.'} Progresso atual: ${player.captures}/4 <b>&lt;capturados&gt;</b>.`;
       container.appendChild(marker);
     }
     const updateLabel = document.createElement('span');
     updateLabel.className = 'updlabel';
     updateLabel.textContent = '<atualização>';
+    updateLabel.dataset.help = `<b>&lt;atualização&gt; de ${player.name}</b>: restam ${player.refresh}/3 marcadores. Antes da compra, cada marcador pode enviar o topo da &lt;entrada&gt; diretamente ao próximo espaço do &lt;fluxo&gt;.`;
     container.appendChild(updateLabel);
     for (let i = 0; i < 3; i += 1) {
+      const available = i < player.refresh;
       const marker = document.createElement('span');
-      marker.className = `refreshmark${i < player.refresh ? ' on' : ''}`;
+      marker.className = `refreshmark${available ? ' on' : ''}`;
+      marker.dataset.help = `<b>Marcador de &lt;atualização&gt; ${i + 1} de ${player.name}</b>: ${available ? 'disponível.' : 'já utilizado.'} Restam ${player.refresh}/3 nesta partida.`;
       container.appendChild(marker);
     }
   }
@@ -386,7 +392,11 @@
         dot.className = 'dot';
         dot.style.background = colorInfo(player.offlineColor).css;
         pill.append(' ', dot, ` ${colorInfo(player.offlineColor).name}`);
-      } else pill.append(' online');
+        pill.dataset.help = `<b>&lt;desconectar&gt;</b>: ${player.name} está com a cor <b>${colorInfo(player.offlineColor).name}</b> offline neste turno. Cartas dessa cor não podem ser usadas nem descartadas até o fim do turno.`;
+      } else {
+        pill.append(' online');
+        pill.dataset.help = `<b>${player.name}</b> não possui nenhuma cor &lt;desconectada&gt; neste turno.`;
+      }
       box.appendChild(pill);
     }
   }
@@ -534,6 +544,7 @@
       for (const card of cards) handBox.appendChild(makeCard(card, player, allowInteract));
       handBox.classList.toggle('selecting', allowInteract && isMyTurn() && game.phase === 'play');
       $(`#meta${slot}`).textContent = `${player.hand.length} cartas • ${player.captures}/4 capturas • ${player.refresh} atualizações`;
+      seat.dataset.help = `<b>Área de ${(!spectator && player.id === room.viewerId) ? 'você' : player.name}</b>: ${player.hand.length} cartas abertas, ${player.captures}/4 &lt;capturados&gt; e ${player.refresh}/3 &lt;atualizações&gt; disponíveis.${game.currentPlayerId === player.id && !game.winnerId ? ' <b>É o turno deste jogador.</b>' : ''}`;
       renderMarkers($(`#melds${slot}`), player);
       seat.classList.toggle('active', game.currentPlayerId === player.id && !game.winnerId);
       seat.classList.toggle('winner', game.winnerId === player.id);
@@ -546,6 +557,7 @@
     if (game.deckTop) {
       const top = makeCard(game.deckTop, null, false);
       top.setAttribute('aria-label', `Topo da entrada: ${cardLabel(game.deckTop)}`);
+      top.dataset.help = `<b>Topo da &lt;entrada&gt;</b>: ${cardLabel(game.deckTop)}. Esta é a carta que será comprada ou enviada ao &lt;fluxo&gt; por uma &lt;atualização&gt;.`;
       deckPile.appendChild(top);
     } else {
       const empty = document.createElement('div'); empty.className = 'deckcard'; deckPile.appendChild(empty);
@@ -561,10 +573,21 @@
       const chip = document.createElement('span');
       chip.className = `turn-chip${id === game.currentPlayerId && !game.winnerId ? ' active' : ''}`;
       chip.textContent = (!spectator && id === room.viewerId) ? 'Você' : player?.name || 'Jogador';
+      chip.dataset.help = `<b>Ordem de turno</b>: ${player?.name || 'Jogador'} ocupa a posição ${index + 1} da sequência.${id === game.currentPlayerId && !game.winnerId ? ' <b>Está jogando agora.</b>' : ''}`;
       order.appendChild(chip);
-      if (index < game.turnOrder.length - 1) { const arrow = document.createElement('span'); arrow.className = 'turn-arrow'; arrow.textContent = '→'; order.appendChild(arrow); }
+      if (index < game.turnOrder.length - 1) {
+        const arrow = document.createElement('span');
+        arrow.className = 'turn-arrow';
+        arrow.textContent = '→';
+        arrow.dataset.help = 'A seta mostra quem joga em seguida na ordem da partida.';
+        order.appendChild(arrow);
+      }
     });
-    const loop = document.createElement('span'); loop.className = 'turn-arrow'; loop.textContent = '↺'; order.appendChild(loop);
+    const loop = document.createElement('span');
+    loop.className = 'turn-arrow';
+    loop.textContent = '↺';
+    loop.dataset.help = 'A ordem de turno é circular: depois do último jogador, a sequência volta ao primeiro.';
+    order.appendChild(loop);
     renderBlockedSummary();
 
     const used = new Set(game.usedSlots || []);
@@ -587,25 +610,57 @@
     conveyorWrap?.classList.toggle('has-invasion-history', invasionSlots.size > 0);
     game.conveyor.forEach((card, index) => {
       const slot = document.createElement('div');
-      slot.className = `slot${index === nextPos ? ' current-discard' : ''}${index === game.lastDiscardPos ? ' latest-discard' : ''}${used.has(index) ? ' used-space' : ''}${invasionSlots.has(index) ? ' has-invasion-marker' : ''}`;
-      const num = document.createElement('span'); num.className = 'slotnum'; num.textContent = index + 1; slot.appendChild(num);
-      if (invasionSlots.has(index) && (playerCount === 2 || playerCount === 3)) {
+      const isMemory = index === nextPos;
+      const isLatest = index === game.lastDiscardPos;
+      const isBlocked = used.has(index);
+      const isInvaded = invasionSlots.has(index);
+      slot.className = `slot${isMemory ? ' current-discard' : ''}${isLatest ? ' latest-discard' : ''}${isBlocked ? ' used-space' : ''}${isInvaded ? ' has-invasion-marker' : ''}`;
+
+      const slotHelp = [`<b>Espaço ${index + 1} do &lt;fluxo&gt;</b>.`];
+      if (card) slotHelp.push(`Topo visível: <b>${cardLabel(card)}</b>.`);
+      else slotHelp.push('Este espaço está vazio.');
+      if (isMemory) slotHelp.push('O triângulo amarelo indica a <b>&lt;memória&gt;</b>: este é o próximo espaço que receberá uma carta.');
+      if (isLatest) slotHelp.push('O marcador azul indica a carta que entrou mais recentemente por descarte.');
+      if (isBlocked) slotHelp.push('O símbolo vermelho indica <b>&lt;bloqueio&gt;</b>: este espaço não pode participar de uma captura até receber uma nova carta.');
+      if (isInvaded) slotHelp.push(`O marcador vermelho <b>${playerCount === 2 ? 'cor/val' : 'cor'}</b> indica que este espaço recebeu uma carta da &lt;entrada&gt; por invasão; ele some quando outra carta cobrir o espaço.`);
+      slot.dataset.help = slotHelp.join(' ');
+
+      const num = document.createElement('span');
+      num.className = 'slotnum';
+      num.textContent = index + 1;
+      num.dataset.help = `Posição <b>${index + 1}</b> do &lt;fluxo&gt;. O &lt;fluxo&gt; é circular: depois da posição 9, retorna à posição 1.`;
+      slot.appendChild(num);
+
+      if (isInvaded && (playerCount === 2 || playerCount === 3)) {
         const invasion = document.createElement('span');
         invasion.className = `invasion-marker invasion-${playerCount}`;
         invasion.textContent = playerCount === 2 ? 'cor/val' : 'cor';
-        invasion.title = playerCount === 2
-          ? 'Este espaço recebeu uma carta da <entrada> por <invasão 2>. O marcador some quando outra carta cobrir este espaço.'
-          : 'Este espaço recebeu uma carta da <entrada> por <invasão 3>. O marcador some quando outra carta cobrir este espaço.';
+        invasion.dataset.help = playerCount === 2
+          ? '<b>&lt;invasão 2&gt; — cor/val</b>: este espaço recebeu a carta da &lt;entrada&gt; porque o descarte correspondia à mesma cor OU ao mesmo valor da carta anterior. O marcador desaparece quando este espaço recebe outra carta.'
+          : '<b>&lt;invasão 3&gt; — cor</b>: este espaço recebeu a carta da &lt;entrada&gt; porque o descarte correspondia à mesma cor da carta anterior. O marcador desaparece quando este espaço recebe outra carta.';
+        invasion.title = invasion.textContent;
         slot.appendChild(invasion);
       }
+
       if (card) {
         const cardEl = makeCard(card, null, false);
         cardEl.classList.add('flowcard');
+        cardEl.dataset.help = `<b>Carta no espaço ${index + 1} do &lt;fluxo&gt;</b>: ${cardLabel(card)}.${isBlocked ? ' Este espaço está com &lt;bloqueio&gt; e não pode ser capturado agora.' : ' Está disponível para formar fragmentos, desde que os outros espaços da sequência também estejam disponíveis.'}`;
         if (enteredFlowSlots.has(index)) cardEl.classList.add('flow-enter');
         cardEl.innerHTML = '';
-        const bits = document.createElement('span'); bits.className = `bitpair${isSpecial(card) ? ' small' : ''}`; bits.textContent = isSpecial(card) ? card.pair : String(card.value); cardEl.appendChild(bits);
+        const bits = document.createElement('span');
+        bits.className = `bitpair${isSpecial(card) ? ' small' : ''}`;
+        bits.textContent = isSpecial(card) ? card.pair : String(card.value);
+        bits.dataset.help = cardEl.dataset.help;
+        cardEl.appendChild(bits);
         slot.appendChild(cardEl);
-        if ((game.covers[index] || 0) > 1) { const stack = document.createElement('span'); stack.className = 'stack'; stack.textContent = `×${game.covers[index]}`; slot.appendChild(stack); }
+        if ((game.covers[index] || 0) > 1) {
+          const stack = document.createElement('span');
+          stack.className = 'stack';
+          stack.textContent = `×${game.covers[index]}`;
+          stack.dataset.help = `<b>${game.covers[index]} cartas neste espaço</b>. Apenas a carta do topo está ativa no &lt;fluxo&gt;; as cartas cobertas permanecem sob ela e podem voltar à &lt;entrada&gt; quando o deck precisar ser refeito.`;
+          slot.appendChild(stack);
+        }
       }
       conveyor.appendChild(slot);
     });
@@ -615,7 +670,11 @@
     for (const pattern of patternList()) {
       const item = document.createElement('span');
       item.className = `pattern${pattern.locked ? ' locked' : ''}`;
-      item.textContent = `${pattern.indices.map((index) => index + 1).join('–')}: ${pattern.cards.map(cardCode).join(' → ')}${pattern.locked ? ' • BLOQUEADO' : ''}`;
+      const positions = pattern.indices.map((index) => index + 1).join('–');
+      item.textContent = `${positions}: ${pattern.cards.map(cardCode).join(' → ')}${pattern.locked ? ' • BLOQUEADO' : ''}`;
+      item.dataset.help = pattern.locked
+        ? `<b>Fragmento ${positions}</b>: esta sequência existe no &lt;fluxo&gt;, mas pelo menos um dos três espaços está com &lt;bloqueio&gt; e não pode ser capturada agora.`
+        : `<b>Fragmento ${positions}</b>: sequência de três posições consecutivas e disponíveis do &lt;fluxo&gt;. Suas cartas podem ser selecionadas em qualquer ordem visual, desde que correspondam a esta sequência.`;
       patternsBox.appendChild(item);
     }
     if (!patternsBox.children.length) { const sub = document.createElement('span'); sub.className = 'sub'; sub.textContent = 'Ainda não há três posições consecutivas preenchidas no <fluxo>.'; patternsBox.appendChild(sub); }
