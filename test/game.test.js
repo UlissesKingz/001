@@ -87,6 +87,8 @@ test('2 jogadores: invasão ativa por mesmo valor e empurra o descarte para o es
   assert.equal(state.conveyor[4].id, discarded.id);
   assert.equal(state.discardIndex, 5);
   assert.equal(state.lastDiscardPos, 4);
+  assert.equal(state.invasionSlots.has(3), true);
+  assert.equal(state.invasionSlots.has(4), false);
 });
 
 test('3 jogadores: mesmo valor sem mesma cor não ativa invasão', () => {
@@ -144,6 +146,41 @@ test('3 jogadores: mesma cor ativa invasão', () => {
   assert.equal(state.conveyor[3].id, invader.id);
   assert.equal(state.conveyor[4].id, discarded.id);
   assert.equal(state.discardIndex, 5);
+  assert.equal(state.invasionSlots.has(3), true);
+});
+
+
+test('marcador de invasão some quando uma nova carta cobre o espaço invadido', () => {
+  const { room, player } = freshRoom();
+  game.startGame(room);
+  room.game.introEndsAt = 0;
+  const state = room.game;
+  state.currentIndex = state.turnOrder.indexOf(player.id);
+  state.phase = 'play';
+  state.discardIndex = 3;
+
+  const previous = { id: 9301, color: 'red', value: 1 };
+  state.stacks[2] = [previous];
+  state.conveyor[2] = previous;
+  state.covers[2] = 1;
+
+  const discarded = { id: 9302, color: 'blue', value: 1 };
+  state.players[player.id].hand[0] = discarded;
+  const invader = { id: 9303, color: 'green', value: 0 };
+  state.deck.push(invader);
+
+  game.playerDiscard(room, player.id, discarded.id);
+  assert.equal(state.invasionSlots.has(3), true);
+
+  state.currentIndex = state.turnOrder.indexOf(player.id);
+  state.phase = 'draw';
+  state.discardIndex = 3;
+  state.refreshesThisTurn = 0;
+  state.players[player.id].refresh = Math.max(1, state.players[player.id].refresh);
+  state.deck.push({ id: 9304, color: 'yellow', value: 0 });
+
+  game.playerRefresh(room, player.id);
+  assert.equal(state.invasionSlots.has(3), false);
 });
 
 

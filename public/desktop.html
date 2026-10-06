@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>001 — Um jogo de cartas e bits</title>
-<link rel="stylesheet" href="/styles.css?v=61">
+<link rel="stylesheet" href="/styles.css?v=62">
 </head>
 <body data-device="desktop">
 <div class="online-note" id="onlineNote"></div>
@@ -97,8 +97,8 @@
 <li><b>2 a 4 jogadores.</b> Cada jogador começa com <b>9 cartas abertas</b> em sua área de jogo, <b>3 marcadores de &lt;atualização&gt;</b> e <b>4 marcadores de &lt;captura&gt;</b>.</li>
 <li>O baralho tem 96 cartas normais: 4 cores, cada uma com 12 cartas <b>0</b> e 12 cartas <b>1</b>, além das especiais <b>00, 01, 10 e 11</b>.</li>
 <li>Na preparação, abra <b>3 cartas normais</b> nas posições 1, 2 e 3 do <b>&lt;fluxo&gt;</b>. Se uma especial aparecer nessa abertura, coloque-a no fundo do deck de <b>&lt;entrada&gt;</b> e revele outra. A próxima carta entra na posição 4.</li>
-<li><b>2 jogadores — O Duelo:</b> o marcador vermelho <b>cor/val</b> acompanha a &lt;memória&gt;. Se o descarte tiver a <b>mesma cor ou o mesmo valor (0 ou 1)</b> da carta do espaço anterior, a carta do topo da &lt;entrada&gt; invade o espaço atual, o descarte segue para o próximo espaço do &lt;fluxo&gt; e os marcadores avançam duas posições.</li>
-<li><b>3 jogadores — O Triângulo:</b> funciona da mesma forma, mas o marcador vermelho mostra <b>cor</b> e a invasão é ativada somente quando o descarte tiver a <b>mesma cor</b> da carta do espaço anterior.</li>
+<li><b>2 jogadores — O Duelo:</b> se o descarte tiver a <b>mesma cor ou o mesmo valor (0 ou 1)</b> da carta do espaço anterior, a carta do topo da &lt;entrada&gt; invade o espaço atual e o descarte segue para o próximo espaço do &lt;fluxo&gt;. O espaço invadido recebe o marcador vermelho <b>cor/val</b>, que permanece ali até uma nova carta cobrir aquele espaço.</li>
+<li><b>3 jogadores — O Triângulo:</b> funciona da mesma forma, mas a invasão é ativada somente quando o descarte tiver a <b>mesma cor</b> da carta do espaço anterior. O espaço invadido recebe o marcador vermelho <b>cor</b>, que permanece até ser coberto por uma nova carta.</li>
 <li>Antes da compra, o jogador pode gastar <b>1, 2 ou 3 marcadores de &lt;atualização&gt;</b>. Cada atualização envia a carta visível do topo da <b>&lt;entrada&gt;</b> diretamente para a próxima posição do <b>&lt;fluxo&gt;</b> e avança o ponteiro. Essa carta <b>não &lt;desconecta&gt; nenhuma cor</b>.</li>
 <li>Depois das atualizações, compre a carta visível do topo da <b>&lt;entrada&gt;</b>.</li>
 <li>Para <b>&lt;capturar&gt;</b> um fragmento, tenha 3 cartas iguais a alguma sequência do <b>&lt;fluxo&gt;</b>. Selecione-as clicando sobre elas e em seguida em <b>CAPTURAR</b> <b>(as cartas da sua mão não precisam ser apresentadas na mesma sequência que as do fluxo, apenas corresponder)</b>. Com cartas normais, devem coincidir <b>bit (0 ou 1) e cor</b>. O &lt;fluxo&gt; é circular: <b>8–9–1</b> e <b>9–1–2</b> também são válidos.</li>
@@ -198,5 +198,5 @@
 
 <script src="/socket.io/socket.io.js"></script>
 <script src="/common-ui.js?v=60"></script>
-<script src="/client.js?v=61"></script>
+<script src="/client.js?v=62"></script>
 </body></html>

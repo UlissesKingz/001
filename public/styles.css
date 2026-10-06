@@ -1829,3 +1829,90 @@ body.device-mobile.mobile-landscape .invasion-marker.invasion-3{
 @media(prefers-reduced-motion:reduce){
   .startup-card h2 .startup-line{width:100%;animation:none!important}
 }
+
+
+/* ===== v62 — invasão marca o espaço invadido até ele ser sobrescrito ===== */
+
+/* A marca agora pertence ao espaço histórico da invasão; não acompanha a <memória>. */
+.invasion-marker{
+  position:absolute!important;
+  z-index:30!important;
+  top:-24px!important;
+  bottom:auto!important;
+  left:50%!important;
+  transform:translateX(-50%)!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  min-width:30px!important;
+  height:16px!important;
+  padding:0 5px!important;
+  border:1px solid #ff7d84!important;
+  border-radius:3px!important;
+  background:#b51f2a!important;
+  color:#fff!important;
+  box-shadow:0 0 0 1px rgba(0,0,0,.35),0 0 10px rgba(255,64,76,.48)!important;
+  font-size:7px!important;
+  line-height:1!important;
+  font-weight:1000!important;
+  letter-spacing:.2px!important;
+  white-space:nowrap!important;
+  opacity:1!important;
+  visibility:visible!important;
+  pointer-events:auto!important;
+}
+.invasion-marker.invasion-2{min-width:40px!important}
+.invasion-marker.invasion-3{min-width:28px!important}
+
+/* Garante espaço vertical suficiente para o marcador acima do <fluxo>. */
+.conveyor-wrap.has-invasion-history{
+  padding-top:26px!important;
+  overflow:visible!important;
+}
+
+/* Se a <memória> voltar a um espaço ainda marcado por invasão, os dois sinais ficam lado a lado. */
+.slot.has-invasion-marker.current-discard::after{
+  left:calc(50% + 18px)!important;
+}
+.slot.has-invasion-marker.current-discard .invasion-marker{
+  left:calc(50% - 18px)!important;
+}
+
+/* Mobile vertical */
+body.device-mobile:not(.mobile-landscape) .conveyor-wrap.has-invasion-history{
+  padding-top:22px!important;
+}
+body.device-mobile:not(.mobile-landscape) .invasion-marker{
+  top:-20px!important;
+  min-width:24px!important;
+  height:13px!important;
+  padding:0 3px!important;
+  font-size:5.5px!important;
+}
+body.device-mobile:not(.mobile-landscape) .invasion-marker.invasion-2{min-width:32px!important}
+body.device-mobile:not(.mobile-landscape) .slot.has-invasion-marker.current-discard::after{
+  left:calc(50% + 13px)!important;
+}
+body.device-mobile:not(.mobile-landscape) .slot.has-invasion-marker.current-discard .invasion-marker{
+  left:calc(50% - 13px)!important;
+}
+
+/* Mobile horizontal */
+body.device-mobile.mobile-landscape .conveyor-wrap.has-invasion-history{
+  padding-top:18px!important;
+}
+body.device-mobile.mobile-landscape .invasion-marker{
+  top:-16px!important;
+  min-width:20px!important;
+  height:10px!important;
+  padding:0 2px!important;
+  font-size:4.5px!important;
+  border-radius:2px!important;
+}
+body.device-mobile.mobile-landscape .invasion-marker.invasion-2{min-width:27px!important}
+body.device-mobile.mobile-landscape .slot.has-invasion-marker.current-discard::after{
+  left:calc(50% + 10px)!important;
+}
+body.device-mobile.mobile-landscape .slot.has-invasion-marker.current-discard .invasion-marker{
+  left:calc(50% - 10px)!important;
+}

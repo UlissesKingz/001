@@ -486,10 +486,10 @@
 
     if (count === 2) {
       title.textContent = '2 jogadores — O Duelo';
-      text.innerHTML = 'O marcador vermelho <b>cor/val</b> acompanha a &lt;memória&gt;. Quando uma carta for descartada e tiver a <b>mesma cor OU o mesmo valor (0 ou 1)</b> da carta do espaço imediatamente anterior, a carta do topo da &lt;entrada&gt; invade o espaço atual. O seu descarte entra no espaço seguinte e os marcadores avançam <b>duas posições</b>, ficando no espaço seguinte ao descarte.';
+      text.innerHTML = 'Quando uma carta for descartada e tiver a <b>mesma cor OU o mesmo valor (0 ou 1)</b> da carta do espaço imediatamente anterior, a carta do topo da &lt;entrada&gt; invade o espaço atual e o seu descarte entra no espaço seguinte. O espaço que recebeu a carta da &lt;entrada&gt; fica marcado com <b>cor/val</b>. Esse marcador permanece ali até uma nova carta cobrir aquele espaço.';
     } else {
       title.textContent = '3 jogadores — O Triângulo';
-      text.innerHTML = 'O marcador vermelho <b>cor</b> acompanha a &lt;memória&gt;. Quando uma carta for descartada e tiver a <b>mesma cor</b> da carta do espaço imediatamente anterior, a carta do topo da &lt;entrada&gt; invade o espaço atual. O seu descarte entra no espaço seguinte e os marcadores avançam <b>duas posições</b>, ficando no espaço seguinte ao descarte.';
+      text.innerHTML = 'Quando uma carta for descartada e tiver a <b>mesma cor</b> da carta do espaço imediatamente anterior, a carta do topo da &lt;entrada&gt; invade o espaço atual e o seu descarte entra no espaço seguinte. O espaço que recebeu a carta da &lt;entrada&gt; fica marcado com <b>cor</b>. Esse marcador permanece ali até uma nova carta cobrir aquele espaço.';
     }
     modal.classList.add('open');
   }
@@ -581,19 +581,21 @@
     state.flowCardIds = currentFlowIds;
     conveyor.innerHTML = '';
     const nextPos = game.discardIndex % 9;
+    const invasionSlots = new Set(game.invasionSlots || []);
+    const playerCount = Number(game.playerCount || game.turnOrder?.length || 0);
+    const conveyorWrap = conveyor.closest('.conveyor-wrap');
+    conveyorWrap?.classList.toggle('has-invasion-history', invasionSlots.size > 0);
     game.conveyor.forEach((card, index) => {
       const slot = document.createElement('div');
-      slot.className = `slot${index === nextPos ? ' current-discard' : ''}${index === game.lastDiscardPos ? ' latest-discard' : ''}${used.has(index) ? ' used-space' : ''}`;
+      slot.className = `slot${index === nextPos ? ' current-discard' : ''}${index === game.lastDiscardPos ? ' latest-discard' : ''}${used.has(index) ? ' used-space' : ''}${invasionSlots.has(index) ? ' has-invasion-marker' : ''}`;
       const num = document.createElement('span'); num.className = 'slotnum'; num.textContent = index + 1; slot.appendChild(num);
-      const playerCount = Number(game.playerCount || game.turnOrder?.length || 0);
-      if (index === nextPos && (playerCount === 2 || playerCount === 3)) {
-        slot.classList.add('has-invasion-marker');
+      if (invasionSlots.has(index) && (playerCount === 2 || playerCount === 3)) {
         const invasion = document.createElement('span');
         invasion.className = `invasion-marker invasion-${playerCount}`;
         invasion.textContent = playerCount === 2 ? 'cor/val' : 'cor';
         invasion.title = playerCount === 2
-          ? '<invasão 2>: ativa por mesma cor ou mesmo valor do espaço anterior.'
-          : '<invasão 3>: ativa por mesma cor do espaço anterior.';
+          ? 'Este espaço recebeu uma carta da <entrada> por <invasão 2>. O marcador some quando outra carta cobrir este espaço.'
+          : 'Este espaço recebeu uma carta da <entrada> por <invasão 3>. O marcador some quando outra carta cobrir este espaço.';
         slot.appendChild(invasion);
       }
       if (card) {

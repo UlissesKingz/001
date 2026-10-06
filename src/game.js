@@ -535,6 +535,7 @@ function startGame(room) {
     stacks: Array.from({ length: 9 }, () => []),
     covers: Array(9).fill(0),
     usedSlots: new Set(),
+    invasionSlots: new Set(),
     discardIndex: 0,
     lastDiscardPos: null,
     winnerId: null,
@@ -568,6 +569,7 @@ function useRefresh(room, player) {
   const card = game.deck.pop();
   player.refresh -= 1;
   const pos = game.discardIndex % 9;
+  game.invasionSlots.delete(pos);
   game.stacks[pos].push(card);
   refreshSlot(game, pos);
   refreshUsedSlot(game, pos);
@@ -616,11 +618,14 @@ function placeDiscard(room, player, cardId) {
   player.hand.splice(index, 1);
 
   if (invasionCard) {
+    game.invasionSlots.delete(currentPos);
     game.stacks[currentPos].push(invasionCard);
     refreshSlot(game, currentPos);
     refreshUsedSlot(game, currentPos);
+    game.invasionSlots.add(currentPos);
 
     const discardPos = (currentPos + 1) % 9;
+    game.invasionSlots.delete(discardPos);
     game.stacks[discardPos].push(card);
     refreshSlot(game, discardPos);
     refreshUsedSlot(game, discardPos);
@@ -630,6 +635,7 @@ function placeDiscard(room, player, cardId) {
     const invasionName = (game.playerCount || game.turnOrder.length) === 2 ? '<invasão 2>' : '<invasão 3>';
     addLog(game, `${player.name} ativou ${invasionName}: ${cardLabel(invasionCard)} da <entrada> invadiu o espaço ${currentPos + 1} e o descarte ${cardLabel(card)} seguiu para o espaço ${discardPos + 1}.`);
   } else {
+    game.invasionSlots.delete(currentPos);
     game.stacks[currentPos].push(card);
     refreshSlot(game, currentPos);
     refreshUsedSlot(game, currentPos);
@@ -880,6 +886,7 @@ function publicGame(room) {
     conveyor: game.conveyor,
     covers: game.covers,
     usedSlots: [...game.usedSlots],
+    invasionSlots: [...game.invasionSlots],
     discardIndex: game.discardIndex,
     lastDiscardPos: game.lastDiscardPos,
     winnerId: game.winnerId,
