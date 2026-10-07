@@ -8,7 +8,11 @@ const COLORS = [
 ];
 
 const ROOM_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-const START_INTRO_MS = 3500;
+const START_INTRO_STEP_MS = 700;
+
+function startIntroDuration(playerCount) {
+  return (Math.max(1, Number(playerCount) || 1) + 1) * START_INTRO_STEP_MS;
+}
 const rooms = new Map();
 
 function randomId(bytes = 12) {
@@ -519,7 +523,7 @@ function startGame(room) {
   const game = {
     matchId: crypto.randomUUID(),
     startedAt,
-    introEndsAt: startedAt + START_INTRO_MS,
+    introEndsAt: startedAt + startIntroDuration(turnOrdered.length),
     starterId: turnOrdered[0]?.id || null,
     finishedAt: null,
     deck: makeDeck(),

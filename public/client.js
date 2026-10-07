@@ -445,15 +445,12 @@
       rows.push({ row, bits, player: orderedPlayers[index], resolved: false, index });
     }
 
-    const total = 3500;
+    const revealStep = 700;
+    const total = (orderedPlayers.length + 1) * revealStep;
     const elapsed = Math.max(0, total - remaining);
-    const firstResolveAt = 1100;
-    // O último nome aparece praticamente no fim da abertura;
-    // a janela fecha logo depois, sem a pausa longa anterior.
-    const lastResolveAt = total - 180;
-    const resolveAt = (index) => orderedPlayers.length <= 1
-      ? firstResolveAt
-      : firstResolveAt + ((lastResolveAt - firstResolveAt) * index / (orderedPlayers.length - 1));
+    // Cada participante é revelado em intervalos exatos de 0,7 s.
+    // Depois do último nome, o quadro permanece mais 0,7 s e fecha.
+    const resolveAt = (index) => revealStep * (index + 1);
     const resolveRow = (item) => {
       if (!item || item.resolved) return;
       item.resolved = true;
