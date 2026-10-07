@@ -8,7 +8,7 @@ const COLORS = [
 ];
 
 const ROOM_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-const START_INTRO_MS = 7000;
+const START_INTRO_MS = 3500;
 const rooms = new Map();
 
 function randomId(bytes = 12) {

@@ -445,7 +445,7 @@
       rows.push({ row, bits, player: orderedPlayers[index], resolved: false, index });
     }
 
-    const total = 7000;
+    const total = 3500;
     const elapsed = Math.max(0, total - remaining);
     const firstResolveAt = 1100;
     // O último nome aparece praticamente no fim da abertura;
