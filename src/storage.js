@@ -18,7 +18,7 @@ async function init() {
     await client.connect();
     db = client.db(process.env.MONGODB_DB || DEFAULT_DB_NAME);
     await db.collection('matches').createIndex({ matchId: 1 }, { unique: true });
-    await db.collection('matches').createIndex({ finishedAt: -1 });
+    await db.collection('matches').createIndex({ startedAt: -1 });
     enabled = true;
     lastError = null;
     console.log(`[MongoDB] Conectado a ${db.databaseName}.`);
@@ -35,19 +35,25 @@ function status() {
   return { enabled, database: db?.databaseName || null, lastError };
 }
 
-async function recordMatch(room) {
-  if (!enabled || !db || !room?.game || room.game.recorded) return false;
+async function recordMatch(room, status = 'completed') {
+  if (!enabled || !db || !room?.game) return false;
   const game = room.game;
-  const winner = game.winnerId ? game.players[game.winnerId] : null;
+  const safeStatus = ['started', 'completed', 'abandoned'].includes(status) ? status : 'completed';
+  const ended = safeStatus === 'completed' || safeStatus === 'abandoned';
+  const endedAt = ended ? (safeStatus === 'completed' && game.finishedAt ? game.finishedAt : Date.now()) : null;
+  const winner = safeStatus === 'completed' && game.winnerId ? game.players[game.winnerId] : null;
+
   const doc = {
     matchId: game.matchId,
     roomCode: room.code,
     gameNo: room.gameNo,
+    status: safeStatus,
     startedAt: game.startedAt ? new Date(game.startedAt) : null,
-    finishedAt: game.finishedAt ? new Date(game.finishedAt) : new Date(),
-    durationMs: game.startedAt ? Math.max(0, (game.finishedAt || Date.now()) - game.startedAt) : null,
+    finishedAt: endedAt ? new Date(endedAt) : null,
+    durationMs: game.startedAt && endedAt ? Math.max(0, endedAt - game.startedAt) : null,
     winnerId: winner?.id || null,
     winnerName: winner?.name || null,
+    turnNo: game.turnNo || 0,
     players: game.turnOrder.map((id) => {
       const player = game.players[id];
       return {
@@ -58,11 +64,17 @@ async function recordMatch(room) {
         captures: player.captures,
         updatesLeft: player.refresh
       };
-    })
+    }),
+    updatedAt: new Date()
   };
+
   try {
-    await db.collection('matches').updateOne({ matchId: doc.matchId }, { $setOnInsert: doc }, { upsert: true });
-    game.recorded = true;
+    await db.collection('matches').updateOne(
+      { matchId: doc.matchId },
+      { $set: doc, $setOnInsert: { createdAt: new Date() } },
+      { upsert: true }
+    );
+    game.recorded = safeStatus === 'completed' || safeStatus === 'abandoned';
     return true;
   } catch (error) {
     lastError = error.message;
@@ -73,7 +85,7 @@ async function recordMatch(room) {
 
 async function recentMatches(limit = 50) {
   if (!enabled || !db) return [];
-  return db.collection('matches').find({}).sort({ finishedAt: -1 }).limit(Math.max(1, Math.min(200, Number(limit) || 50))).toArray();
+  return db.collection('matches').find({}).sort({ startedAt: -1 }).limit(Math.max(1, Math.min(200, Number(limit) || 50))).toArray();
 }
 
 async function close() {

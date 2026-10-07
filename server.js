@@ -149,7 +149,7 @@ function emitGameStart(room) {
 
 function maybeRecord(room) {
   if (!room?.game || room.game.phase !== 'gameover' || room.game.recorded) return;
-  storage.recordMatch(room).catch((error) => console.warn('[MongoDB] registro:', error.message));
+  storage.recordMatch(room, 'completed').catch((error) => console.warn('[MongoDB] registro:', error.message));
 }
 
 function cancelBotTurn(code) {
@@ -190,10 +190,13 @@ function cancelRoomCleanup(code) {
 function scheduleRoomCleanup(room) {
   cancelRoomCleanup(room.code);
   if (room.players.some((player) => player.type === 'human' && player.connected)) return;
-  const timer = setTimeout(() => {
+  const timer = setTimeout(async () => {
     const current = game.rooms.get(room.code);
     if (current && !current.players.some((player) => player.type === 'human' && player.connected)) {
       cancelBotTurn(room.code);
+      if (current.game && current.game.phase !== 'gameover') {
+        await storage.recordMatch(current, 'abandoned').catch((error) => console.warn('[MongoDB] abandono:', error.message));
+      }
       game.rooms.delete(room.code);
     }
     emptyRoomTimers.delete(room.code);
@@ -263,6 +266,7 @@ io.on('connection', (socket) => {
   socket.on('room:start', (_payload, ack) => action(socket, ack, ({ room, player }) => {
     if (room.hostId !== player.id) throw new Error('Somente o criador da sala pode iniciar a partida.');
     game.startGame(room);
+    storage.recordMatch(room, 'started').catch((error) => console.warn('[MongoDB] início:', error.message));
     setImmediate(() => emitGameStart(room));
     return true;
   }));
@@ -274,7 +278,10 @@ io.on('connection', (socket) => {
         game.leaveRoom(ctx.room, ctx.player.id);
         socket.leave(ctx.room.code);
         socketContext.delete(socket.id);
-        if (game.rooms.has(ctx.room.code)) emitRoom(ctx.room);
+        if (game.rooms.has(ctx.room.code)) {
+          emitRoom(ctx.room);
+          scheduleRoomCleanup(ctx.room);
+        }
       }
       safeAck(ack, { ok: true });
     } catch (error) {
