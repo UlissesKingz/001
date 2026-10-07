@@ -448,7 +448,9 @@
     const total = 7000;
     const elapsed = Math.max(0, total - remaining);
     const firstResolveAt = 1100;
-    const lastResolveAt = 5000;
+    // O último nome aparece praticamente no fim da abertura;
+    // a janela fecha logo depois, sem a pausa longa anterior.
+    const lastResolveAt = total - 180;
     const resolveAt = (index) => orderedPlayers.length <= 1
       ? firstResolveAt
       : firstResolveAt + ((lastResolveAt - firstResolveAt) * index / (orderedPlayers.length - 1));

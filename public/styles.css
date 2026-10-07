@@ -1916,3 +1916,31 @@ body.device-mobile.mobile-landscape .slot.has-invasion-marker.current-discard::a
 body.device-mobile.mobile-landscape .slot.has-invasion-marker.current-discard .invasion-marker{
   left:calc(50% - 10px)!important;
 }
+
+
+/* ===== v64 — invasão centralizada ===== */
+
+/* O marcador de invasão fica sempre no centro exato do espaço em que a invasão ocorreu. */
+.slot.has-invasion-marker .invasion-marker,
+.slot.has-invasion-marker.current-discard .invasion-marker,
+body.device-mobile:not(.mobile-landscape) .slot.has-invasion-marker .invasion-marker,
+body.device-mobile:not(.mobile-landscape) .slot.has-invasion-marker.current-discard .invasion-marker,
+body.device-mobile.mobile-landscape .slot.has-invasion-marker .invasion-marker,
+body.device-mobile.mobile-landscape .slot.has-invasion-marker.current-discard .invasion-marker{
+  left:50%!important;
+  right:auto!important;
+  transform:translateX(-50%)!important;
+  margin-left:0!important;
+  margin-right:0!important;
+}
+
+/* Se <memória> e invasão estiverem no mesmo espaço, somente o triângulo amarelo se desloca. */
+.slot.has-invasion-marker.current-discard::after{
+  left:calc(50% + 18px)!important;
+}
+body.device-mobile:not(.mobile-landscape) .slot.has-invasion-marker.current-discard::after{
+  left:calc(50% + 13px)!important;
+}
+body.device-mobile.mobile-landscape .slot.has-invasion-marker.current-discard::after{
+  left:calc(50% + 10px)!important;
+}
