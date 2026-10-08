@@ -33,6 +33,121 @@
 
   localStorage.setItem('001_device', DEVICE);
 
+
+  // v70: painel lateral de ações; fora de #gameApp, sem afetar a grade ou os controles.
+  const historyUI = { root: null, toggle: null, panel: null, list: null, counter: null, matchId: null, signature: null };
+
+  function closeHistory() {
+    if (!historyUI.panel) return;
+    historyUI.panel.hidden = true;
+    historyUI.toggle.setAttribute('aria-expanded', 'false');
+    historyUI.toggle.setAttribute('aria-label', 'Abrir log da partida');
+  }
+
+  function renderHistory(game) {
+    if (!game || !historyUI.list) return;
+    if (historyUI.matchId !== game.matchId) {
+      historyUI.matchId = game.matchId;
+      historyUI.signature = null;
+    }
+    // Não gera DOM novo durante os turnos se o painel estiver fechado.
+    if (historyUI.panel.hidden) return;
+    const logs = Array.isArray(game.logs) ? game.logs : [];
+    const newest = logs[0];
+    const signature = `${game.matchId}|${logs.length}|${newest?.at ?? ''}|${newest?.text ?? ''}`;
+    if (signature === historyUI.signature) return;
+    historyUI.signature = signature;
+    const oldHeight = historyUI.list.scrollHeight;
+    const oldScroll = historyUI.list.scrollTop;
+    const browsingOlder = oldScroll > 24;
+    const fragment = document.createDocumentFragment();
+    if (!logs.length) {
+      const empty = document.createElement('p');
+      empty.className = 'history-empty';
+      empty.textContent = 'As ações da partida aparecerão aqui.';
+      fragment.appendChild(empty);
+    }
+    // O servidor fornece até 80 eventos em ordem reversa de criação (novos primeiro).
+    for (const entry of logs) {
+      const item = document.createElement('div');
+      item.className = 'history-item';
+      const description = String(entry?.text || '');
+      if (/venceu|capturou/i.test(description)) item.classList.add('history-positive');
+      else if (/invasão|desconectar|bloqueio/i.test(description)) item.classList.add('history-alert');
+      const timestamp = new Date(Number(entry?.at));
+      if (Number.isFinite(Number(entry?.at)) && !Number.isNaN(timestamp.getTime())) {
+        const time = document.createElement('time');
+        time.className = 'history-time';
+        time.dateTime = timestamp.toISOString();
+        time.textContent = timestamp.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        item.appendChild(time);
+      }
+      const content = document.createElement('div');
+      content.className = 'history-description';
+      // Termos <fluxo>, <entrada> etc. devem permanecer visíveis, nunca ser interpretados como HTML.
+      content.textContent = description;
+      item.appendChild(content);
+      fragment.appendChild(item);
+    }
+    historyUI.list.replaceChildren(fragment);
+    historyUI.counter.textContent = `${logs.length} evento${logs.length === 1 ? '' : 's'} • recentes primeiro`;
+    // Preserva a leitura dos itens anteriores quando outro jogador realiza uma ação.
+    historyUI.list.scrollTop = browsingOlder ? oldScroll + historyUI.list.scrollHeight - oldHeight : 0;
+  }
+
+  function installHistory() {
+    if (historyUI.root) return;
+    const style = document.createElement('link');
+    style.rel = 'stylesheet';
+    style.href = '/activity-log.css?v=70';
+    document.head.appendChild(style);
+
+    const root = document.createElement('aside');
+    root.id = 'historyWidget';
+    root.className = 'history-widget';
+    root.setAttribute('aria-label', 'Registro de ações');
+    const panel = document.createElement('section');
+    panel.id = 'historyPanel';
+    panel.className = 'history-panel';
+    panel.hidden = true;
+    panel.setAttribute('aria-label', 'Histórico de ações da partida');
+    const heading = document.createElement('header');
+    heading.className = 'history-heading';
+    const title = document.createElement('strong');
+    title.textContent = 'LOG DA PARTIDA';
+    const counter = document.createElement('small');
+    counter.className = 'history-counter';
+    counter.textContent = 'Ações e consequências';
+    heading.append(title, counter);
+    const list = document.createElement('div');
+    list.className = 'history-list';
+    list.setAttribute('role', 'log');
+    list.setAttribute('aria-live', 'off');
+    list.setAttribute('aria-label', 'Ações da mais recente à mais antiga');
+    panel.append(heading, list);
+    const toggle = document.createElement('button');
+    toggle.type = 'button';
+    toggle.className = 'history-toggle';
+    toggle.textContent = 'LOG';
+    toggle.title = 'Abrir ou fechar o histórico da partida';
+    toggle.setAttribute('aria-controls', 'historyPanel');
+    toggle.setAttribute('aria-expanded', 'false');
+    toggle.setAttribute('aria-label', 'Abrir log da partida');
+    root.append(panel, toggle);
+    document.body.appendChild(root);
+    Object.assign(historyUI, { root, toggle, panel, list, counter });
+    toggle.addEventListener('click', () => {
+      const opening = panel.hidden;
+      panel.hidden = !opening;
+      toggle.setAttribute('aria-expanded', String(opening));
+      toggle.setAttribute('aria-label', `${opening ? 'Fechar' : 'Abrir'} log da partida`);
+      if (opening) renderHistory(state.room?.game);
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && !panel.hidden) closeHistory();
+    });
+  }
+
   function showScreen(id) {
     $$('.pre-screen').forEach((screen) => screen.classList.remove('active'));
     $(id)?.classList.add('active');
@@ -681,6 +796,7 @@
     const log = $('#log');
     log.innerHTML = '';
     for (const entry of game.logs || []) { const line = document.createElement('div'); line.className = 'log-entry'; line.textContent = entry.text; log.appendChild(line); }
+    renderHistory(game);
     renderControls();
     renderSortButtons();
 
@@ -818,6 +934,7 @@
       renderGame();
     } else {
       document.body.classList.remove('in-game', 'viewer-spectator');
+      closeHistory();
       const banner = $('#viewerBanner');
       if (banner) { banner.textContent = ''; banner.classList.remove('show'); }
       showScreen('#lobbyScreen');
@@ -896,6 +1013,7 @@
     state.shownIntroMatch = null;
     saveToken('');
     state.room = null;
+    closeHistory();
     state.selected.clear();
     state.handOrder = [];
     state.shownWinnerMatch = null;
@@ -1001,5 +1119,6 @@
     getRoom() { return state.room; }
   };
 
+  installHistory();
   connect();
 })();
