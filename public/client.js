@@ -33,6 +33,136 @@
 
   localStorage.setItem('001_device', DEVICE);
 
+  // v71 — Reposição visual da mão após uma captura.
+  // Cada carta leva 700 ms (350 ms saindo da entrada + 350 ms surgindo na mão).
+  // A reposição real continua sendo decidida pelo servidor; esta camada é apenas visual.
+  const refillFX = {
+    matchId: null, queue: [], pending: new Map(), running: false,
+    timers: new Set(), ghosts: new Set()
+  };
+
+  function clearRefillFX() {
+    for (const timer of refillFX.timers) clearTimeout(timer);
+    for (const ghost of refillFX.ghosts) ghost.remove();
+    refillFX.timers.clear();
+    refillFX.ghosts.clear();
+    refillFX.queue.length = 0;
+    refillFX.pending.clear();
+    refillFX.running = false;
+  }
+
+  function refillTimeout(fn, delay) {
+    const timer = setTimeout(() => {
+      refillFX.timers.delete(timer);
+      fn();
+    }, delay);
+    refillFX.timers.add(timer);
+  }
+
+  function prepareRefillFX(previousRoom, nextRoom) {
+    const previousGame = previousRoom?.game;
+    const game = nextRoom?.game;
+    if (!game || refillFX.matchId !== game.matchId) {
+      clearRefillFX();
+      refillFX.matchId = game?.matchId || null;
+    }
+    // Não anima o carregamento inicial, F5, reconexão, troca de partida ou compra comum.
+    if (!game || !previousGame || previousGame.matchId !== game.matchId) return;
+    for (const player of game.players || []) {
+      const before = previousGame.players?.find((other) => other.id === player.id);
+      if (!before || player.captures <= before.captures) continue;
+      const previousIds = new Set((before.hand || []).map((card) => card.id));
+      const received = (player.hand || []).filter((card) => !previousIds.has(card.id));
+      for (const card of received) {
+        const key = `${player.id}:${card.id}`;
+        if (refillFX.pending.has(key)) continue;
+        refillFX.pending.set(key, 'waiting');
+        refillFX.queue.push({ key, playerId: player.id, card });
+      }
+    }
+  }
+
+  function refillCardElement(playerId, cardId) {
+    const room = state.room;
+    if (!room?.game) return null;
+    const participants = [...room.game.players].sort((a, b) => a.seat - b.seat);
+    const display = viewerIsSpectator()
+      ? participants
+      : [me(), ...participants.filter((player) => player.id !== room.viewerId)].filter(Boolean);
+    const index = display.findIndex((player) => player.id === playerId);
+    if (index < 0) return null;
+    return document.querySelector(`#hand${index} [data-card-id="${cardId}"]`);
+  }
+
+  function advanceRefillFX() {
+    const job = refillFX.queue.shift();
+    if (!job) { refillFX.running = false; return; }
+    refillFX.running = true;
+    const target = refillCardElement(job.playerId, job.card.id);
+    const deck = $('#deckPile');
+    const anchor = deck?.querySelector('.card') || deck;
+    const rect = anchor?.getBoundingClientRect();
+    // Se a carta já saiu da mão (por exemplo, um robô descartou), não a anima.
+    if (!target || !rect?.width || !rect?.height) {
+      refillFX.pending.delete(job.key);
+      if (target) target.classList.remove('refill-fx-waiting', 'refill-fx-arriving');
+      advanceRefillFX();
+      return;
+    }
+    const ghost = makeCard(job.card, null, false);
+    ghost.classList.add('refill-fx-departing');
+    ghost.setAttribute('aria-hidden', 'true');
+    ghost.style.cssText += `;left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;height:${rect.height}px;`;
+    document.body.appendChild(ghost);
+    refillFX.ghosts.add(ghost);
+
+    refillTimeout(() => {
+      ghost.remove();
+      refillFX.ghosts.delete(ghost);
+      if (refillFX.pending.has(job.key)) {
+        refillFX.pending.set(job.key, 'arriving');
+        const card = refillCardElement(job.playerId, job.card.id);
+        if (card) {
+          card.classList.remove('refill-fx-waiting');
+          card.classList.add('refill-fx-arriving');
+        }
+      }
+    }, 350);
+    refillTimeout(() => {
+      refillFX.pending.delete(job.key);
+      const card = refillCardElement(job.playerId, job.card.id);
+      if (card) card.classList.remove('refill-fx-waiting', 'refill-fx-arriving');
+      advanceRefillFX();
+    }, 700);
+  }
+
+  function installRefillFX() {
+    if (document.getElementById('refillFxStyles')) return;
+    const style = document.createElement('style');
+    style.id = 'refillFxStyles';
+    style.textContent = `
+      @keyframes refill-fx-depart {
+        from { transform:translateY(0); clip-path:inset(0 0 0 0); opacity:1; }
+        to { transform:translateY(60%); clip-path:inset(0 0 100% 0); opacity:0; }
+      }
+      @keyframes refill-fx-rise {
+        from { transform:translateY(23px); clip-path:inset(100% 0 0 0); opacity:1; }
+        to { transform:translateY(0); clip-path:inset(0 0 0 0); opacity:1; }
+      }
+      .refill-fx-departing {
+        position:fixed!important; margin:0!important; z-index:1100!important;
+        pointer-events:none!important; user-select:none!important;
+        animation:refill-fx-depart 350ms ease-in both!important;
+      }
+      .refill-fx-waiting { visibility:hidden!important; pointer-events:none!important; }
+      .refill-fx-arriving {
+        pointer-events:none!important;
+        animation:refill-fx-rise 350ms ease-out both!important;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
 
   // v70: painel lateral de ações; fora de #gameApp, sem afetar a grade ou os controles.
   const historyUI = { root: null, toggle: null, panel: null, list: null, counter: null, matchId: null, signature: null };
@@ -655,7 +785,13 @@
       handBox.innerHTML = '';
       const allowInteract = !spectator && slot === 0;
       const cards = orderedHand(player, allowInteract);
-      for (const card of cards) handBox.appendChild(makeCard(card, player, allowInteract));
+      for (const card of cards) {
+        const element = makeCard(card, player, allowInteract);
+        const status = refillFX.pending.get(`${player.id}:${card.id}`);
+        if (status === 'waiting') element.classList.add('refill-fx-waiting');
+        else if (status === 'arriving') element.classList.add('refill-fx-arriving');
+        handBox.appendChild(element);
+      }
       handBox.classList.toggle('selecting', allowInteract && isMyTurn() && game.phase === 'play');
       $(`#meta${slot}`).textContent = `${player.hand.length} cartas • ${player.captures}/4 capturas • ${player.refresh} atualizações`;
       seat.dataset.help = `<b>Área de ${(!spectator && player.id === room.viewerId) ? 'você' : player.name}</b>: ${player.hand.length} cartas abertas, ${player.captures}/4 &lt;capturados&gt; e ${player.refresh}/3 &lt;atualizações&gt; disponíveis.${game.currentPlayerId === player.id && !game.winnerId ? ' <b>É o turno deste jogador.</b>' : ''}`;
@@ -928,10 +1064,12 @@
   }
 
   function enterRoomState(room) {
+    prepareRefillFX(state.room, room);
     state.room = room;
     if (room.status === 'game' && room.game) {
       showScreen('#lobbyScreen');
       renderGame();
+      if (refillFX.queue.length && !refillFX.running) advanceRefillFX();
     } else {
       document.body.classList.remove('in-game', 'viewer-spectator');
       closeHistory();
@@ -1120,5 +1258,6 @@
   };
 
   installHistory();
+  installRefillFX();
   connect();
 })();
