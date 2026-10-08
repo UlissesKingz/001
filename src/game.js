@@ -341,8 +341,10 @@ function drawCard(game, player) {
   return card;
 }
 
-function refillToNine(game, player) {
-  while (player.hand.length < 9) {
+// Depois da compra o jogador tem 10 cartas. Cada captura repõe a mão
+// até 10 ANTES do descarte; o descarte encerra o turno com 9 cartas.
+function refillToTen(game, player) {
+  while (player.hand.length < 10) {
     if (!drawCard(game, player)) break;
   }
 }
@@ -678,7 +680,7 @@ function applyCapture(room, player, selectedCards, match) {
     addLog(game, `${player.name} venceu ao capturar o 4º fragmento e completar o pacote de 12 bits.`);
     return;
   }
-  refillToNine(game, player);
+  refillToTen(game, player);
 }
 
 function validateTurn(room, playerId, phase = null) {
@@ -742,7 +744,6 @@ function playerCapture(room, playerId, cardIds) {
 function playerDiscard(room, playerId, cardId) {
   const { game, player } = validateTurn(room, playerId, 'play');
   placeDiscard(room, player, Number(cardId));
-  if (game.capturedThisTurn) refillToNine(game, player);
   player.offlineColor = null;
   nextPlayer(room);
   room.updatedAt = Date.now();
@@ -828,7 +829,6 @@ function runBotAction(room) {
 
     const discardIndex = chooseBotDiscard(room, player);
     if (discardIndex >= 0) placeDiscard(room, player, player.hand[discardIndex].id);
-    if (game.capturedThisTurn) refillToNine(game, player);
     player.offlineColor = null;
     nextPlayer(room);
     room.updatedAt = Date.now();

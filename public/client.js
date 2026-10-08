@@ -1449,6 +1449,18 @@
     getRoom() { return state.room; }
   };
 
+  // v75: atualiza apenas os textos de REGRAS com a reposição validada no servidor.
+  function updateOnlineCaptureRules() {
+    for (const item of document.querySelectorAll('#rules li')) {
+      const rule = item.textContent || '';
+      if (rule.includes('Após a captura, sua área é reposta')) {
+        item.innerHTML = 'O jogador pode capturar <b>apenas 1 fragmento por turno</b>. Após a captura, compre cartas da &lt;entrada&gt; até voltar a ter <b>10 cartas</b> na sua área, mesmo que tenha usado 2 ou 3 cartas. Depois, descarte 1 carta.';
+      } else if (rule.includes('depois do descarte reponha novamente')) {
+        item.innerHTML = 'Após uma captura, <b>reponha até 10 cartas antes do descarte</b>. Descarte 1 carta e termine o turno com <b>9 cartas</b>. Não há nova reposição depois de descartar.';
+      }
+    }
+  }
+  updateOnlineCaptureRules();
   installHistory();
   installRefillFX();
   installFixedHandSlots();
