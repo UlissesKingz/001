@@ -33,6 +33,81 @@
 
   localStorage.setItem('001_device', DEVICE);
 
+
+  // v73 — Em celular vertical, iniciar a partida no mesmo enquadramento do
+  // botão de ajustar a tela. Respeita qualquer escolha manual posterior.
+  const portraitAutoFit = { pending: false, internalClick: false, userOverride: false };
+
+  function syncPortraitAutoFit() {
+    if (DEVICE !== 'mobile' || portraitAutoFit.userOverride || portraitAutoFit.pending) return;
+    if (!document.body.classList.contains('in-game')) return;
+    const button = $('#fitBtn');
+    if (!button) return;
+    const portrait = window.matchMedia('(orientation: portrait)').matches;
+    if (button.classList.contains('active') === portrait) {
+      if (portrait) requestAnimationFrame(() => requestAnimationFrame(() => ensurePortraitAllPlayersVisible()));
+      return;
+    }
+
+    portraitAutoFit.pending = true;
+    // Aguarda a montagem completa do tabuleiro e o primeiro recálculo de escala.
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      portraitAutoFit.pending = false;
+      if (!document.body.classList.contains('in-game') || portraitAutoFit.userOverride) return;
+      const fit = $('#fitBtn');
+      if (!fit) return;
+      const vertical = window.matchMedia('(orientation: portrait)').matches;
+      if (fit.classList.contains('active') === vertical) return;
+      portraitAutoFit.internalClick = true;
+      try { fit.click(); } finally { portraitAutoFit.internalClick = false; }
+      if (vertical) requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(() => ensurePortraitAllPlayersVisible())));
+    }));
+  }
+
+  function ensurePortraitAllPlayersVisible(step = 0) {
+    if (DEVICE !== 'mobile' || !document.body.classList.contains('in-game')) return;
+    if (!window.matchMedia('(orientation: portrait)').matches) return;
+    if (portraitAutoFit.userOverride || !$('#fitBtn')?.classList.contains('active')) return;
+    const app = $('#gameApp');
+    if (!app) return;
+    const bottomLimit = Math.min(window.innerHeight - 4, ($('.legal-footer')?.getBoundingClientRect().top ?? window.innerHeight) - 4);
+    const bounds = app.getBoundingClientRect();
+    if (bounds.bottom <= bottomLimit + 1 || bounds.height <= 0) return;
+    // O zoom padrão pode subestimar o rodapé e a altura extra das mensagens.
+    // Corrige somente a área que transbordou, sem reposicionar componentes.
+    const available = bottomLimit - Math.max(0, bounds.top);
+    if (available <= 0) return;
+    const shrink = Math.max(0.65, Math.min(0.98, (available / bounds.height) * 0.98));
+    const zoom = Number.parseFloat(app.style.zoom) || 1;
+    app.style.zoom = Math.max(0.30, zoom * shrink).toFixed(3);
+    if (step < 4) requestAnimationFrame(() => ensurePortraitAllPlayersVisible(step + 1));
+  }
+
+  function releaseDefaultPortraitFit() {
+    if (DEVICE !== 'mobile' || portraitAutoFit.userOverride) return;
+    const button = $('#fitBtn');
+    if (!button?.classList.contains('active')) return;
+    // Não deixa o zoom automático aplicado no lobby ou na tela de entrada.
+    portraitAutoFit.internalClick = true;
+    try { button.click(); } finally { portraitAutoFit.internalClick = false; }
+  }
+
+  function installMobilePhysicalManual() {
+    if (DEVICE !== 'mobile' || $('.physical-manual-link')) return;
+    const footer = $('.legal-footer');
+    if (!footer) return;
+    // Link já existente no desktop: restaura-o na versão móvel com o mesmo destino.
+    const link = document.createElement('a');
+    link.className = 'btn physical-manual-link';
+    link.href = 'https://drive.google.com/file/d/12i0FPjL79dPumXRwTyfql8Pu1JBw0dxc/view?usp=sharing';
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    link.textContent = 'Manual Jogo Físico';
+    link.setAttribute('aria-label', 'Abrir manual do jogo físico');
+    link.title = 'Abrir manual do jogo físico';
+    footer.appendChild(link);
+  }
+
   // v72 — A mesma animação visual para qualquer carta recebida da <entrada>:
   // compra normal, compra após a 3ª <atualização> e reposição por <captura>.
   // Funciona na mão de todos os participantes (humanos e robôs).
@@ -167,6 +242,114 @@
     document.head.appendChild(style);
   }
 
+
+  // v74 — dez posições reservadas, estáveis, para a mão de todos os jogadores.
+  // Espaços vazios não são cartas e nunca recebem eventos de clique ou drag.
+  const HAND_CAPACITY = 10;
+
+  function installFixedHandSlots() {
+    if (document.getElementById('fixedHandSlotsStyles')) return;
+    const style = document.createElement('style');
+    style.id = 'fixedHandSlotsStyles';
+    style.textContent = `
+      /* O ID evita que as regras antigas de 9 colunas sobreponham estas 10. */
+      #hand0.fixed-card-slots, #hand1.fixed-card-slots,
+      #hand2.fixed-card-slots, #hand3.fixed-card-slots {
+        display:grid!important;
+        grid-template-columns:repeat(10,minmax(0,1fr))!important;
+        grid-template-rows:auto!important;
+        grid-auto-flow:row!important;
+        align-content:start!important;
+        align-items:stretch!important;
+        flex-wrap:nowrap!important;
+        width:100%!important;
+        min-width:0!important;
+        max-width:560px!important;
+        gap:4px!important;
+        padding:3px 0!important;
+        overflow:visible!important;
+      }
+      #hand1.fixed-card-slots, #hand2.fixed-card-slots,
+      #hand3.fixed-card-slots {
+        max-width:390px!important;
+        gap:2px!important;
+        padding:2px 0!important;
+      }
+      #hand0.fixed-card-slots > .card, #hand1.fixed-card-slots > .card,
+      #hand2.fixed-card-slots > .card, #hand3.fixed-card-slots > .card {
+        box-sizing:border-box!important;
+        width:100%!important;
+        min-width:0!important;
+        max-width:none!important;
+        justify-self:stretch!important;
+      }
+      #hand0.fixed-card-slots > .hand-empty-slot,
+      #hand1.fixed-card-slots > .hand-empty-slot,
+      #hand2.fixed-card-slots > .hand-empty-slot,
+      #hand3.fixed-card-slots > .hand-empty-slot {
+        box-sizing:border-box;
+        display:block;
+        width:100%;
+        min-width:0;
+        min-height:72px;
+        height:72px;
+        border:1px dashed rgba(103,126,152,.30);
+        background:rgba(15,25,38,.22);
+        border-radius:4px;
+        pointer-events:none;
+        user-select:none;
+        opacity:.60;
+      }
+      #hand1.fixed-card-slots > .hand-empty-slot,
+      #hand2.fixed-card-slots > .hand-empty-slot,
+      #hand3.fixed-card-slots > .hand-empty-slot {
+        min-height:54px;
+        height:54px;
+        border-radius:3px;
+      }
+      body.device-mobile #hand0.fixed-card-slots,
+      body.device-mobile #hand1.fixed-card-slots,
+      body.device-mobile #hand2.fixed-card-slots,
+      body.device-mobile #hand3.fixed-card-slots {
+        max-width:none!important;
+        gap:2px!important;
+        overflow:visible!important;
+      }
+      body.device-mobile #hand0.fixed-card-slots > .hand-empty-slot {
+        height:auto; min-height:54px; aspect-ratio:.56;
+      }
+      body.device-mobile #hand1.fixed-card-slots > .hand-empty-slot,
+      body.device-mobile #hand2.fixed-card-slots > .hand-empty-slot,
+      body.device-mobile #hand3.fixed-card-slots > .hand-empty-slot {
+        height:auto; min-height:38px; aspect-ratio:.70;
+      }
+      body.device-mobile.mobile-landscape #hand0.fixed-card-slots,
+      body.device-mobile.mobile-landscape #hand1.fixed-card-slots,
+      body.device-mobile.mobile-landscape #hand2.fixed-card-slots,
+      body.device-mobile.mobile-landscape #hand3.fixed-card-slots {
+        gap:3px!important;
+        padding:2px 0!important;
+        overflow:hidden!important;
+      }
+      body.device-mobile.mobile-landscape #hand0.fixed-card-slots > .hand-empty-slot,
+      body.device-mobile.mobile-landscape #hand1.fixed-card-slots > .hand-empty-slot,
+      body.device-mobile.mobile-landscape #hand2.fixed-card-slots > .hand-empty-slot,
+      body.device-mobile.mobile-landscape #hand3.fixed-card-slots > .hand-empty-slot {
+        height:48px; min-height:48px; aspect-ratio:auto;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function reserveEmptyHandSlots(handBox, count) {
+    handBox.classList.add('fixed-card-slots');
+    for (let index = count; index < HAND_CAPACITY; index++) {
+      const empty = document.createElement('span');
+      empty.className = 'hand-empty-slot';
+      empty.setAttribute('aria-hidden', 'true');
+      handBox.appendChild(empty);
+    }
+  }
 
   // v70: painel lateral de ações; fora de #gameApp, sem afetar a grade ou os controles.
   const historyUI = { root: null, toggle: null, panel: null, list: null, counter: null, matchId: null, signature: null };
@@ -796,6 +979,7 @@
         else if (status === 'arriving') element.classList.add('refill-fx-arriving');
         handBox.appendChild(element);
       }
+      reserveEmptyHandSlots(handBox, cards.length);
       handBox.classList.toggle('selecting', allowInteract && isMyTurn() && game.phase === 'play');
       $(`#meta${slot}`).textContent = `${player.hand.length} cartas • ${player.captures}/4 capturas • ${player.refresh} atualizações`;
       seat.dataset.help = `<b>Área de ${(!spectator && player.id === room.viewerId) ? 'você' : player.name}</b>: ${player.hand.length} cartas abertas, ${player.captures}/4 &lt;capturados&gt; e ${player.refresh}/3 &lt;atualizações&gt; disponíveis.${game.currentPlayerId === player.id && !game.winnerId ? ' <b>É o turno deste jogador.</b>' : ''}`;
@@ -947,8 +1131,10 @@
     if (room.restart) renderRestartVote();
     // Mobile keeps one stable scale for the whole match. Re-rendering cards or
     // bot actions must never temporarily expose the unscaled layout.
-    if (DEVICE === 'mobile') UI001.updateMobileStageScale?.();
-    else requestAnimationFrame(() => UI001.updateFitScale?.());
+    if (DEVICE === 'mobile') {
+      UI001.updateMobileStageScale?.();
+      syncPortraitAutoFit();
+    } else requestAnimationFrame(() => UI001.updateFitScale?.());
   }
 
   function renderSortButtons() {
@@ -1075,6 +1261,7 @@
       renderGame();
       if (refillFX.queue.length && !refillFX.running) advanceRefillFX();
     } else {
+      releaseDefaultPortraitFit();
       document.body.classList.remove('in-game', 'viewer-spectator');
       closeHistory();
       const banner = $('#viewerBanner');
@@ -1162,6 +1349,7 @@
     state.shownModeMatch = null;
     state.flowMatchId = null;
     state.flowCardIds = null;
+    releaseDefaultPortraitFit();
     document.body.classList.remove('in-game', 'viewer-spectator', 'mobile-landscape');
     $('#restartVoteModal')?.classList.remove('open');
     $('#leaveGameModal')?.classList.remove('open');
@@ -1263,5 +1451,14 @@
 
   installHistory();
   installRefillFX();
+  installFixedHandSlots();
+  installMobilePhysicalManual();
+  if (DEVICE === 'mobile') {
+    $('#fitBtn')?.addEventListener('click', () => {
+      if (!portraitAutoFit.internalClick) portraitAutoFit.userOverride = true;
+    });
+    window.addEventListener('resize', syncPortraitAutoFit);
+    window.addEventListener('orientationchange', syncPortraitAutoFit);
+  }
   connect();
 })();
