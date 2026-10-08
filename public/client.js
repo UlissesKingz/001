@@ -33,9 +33,11 @@
 
   localStorage.setItem('001_device', DEVICE);
 
-  // v71 — Reposição visual da mão após uma captura.
+  // v72 — A mesma animação visual para qualquer carta recebida da <entrada>:
+  // compra normal, compra após a 3ª <atualização> e reposição por <captura>.
+  // Funciona na mão de todos os participantes (humanos e robôs).
   // Cada carta leva 700 ms (350 ms saindo da entrada + 350 ms surgindo na mão).
-  // A reposição real continua sendo decidida pelo servidor; esta camada é apenas visual.
+  // A compra/reposição real continua sendo decidida pelo servidor; esta camada é apenas visual.
   const refillFX = {
     matchId: null, queue: [], pending: new Map(), running: false,
     timers: new Set(), ghosts: new Set()
@@ -66,11 +68,13 @@
       clearRefillFX();
       refillFX.matchId = game?.matchId || null;
     }
-    // Não anima o carregamento inicial, F5, reconexão, troca de partida ou compra comum.
-    if (!game || !previousGame || previousGame.matchId !== game.matchId) return;
+    // Não anima carregamento inicial, F5 nem troca de sala ou partida.
+    if (!game || !previousGame || previousRoom.code !== nextRoom.code || previousGame.matchId !== game.matchId) return;
     for (const player of game.players || []) {
       const before = previousGame.players?.find((other) => other.id === player.id);
-      if (!before || player.captures <= before.captures) continue;
+      if (!before) continue;
+      // Só anima IDs que acabaram de entrar na mão: compras comuns, compras
+      // obrigatórias e todas as reposições após <captura>, inclusive pós-descarte.
       const previousIds = new Set((before.hand || []).map((card) => card.id));
       const received = (player.hand || []).filter((card) => !previousIds.has(card.id));
       for (const card of received) {
