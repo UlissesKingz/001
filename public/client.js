@@ -721,22 +721,18 @@
     const setTurnPrompt = (text, tone = '') => {
       if (!turnPrompt) return;
       turnPrompt.className = `turn-prompt${tone ? ` ${tone}` : ''}`;
-      turnPrompt.replaceChildren();
-      const message = document.createElement('p');
-      message.textContent = text;
-      message.style.margin = '0';
-      turnPrompt.appendChild(message);
-
       const playerCount = game?.players?.length || 0;
-      if (tone === 'active' && (playerCount === 2 || playerCount === 3)) {
-        const invasion = document.createElement('p');
-        invasion.textContent = playerCount === 2
-          ? 'Partida em 2 jogadores: Se uma carta for descartada ao lado de outra de mesmo valor ou cor, a carta do deck <entrada> é colocada entre elas.'
-          : 'Partida em 3 jogadores: Se uma carta for descartada ao lado de outra da mesma cor, a carta do deck <entrada> é colocada entre elas.';
-        invasion.style.cssText = 'margin:5px 0 0;font-size:.9em;font-weight:500;letter-spacing:0;line-height:1.3;opacity:.9;';
-        turnPrompt.appendChild(invasion);
-      }
-      turnPrompt.style.flexDirection = 'column';
+      const invasion = tone === 'active' && playerCount === 2
+        ? 'Partida em 2 jogadores: Se uma carta for descartada ao lado de outra de mesmo valor ou cor, a carta do deck <entrada> é colocada entre elas.'
+        : tone === 'active' && playerCount === 3
+          ? 'Partida em 3 jogadores: Se uma carta for descartada ao lado de outra da mesma cor, a carta do deck <entrada> é colocada entre elas.'
+          : '';
+      // Texto puro: evita reconstruir nós DOM, preserva o aviso e os cliques do jogo.
+      turnPrompt.textContent = invasion ? `${text}\n\n${invasion}` : text;
+      turnPrompt.style.display = invasion ? 'block' : '';
+      turnPrompt.style.whiteSpace = invasion ? 'pre-line' : '';
+      turnPrompt.style.lineHeight = invasion ? '1.35' : '';
+      turnPrompt.style.flexDirection = '';
     };
     draw.disabled = true; refresh.disabled = true; capture.disabled = true; discard.disabled = true;
     capture.classList.remove('meld-ready', 'meld-invalid');
