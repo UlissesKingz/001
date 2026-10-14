@@ -25,6 +25,7 @@
     introInterval: null,
     flowMatchId: null,
     flowCardIds: null,
+    flowDiscardIndex: null,
     sfxMatchId: null,
     sfxSeq: 0,
     soundMuted: localStorage.getItem('001_sound_muted') === '1',
@@ -379,6 +380,27 @@
       body.device-mobile #conveyor .slot.msb-slot {
         border-width:3px!important;
         box-shadow:0 0 0 1px #deacff,0 0 8px 1px rgba(178,80,255,.82),inset 0 0 9px rgba(162,66,255,.25)!important;
+      }
+      @keyframes resonance-slot-pulse {
+        0% { box-shadow:0 0 0 1px #d79cff,0 0 8px 1px rgba(178,80,255,.70),inset 0 0 8px rgba(162,66,255,.22); }
+        22% { box-shadow:0 0 0 1px #f0d6ff,0 0 16px 4px rgba(190,108,255,.98),inset 0 0 18px rgba(195,114,255,.42); }
+        45% { box-shadow:0 0 0 1px #d79cff,0 0 8px 1px rgba(178,80,255,.72),inset 0 0 8px rgba(162,66,255,.22); }
+        68% { box-shadow:0 0 0 1px #f0d6ff,0 0 18px 5px rgba(190,108,255,.98),inset 0 0 18px rgba(195,114,255,.44); }
+        100% { box-shadow:0 0 0 1px #d79cff,0 0 8px 1px rgba(178,80,255,.76),inset 0 0 8px rgba(162,66,255,.24); }
+      }
+      @keyframes resonance-card-enter {
+        from { transform:translateY(22px); clip-path:inset(100% 0 0 0); opacity:.92; }
+        to { transform:translateY(0); clip-path:inset(0 0 0 0); opacity:1; }
+      }
+      #conveyor .slot.resonance-target {
+        border:3px solid #b65bff!important;
+        box-shadow:0 0 0 1px #eecfff,0 0 14px 3px rgba(190,108,255,.90),inset 0 0 15px rgba(190,108,255,.32)!important;
+        animation:resonance-slot-pulse 1050ms ease-in-out both!important;
+        position:relative;
+        z-index:3;
+      }
+      #conveyor .flowcard.resonance-enter {
+        animation:resonance-card-enter 1050ms ease-out both!important;
       }
     `;
     document.head.appendChild(style);
@@ -970,10 +992,10 @@
 
     if (count === 2) {
       title.textContent = '2 jogadores — O Duelo';
-      text.innerHTML = 'O <b>MSB</b> é a posição 1 do &lt;fluxo&gt;, destacada em roxo. O descarte com a <b>mesma cor OU o mesmo valor</b> do MSB ativa a &lt;ressonância&gt;: uma carta da &lt;entrada&gt; entra primeiro e o descarte entra em seguida. <b>MSB especial:</b> qualquer descarte válido ativa o efeito.';
+      text.innerHTML = 'O <b>MSB</b> é a posição 1 do &lt;fluxo&gt;, destacada em roxo. Quando o descarte é uma <b>carta comum</b> com a <b>mesma cor OU o mesmo valor</b> da carta do MSB, ativa a &lt;ressonância&gt;: uma carta da &lt;entrada&gt; entra primeiro e o descarte entra em seguida. <b>Se a carta do MSB for uma carta especial</b>, qualquer descarte válido ativa o efeito.';
     } else {
       title.textContent = '3 jogadores — O Triângulo';
-      text.innerHTML = 'O <b>MSB</b> é a posição 1 do &lt;fluxo&gt;, destacada em roxo. O descarte com a <b>mesma cor</b> do MSB ativa a &lt;ressonância&gt;: uma carta da &lt;entrada&gt; entra primeiro e o descarte entra em seguida. <b>MSB especial:</b> qualquer descarte válido ativa o efeito.';
+      text.innerHTML = 'O <b>MSB</b> é a posição 1 do &lt;fluxo&gt;, destacada em roxo. Quando o descarte é uma <b>carta comum</b> com a <b>mesma cor</b> da carta do MSB, ativa a &lt;ressonância&gt;: uma carta da &lt;entrada&gt; entra primeiro e o descarte entra em seguida. <b>Se a carta do MSB for uma carta especial</b>, qualquer descarte válido ativa o efeito.';
     }
     modal.classList.add('open');
   }
@@ -1073,14 +1095,25 @@
     const conveyor = $('#conveyor');
     const currentFlowIds = game.conveyor.map((card) => card?.id ?? null);
     const previousFlowIds = state.flowMatchId === game.matchId ? state.flowCardIds : null;
+    const previousDiscardIndex = state.flowMatchId === game.matchId ? state.flowDiscardIndex : null;
     const enteredFlowSlots = new Set();
     if (previousFlowIds) {
       currentFlowIds.forEach((id, index) => {
         if (id !== null && id !== previousFlowIds[index]) enteredFlowSlots.add(index);
       });
     }
+    let resonanceEntrySlot = -1;
+    if (previousFlowIds && previousDiscardIndex !== null && previousDiscardIndex !== undefined) {
+      const advanced = Number(game.discardIndex) - Number(previousDiscardIndex);
+      const candidate = ((Number(previousDiscardIndex) % 8) + 8) % 8;
+      const discardPos = (candidate + 1) % 8;
+      if ((advanced === 2 || (((advanced % 8) + 8) % 8) === 2) && game.lastDiscardPos === discardPos && enteredFlowSlots.has(candidate) && enteredFlowSlots.has(discardPos)) {
+        resonanceEntrySlot = candidate;
+      }
+    }
     state.flowMatchId = game.matchId;
     state.flowCardIds = currentFlowIds;
+    state.flowDiscardIndex = game.discardIndex;
     conveyor.innerHTML = '';
     const nextPos = game.discardIndex % 8;
     game.conveyor.forEach((card, index) => {
@@ -1088,7 +1121,8 @@
       const isMemory = index === nextPos;
       const isLatest = index === game.lastDiscardPos;
       const isBlocked = used.has(index);
-      slot.className = `slot${isMemory ? ' current-discard' : ''}${isLatest ? ' latest-discard' : ''}${isBlocked ? ' used-space' : ''}${index === 0 ? ' msb-slot' : ''}`;
+      const isResonanceTarget = index === resonanceEntrySlot;
+      slot.className = `slot${isMemory ? ' current-discard' : ''}${isLatest ? ' latest-discard' : ''}${isBlocked ? ' used-space' : ''}${index === 0 ? ' msb-slot' : ''}${isResonanceTarget ? ' resonance-target' : ''}`;
 
       const slotHelp = [`<b>Espaço ${index + 1} do &lt;fluxo&gt;</b>.`];
       if (card) slotHelp.push(`Topo visível: <b>${cardLabel(card)}</b>.`);
@@ -1096,7 +1130,7 @@
       if (isMemory) slotHelp.push('O triângulo amarelo indica a <b>&lt;memória&gt;</b>: este é o próximo espaço que receberá uma carta.');
       if (isLatest) slotHelp.push('O marcador azul indica a carta que entrou mais recentemente por descarte.');
       if (isBlocked) slotHelp.push('O símbolo vermelho indica <b>&lt;bloqueio&gt;</b>: este espaço não pode participar de uma captura até receber uma nova carta.');
-      if (index === 0) slotHelp.push('<b>MSB — bit mais significativo</b> deste byte. Nas partidas de 2 ou 3 jogadores, determina a &lt;ressonância&gt;; se for especial, todo descarte válido a ativa.');
+      if (index === 0) slotHelp.push('<b>MSB — bit mais significativo</b> deste byte. Nas partidas de 2 ou 3 jogadores, determina a &lt;ressonância&gt;; se a carta do MSB for uma carta especial, todo descarte válido a ativa.');
       slot.dataset.help = slotHelp.join(' ');
 
       const num = document.createElement('span');
@@ -1109,7 +1143,7 @@
         const cardEl = makeCard(card, null, false);
         cardEl.classList.add('flowcard');
         cardEl.dataset.help = `<b>Carta no espaço ${index + 1} do &lt;fluxo&gt;</b>: ${cardLabel(card)}.${index === 0 ? ' <b>MSB:</b> referência da &lt;ressonância&gt; nos modos de 2 e 3 jogadores.' : ''}${isBlocked ? ' Este espaço está com &lt;bloqueio&gt; e não pode ser capturado agora.' : ' Está disponível para formar fragmentos, desde que os outros espaços da sequência também estejam disponíveis.'}`;
-        if (enteredFlowSlots.has(index)) cardEl.classList.add('flow-enter');
+        if (enteredFlowSlots.has(index)) { cardEl.classList.add('flow-enter'); if (isResonanceTarget) cardEl.classList.add('resonance-enter'); }
         cardEl.innerHTML = '';
         const bits = document.createElement('span');
         bits.className = `bitpair${isSpecial(card) ? ' small' : ''}`;
@@ -1190,9 +1224,9 @@
       turnPrompt.className = `turn-prompt${tone ? ` ${tone}` : ''}`;
       const playerCount = game?.players?.length || 0;
       const resonance = tone === 'active' && playerCount === 2
-        ? '2 jogadores — <ressonância>: descarte da mesma cor OU valor do MSB (posição 1) envia 1 carta extra da <entrada> ao <fluxo>. MSB especial: qualquer descarte.'
+        ? '2 jogadores — <ressonância>: uma carta comum descartada com a mesma cor OU valor da carta do MSB (posição 1) envia 1 carta extra da <entrada> ao <fluxo>. Se a carta do MSB for uma carta especial, qualquer descarte válido ativa o efeito.'
         : tone === 'active' && playerCount === 3
-          ? '3 jogadores — <ressonância>: descarte da mesma cor do MSB (posição 1) envia 1 carta extra da <entrada> ao <fluxo>. MSB especial: qualquer descarte.'
+          ? '3 jogadores — <ressonância>: uma carta comum descartada com a mesma cor da carta do MSB (posição 1) envia 1 carta extra da <entrada> ao <fluxo>. Se a carta do MSB for uma carta especial, qualquer descarte válido ativa o efeito.'
           : '';
       // Texto puro: evita reconstruir nós DOM, preserva o aviso e os cliques do jogo.
       turnPrompt.textContent = resonance ? `${text}\n\n${resonance}` : text;
@@ -1485,11 +1519,11 @@
       if (rule.includes('Cada jogador começa')) {
         item.innerHTML = '<b>2 a 4 jogadores.</b> Cada jogador começa com <b>8 cartas abertas</b> em sua área de jogo, <b>3 marcadores de &lt;atualização&gt;</b> e <b>4 marcadores de &lt;captura&gt;</b>. A mão comporta temporariamente <b>9 cartas</b> após a compra.';
       } else if (rule.startsWith('2 jogadores')) {
-        item.innerHTML = '<b>2 jogadores — O Duelo:</b> ocorre &lt;ressonância&gt; quando a carta descartada tem a <b>mesma cor OU o mesmo valor</b> do MSB (primeira posição do &lt;fluxo&gt;). A carta visível da &lt;entrada&gt; entra primeiro no &lt;fluxo&gt;, seguida do descarte, avançando a &lt;memória&gt; duas posições.';
+        item.innerHTML = '<b>2 jogadores — O Duelo:</b> ocorre &lt;ressonância&gt; quando a carta descartada é uma <b>carta comum</b> com a <b>mesma cor OU o mesmo valor</b> da carta do MSB (primeira posição do &lt;fluxo&gt;). A carta visível da &lt;entrada&gt; entra primeiro no &lt;fluxo&gt;, seguida do descarte, avançando a &lt;memória&gt; duas posições.';
       } else if (rule.startsWith('3 jogadores')) {
-        item.innerHTML = '<b>3 jogadores — O Triângulo:</b> a &lt;ressonância&gt; ocorre somente quando a carta descartada tem a <b>mesma cor</b> do MSB. Em <b>4 jogadores</b> não há &lt;ressonância&gt;.';
+        item.innerHTML = '<b>3 jogadores — O Triângulo:</b> a &lt;ressonância&gt; ocorre somente quando a carta descartada é uma <b>carta comum</b> com a <b>mesma cor</b> da carta do MSB. Em <b>4 jogadores</b> não há &lt;ressonância&gt;.';
         const extra = document.createElement('li');
-        extra.innerHTML = '<b>MSB especial (00, 01, 10, 11):</b> qualquer descarte válido ativa &lt;ressonância&gt; em partidas de 2 ou 3 jogadores. Se o MSB é normal, descartar uma especial não ativa o efeito. A carta adicional não gera outra &lt;ressonância&gt; nem &lt;desconecta&gt; cores; apenas o descarte original &lt;desconecta&gt;.';
+        extra.innerHTML = '<b>Carta especial no MSB (00, 01, 10, 11):</b> qualquer descarte válido ativa &lt;ressonância&gt; em partidas de 2 ou 3 jogadores. Se a carta do MSB for uma <b>carta comum</b>, descartar uma <b>carta especial</b> não ativa o efeito. A carta adicional não gera outra &lt;ressonância&gt; nem &lt;desconecta&gt; cores; apenas o descarte original &lt;desconecta&gt;.';
         item.after(extra);
       } else if (rule.includes('8–9–1') || rule.includes('9–1–2')) {
         item.innerHTML = item.innerHTML.replace('8–9–1', '7–8–1').replace('9–1–2', '8–1–2');

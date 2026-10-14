@@ -554,8 +554,8 @@ function startGame(room) {
     for (const member of ordered) drawCard(game, game.players[member.id]);
   }
   seedConveyor(game);
-  if (game.playerCount === 2) addLog(game, 'Modo 2 jogadores — O Duelo: <ressonância> ativada por mesma cor OU valor do MSB (posição 1 do <fluxo>). MSB especial ativa qualquer descarte.');
-  if (game.playerCount === 3) addLog(game, 'Modo 3 jogadores — O Triângulo: <ressonância> ativada por mesma cor do MSB (posição 1 do <fluxo>). MSB especial ativa qualquer descarte.');
+  if (game.playerCount === 2) addLog(game, 'Modo 2 jogadores — O Duelo: <ressonância> ativada por mesma cor OU valor da carta do MSB (posição 1 do <fluxo>). Se a carta do MSB for uma carta especial, qualquer descarte válido ativa o efeito.');
+  if (game.playerCount === 3) addLog(game, 'Modo 3 jogadores — O Triângulo: <ressonância> ativada por mesma cor da carta do MSB (posição 1 do <fluxo>). Se a carta do MSB for uma carta especial, qualquer descarte válido ativa o efeito.');
   addLog(game, 'Nova partida: 8 cartas abertas e um <fluxo> de 8 posições (1 byte), 3 <atualização> e 4 marcadores de <capturados> por jogador.');
   addLog(game, `${game.players[game.starterId]?.name || 'Jogador'} foi selecionado aleatoriamente para iniciar a partida.`);
   startTurn(room);
