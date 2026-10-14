@@ -341,10 +341,10 @@ function drawCard(game, player) {
   return card;
 }
 
-// Depois da compra o jogador tem 10 cartas. Cada captura repõe a mão
-// até 10 ANTES do descarte; o descarte encerra o turno com 9 cartas.
-function refillToTen(game, player) {
-  while (player.hand.length < 10) {
+// Depois da compra o jogador tem 9 cartas. Cada captura repõe a mão
+// até 9 ANTES do descarte; o descarte encerra o turno com 8 cartas.
+function refillToNine(game, player) {
+  while (player.hand.length < 9) {
     if (!drawCard(game, player)) break;
   }
 }
@@ -362,8 +362,8 @@ function takeOpeningNormal(game) {
 
 function patterns(game) {
   const list = [];
-  for (let start = 0; start < 9; start += 1) {
-    const indices = [start, (start + 1) % 9, (start + 2) % 9];
+  for (let start = 0; start < 8; start += 1) {
+    const indices = [start, (start + 1) % 8, (start + 2) % 8];
     const cards = indices.map((index) => game.conveyor[index]);
     if (cards.every(Boolean)) list.push({ start, indices, cards, locked: indices.some((index) => game.usedSlots.has(index)) });
   }
@@ -537,11 +537,10 @@ function startGame(room) {
     turnNo: 0,
     refreshesThisTurn: 0,
     capturedThisTurn: false,
-    conveyor: Array(9).fill(null),
-    stacks: Array.from({ length: 9 }, () => []),
-    covers: Array(9).fill(0),
+    conveyor: Array(8).fill(null),
+    stacks: Array.from({ length: 8 }, () => []),
+    covers: Array(8).fill(0),
     usedSlots: new Set(),
-    invasionSlots: new Set(),
     discardIndex: 0,
     lastDiscardPos: null,
     winnerId: null,
@@ -551,13 +550,13 @@ function startGame(room) {
     lastSfxEvent: null
   };
   room.game = game;
-  for (let round = 0; round < 9; round += 1) {
+  for (let round = 0; round < 8; round += 1) {
     for (const member of ordered) drawCard(game, game.players[member.id]);
   }
   seedConveyor(game);
-  if (game.playerCount === 2) addLog(game, 'Modo 2 jogadores — O Duelo: <invasão 2> ativa por mesma cor ou mesmo valor do espaço anterior.');
-  if (game.playerCount === 3) addLog(game, 'Modo 3 jogadores — O Triângulo: <invasão 3> ativa por mesma cor do espaço anterior.');
-  addLog(game, 'Nova partida: 9 cartas abertas, 3 <atualização> e 4 marcadores de <capturados> por jogador.');
+  if (game.playerCount === 2) addLog(game, 'Modo 2 jogadores — O Duelo: <ressonância> ativada por mesma cor OU valor do MSB (posição 1 do <fluxo>). MSB especial ativa qualquer descarte.');
+  if (game.playerCount === 3) addLog(game, 'Modo 3 jogadores — O Triângulo: <ressonância> ativada por mesma cor do MSB (posição 1 do <fluxo>). MSB especial ativa qualquer descarte.');
+  addLog(game, 'Nova partida: 8 cartas abertas e um <fluxo> de 8 posições (1 byte), 3 <atualização> e 4 marcadores de <capturados> por jogador.');
   addLog(game, `${game.players[game.starterId]?.name || 'Jogador'} foi selecionado aleatoriamente para iniciar a partida.`);
   startTurn(room);
   room.updatedAt = Date.now();
@@ -574,8 +573,7 @@ function useRefresh(room, player) {
   if (!game.deck.length && !recycleDeck(game)) return null;
   const card = game.deck.pop();
   player.refresh -= 1;
-  const pos = game.discardIndex % 9;
-  game.invasionSlots.delete(pos);
+  const pos = game.discardIndex % 8;
   game.stacks[pos].push(card);
   refreshSlot(game, pos);
   refreshUsedSlot(game, pos);
@@ -587,25 +585,27 @@ function useRefresh(room, player) {
   return card;
 }
 
-function invasionRuleFor(game) {
+function resonanceRuleFor(game) {
   const count = game?.playerCount || game?.turnOrder?.length || 0;
   if (count === 2) return 'color-or-value';
   if (count === 3) return 'color';
   return null;
 }
 
-function invasionMatches(game, discardCard) {
-  const rule = invasionRuleFor(game);
-  if (!rule || !discardCard || isSpecial(discardCard)) return false;
-  const currentPos = game.discardIndex % 9;
-  const previousPos = (currentPos + 8) % 9;
-  const previousCard = game.conveyor[previousPos];
-  if (!previousCard || isSpecial(previousCard)) return false;
-  if (rule === 'color') return discardCard.color === previousCard.color;
-  return discardCard.color === previousCard.color || discardCard.value === previousCard.value;
+// O MSB é sempre a carta no primeiro espaço do <fluxo>.
+// Se for especial, todo descarte válido ativa a ressonância em 2/3 jogadores.
+// Se for comum, o descarte também deve ser comum: especial sem cor não ativa.
+function resonanceMatches(game, discardCard) {
+  const rule = resonanceRuleFor(game);
+  const msb = game?.conveyor?.[0];
+  if (!rule || !msb || !discardCard) return false;
+  if (isSpecial(msb)) return true;
+  if (isSpecial(discardCard)) return false;
+  if (rule === 'color') return discardCard.color === msb.color;
+  return discardCard.color === msb.color || discardCard.value === msb.value;
 }
 
-function takeCardForInvasion(game) {
+function takeCardForResonance(game) {
   if (!game.deck.length && !recycleDeck(game)) return null;
   return game.deck.pop() || null;
 }
@@ -617,31 +617,28 @@ function placeDiscard(room, player, cardId) {
   const card = player.hand[index];
   if (!canDiscardCard(player, card)) throw new Error('Essa carta não pode ser descartada neste turno.');
 
-  const triggersInvasion = invasionMatches(game, card);
-  const currentPos = game.discardIndex % 9;
-  const invasionCard = triggersInvasion ? takeCardForInvasion(game) : null;
+  // Avalia o MSB antes de qualquer sobrescrita, inclusive quando a
+  // próxima posição da <memória> é a própria posição 1.
+  const triggersResonance = resonanceMatches(game, card);
+  const currentPos = game.discardIndex % 8;
+  const extraCard = triggersResonance ? takeCardForResonance(game) : null;
 
   player.hand.splice(index, 1);
 
-  if (invasionCard) {
-    game.invasionSlots.delete(currentPos);
-    game.stacks[currentPos].push(invasionCard);
+  if (extraCard) {
+    // A carta complementar não aplica desconexão nem provoca nova ressonância.
+    game.stacks[currentPos].push(extraCard);
     refreshSlot(game, currentPos);
     refreshUsedSlot(game, currentPos);
-    game.invasionSlots.add(currentPos);
 
-    const discardPos = (currentPos + 1) % 9;
-    game.invasionSlots.delete(discardPos);
+    const discardPos = (currentPos + 1) % 8;
     game.stacks[discardPos].push(card);
     refreshSlot(game, discardPos);
     refreshUsedSlot(game, discardPos);
     game.discardIndex += 2;
     game.lastDiscardPos = discardPos;
-
-    const invasionName = (game.playerCount || game.turnOrder.length) === 2 ? '<invasão 2>' : '<invasão 3>';
-    addLog(game, `${player.name} ativou ${invasionName}: ${cardLabel(invasionCard)} da <entrada> invadiu o espaço ${currentPos + 1} e o descarte ${cardLabel(card)} seguiu para o espaço ${discardPos + 1}.`);
+    addLog(game, `${player.name} ativou <ressonância> pelo MSB: ${cardLabel(extraCard)} da <entrada> entrou no espaço ${currentPos + 1} e o descarte ${cardLabel(card)} entrou no espaço ${discardPos + 1}.`);
   } else {
-    game.invasionSlots.delete(currentPos);
     game.stacks[currentPos].push(card);
     refreshSlot(game, currentPos);
     refreshUsedSlot(game, currentPos);
@@ -680,7 +677,7 @@ function applyCapture(room, player, selectedCards, match) {
     addLog(game, `${player.name} venceu ao capturar o 4º fragmento e completar o pacote de 12 bits.`);
     return;
   }
-  refillToTen(game, player);
+  refillToNine(game, player);
 }
 
 function validateTurn(room, playerId, phase = null) {
@@ -769,7 +766,9 @@ function chooseBotDiscard(room, player) {
   const pool = normals.length ? normals : legal;
   const minimum = Math.min(...pool.map((index) => participation[index]));
   const best = pool.filter((index) => participation[index] === minimum);
-  return best[crypto.randomInt(0, best.length)];
+  const resonant = best.filter((index) => resonanceMatches(game, player.hand[index]));
+  const candidates = resonant.length ? resonant : best;
+  return candidates[crypto.randomInt(0, candidates.length)];
 }
 
 function isBotTurn(room) {
@@ -890,12 +889,11 @@ function publicGame(room) {
     conveyor: game.conveyor,
     covers: game.covers,
     usedSlots: [...game.usedSlots],
-    invasionSlots: [...game.invasionSlots],
     discardIndex: game.discardIndex,
     lastDiscardPos: game.lastDiscardPos,
     winnerId: game.winnerId,
     playerCount: game.playerCount || game.turnOrder.length,
-    invasionRule: invasionRuleFor(game),
+    resonanceRule: resonanceRuleFor(game),
     turnOrder: [...game.turnOrder],
     players: game.turnOrder.map((id) => ({ ...game.players[id], hand: game.players[id].hand.map((card) => ({ ...card })) })),
     logs: game.logs.map((entry) => ({ ...entry })),
@@ -982,5 +980,5 @@ module.exports = {
   respondRestart,
   sanitizeRoomCode,
   sanitizeName,
-  _engine: { makeDeck, matchFor, patterns, canDiscardCard, isSpecial, cardCode, startGame, invasionRuleFor, invasionMatches }
+  _engine: { makeDeck, matchFor, patterns, canDiscardCard, isSpecial, cardCode, startGame, resonanceRuleFor, resonanceMatches, placeDiscard, applyCapture, chooseBotDiscard, useRefresh }
 };

@@ -243,20 +243,20 @@
   }
 
 
-  // v74 — dez posições reservadas, estáveis, para a mão de todos os jogadores.
+  // v76 — nove posições reservadas, estáveis, para a mão de todos os jogadores.
   // Espaços vazios não são cartas e nunca recebem eventos de clique ou drag.
-  const HAND_CAPACITY = 10;
+  const HAND_CAPACITY = 9;
 
   function installFixedHandSlots() {
     if (document.getElementById('fixedHandSlotsStyles')) return;
     const style = document.createElement('style');
     style.id = 'fixedHandSlotsStyles';
     style.textContent = `
-      /* O ID evita que as regras antigas de 9 colunas sobreponham estas 10. */
+      /* Uma posição fica reservada para a compra temporária da nona carta. */
       #hand0.fixed-card-slots, #hand1.fixed-card-slots,
       #hand2.fixed-card-slots, #hand3.fixed-card-slots {
         display:grid!important;
-        grid-template-columns:repeat(10,minmax(0,1fr))!important;
+        grid-template-columns:repeat(9,minmax(0,1fr))!important;
         grid-template-rows:auto!important;
         grid-auto-flow:row!important;
         align-content:start!important;
@@ -341,6 +341,34 @@
     document.head.appendChild(style);
   }
 
+  function installByteFlowStyles() {
+    if (document.getElementById('byteFlowStyles')) return;
+    const style = document.createElement('style');
+    style.id = 'byteFlowStyles';
+    style.textContent = `
+      /* Um byte: as oito posições dividem uniformemente a largura disponível. */
+      #conveyor {
+        display:grid!important;
+        grid-template-columns:repeat(8,minmax(0,1fr))!important;
+        min-width:0!important;
+        width:100%!important;
+      }
+      #conveyor > .slot { min-width:0!important; }
+      /* Referência visual permanente do MSB, inclusive com a carta bloqueada. */
+      #conveyor .slot.msb-slot {
+        border:3px solid #b65bff!important;
+        box-shadow:0 0 0 1px #e6b7ff,0 0 11px 2px rgba(178,80,255,.86),inset 0 0 13px rgba(162,66,255,.26)!important;
+        position:relative;
+        z-index:2;
+      }
+      body.device-mobile #conveyor .slot.msb-slot {
+        border-width:3px!important;
+        box-shadow:0 0 0 1px #deacff,0 0 8px 1px rgba(178,80,255,.82),inset 0 0 9px rgba(162,66,255,.25)!important;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
   function reserveEmptyHandSlots(handBox, count) {
     handBox.classList.add('fixed-card-slots');
     for (let index = count; index < HAND_CAPACITY; index++) {
@@ -390,7 +418,7 @@
       item.className = 'history-item';
       const description = String(entry?.text || '');
       if (/venceu|capturou/i.test(description)) item.classList.add('history-positive');
-      else if (/invasão|desconectar|bloqueio/i.test(description)) item.classList.add('history-alert');
+      else if (/ressonância|desconectar|bloqueio/i.test(description)) item.classList.add('history-alert');
       const timestamp = new Date(Number(entry?.at));
       if (Number.isFinite(Number(entry?.at)) && !Number.isNaN(timestamp.getTime())) {
         const time = document.createElement('time');
@@ -702,8 +730,8 @@
     if (!game) return [];
     const used = new Set(game.usedSlots || []);
     const list = [];
-    for (let start = 0; start < 9; start += 1) {
-      const indices = [start, (start + 1) % 9, (start + 2) % 9];
+    for (let start = 0; start < 8; start += 1) {
+      const indices = [start, (start + 1) % 8, (start + 2) % 8];
       const cards = indices.map((index) => game.conveyor[index]);
       if (cards.every(Boolean)) list.push({ start, indices, cards, locked: indices.some((index) => used.has(index)) });
     }
@@ -927,10 +955,10 @@
 
     if (count === 2) {
       title.textContent = '2 jogadores — O Duelo';
-      text.innerHTML = 'Quando uma carta for descartada e tiver a <b>mesma cor OU o mesmo valor (0 ou 1)</b> da carta do espaço imediatamente anterior, a carta do topo da &lt;entrada&gt; invade o espaço atual e o seu descarte entra no espaço seguinte. O espaço que recebeu a carta da &lt;entrada&gt; fica marcado com <b>cor/val</b>. Esse marcador permanece ali até uma nova carta cobrir aquele espaço.';
+      text.innerHTML = 'O <b>MSB</b> é a posição 1 do &lt;fluxo&gt;, destacada em roxo. O descarte com a <b>mesma cor OU o mesmo valor</b> do MSB ativa a &lt;ressonância&gt;: uma carta da &lt;entrada&gt; entra primeiro e o descarte entra em seguida. <b>MSB especial:</b> qualquer descarte válido ativa o efeito.';
     } else {
       title.textContent = '3 jogadores — O Triângulo';
-      text.innerHTML = 'Quando uma carta for descartada e tiver a <b>mesma cor</b> da carta do espaço imediatamente anterior, a carta do topo da &lt;entrada&gt; invade o espaço atual e o seu descarte entra no espaço seguinte. O espaço que recebeu a carta da &lt;entrada&gt; fica marcado com <b>cor</b>. Esse marcador permanece ali até uma nova carta cobrir aquele espaço.';
+      text.innerHTML = 'O <b>MSB</b> é a posição 1 do &lt;fluxo&gt;, destacada em roxo. O descarte com a <b>mesma cor</b> do MSB ativa a &lt;ressonância&gt;: uma carta da &lt;entrada&gt; entra primeiro e o descarte entra em seguida. <b>MSB especial:</b> qualquer descarte válido ativa o efeito.';
     }
     modal.classList.add('open');
   }
@@ -1041,18 +1069,13 @@
     state.flowMatchId = game.matchId;
     state.flowCardIds = currentFlowIds;
     conveyor.innerHTML = '';
-    const nextPos = game.discardIndex % 9;
-    const invasionSlots = new Set(game.invasionSlots || []);
-    const playerCount = Number(game.playerCount || game.turnOrder?.length || 0);
-    const conveyorWrap = conveyor.closest('.conveyor-wrap');
-    conveyorWrap?.classList.toggle('has-invasion-history', invasionSlots.size > 0);
+    const nextPos = game.discardIndex % 8;
     game.conveyor.forEach((card, index) => {
       const slot = document.createElement('div');
       const isMemory = index === nextPos;
       const isLatest = index === game.lastDiscardPos;
       const isBlocked = used.has(index);
-      const isInvaded = invasionSlots.has(index);
-      slot.className = `slot${isMemory ? ' current-discard' : ''}${isLatest ? ' latest-discard' : ''}${isBlocked ? ' used-space' : ''}${isInvaded ? ' has-invasion-marker' : ''}`;
+      slot.className = `slot${isMemory ? ' current-discard' : ''}${isLatest ? ' latest-discard' : ''}${isBlocked ? ' used-space' : ''}${index === 0 ? ' msb-slot' : ''}`;
 
       const slotHelp = [`<b>Espaço ${index + 1} do &lt;fluxo&gt;</b>.`];
       if (card) slotHelp.push(`Topo visível: <b>${cardLabel(card)}</b>.`);
@@ -1060,30 +1083,19 @@
       if (isMemory) slotHelp.push('O triângulo amarelo indica a <b>&lt;memória&gt;</b>: este é o próximo espaço que receberá uma carta.');
       if (isLatest) slotHelp.push('O marcador azul indica a carta que entrou mais recentemente por descarte.');
       if (isBlocked) slotHelp.push('O símbolo vermelho indica <b>&lt;bloqueio&gt;</b>: este espaço não pode participar de uma captura até receber uma nova carta.');
-      if (isInvaded) slotHelp.push(`O marcador vermelho <b>${playerCount === 2 ? 'cor/val' : 'cor'}</b> indica que este espaço recebeu uma carta da &lt;entrada&gt; por invasão; ele some quando outra carta cobrir o espaço.`);
+      if (index === 0) slotHelp.push('<b>MSB — bit mais significativo</b> deste byte. Nas partidas de 2 ou 3 jogadores, determina a &lt;ressonância&gt;; se for especial, todo descarte válido a ativa.');
       slot.dataset.help = slotHelp.join(' ');
 
       const num = document.createElement('span');
       num.className = 'slotnum';
       num.textContent = index + 1;
-      num.dataset.help = `Posição <b>${index + 1}</b> do &lt;fluxo&gt;. O &lt;fluxo&gt; é circular: depois da posição 9, retorna à posição 1.`;
+      num.dataset.help = `Posição <b>${index + 1}</b> do &lt;fluxo&gt;. O &lt;fluxo&gt; é um byte circular com 8 posições: depois da posição 8, retorna à posição 1.${index === 0 ? ' <b>MSB:</b> referência da &lt;ressonância&gt; nas partidas de 2 e 3 jogadores.' : ''}`;
       slot.appendChild(num);
-
-      if (isInvaded && (playerCount === 2 || playerCount === 3)) {
-        const invasion = document.createElement('span');
-        invasion.className = `invasion-marker invasion-${playerCount}`;
-        invasion.textContent = playerCount === 2 ? 'cor/val' : 'cor';
-        invasion.dataset.help = playerCount === 2
-          ? '<b>&lt;invasão 2&gt; — cor/val</b>: este espaço recebeu a carta da &lt;entrada&gt; porque o descarte correspondia à mesma cor OU ao mesmo valor da carta anterior. O marcador desaparece quando este espaço recebe outra carta.'
-          : '<b>&lt;invasão 3&gt; — cor</b>: este espaço recebeu a carta da &lt;entrada&gt; porque o descarte correspondia à mesma cor da carta anterior. O marcador desaparece quando este espaço recebe outra carta.';
-        invasion.title = invasion.textContent;
-        slot.appendChild(invasion);
-      }
 
       if (card) {
         const cardEl = makeCard(card, null, false);
         cardEl.classList.add('flowcard');
-        cardEl.dataset.help = `<b>Carta no espaço ${index + 1} do &lt;fluxo&gt;</b>: ${cardLabel(card)}.${isBlocked ? ' Este espaço está com &lt;bloqueio&gt; e não pode ser capturado agora.' : ' Está disponível para formar fragmentos, desde que os outros espaços da sequência também estejam disponíveis.'}`;
+        cardEl.dataset.help = `<b>Carta no espaço ${index + 1} do &lt;fluxo&gt;</b>: ${cardLabel(card)}.${index === 0 ? ' <b>MSB:</b> referência da &lt;ressonância&gt; nos modos de 2 e 3 jogadores.' : ''}${isBlocked ? ' Este espaço está com &lt;bloqueio&gt; e não pode ser capturado agora.' : ' Está disponível para formar fragmentos, desde que os outros espaços da sequência também estejam disponíveis.'}`;
         if (enteredFlowSlots.has(index)) cardEl.classList.add('flow-enter');
         cardEl.innerHTML = '';
         const bits = document.createElement('span');
@@ -1164,16 +1176,16 @@
       if (!turnPrompt) return;
       turnPrompt.className = `turn-prompt${tone ? ` ${tone}` : ''}`;
       const playerCount = game?.players?.length || 0;
-      const invasion = tone === 'active' && playerCount === 2
-        ? 'Partida em 2 jogadores: Se uma carta for descartada ao lado de outra de mesmo valor ou cor, a carta do deck <entrada> é colocada entre elas.'
+      const resonance = tone === 'active' && playerCount === 2
+        ? '2 jogadores — <ressonância>: descarte da mesma cor OU valor do MSB (posição 1) envia 1 carta extra da <entrada> ao <fluxo>. MSB especial: qualquer descarte.'
         : tone === 'active' && playerCount === 3
-          ? 'Partida em 3 jogadores: Se uma carta for descartada ao lado de outra da mesma cor, a carta do deck <entrada> é colocada entre elas.'
+          ? '3 jogadores — <ressonância>: descarte da mesma cor do MSB (posição 1) envia 1 carta extra da <entrada> ao <fluxo>. MSB especial: qualquer descarte.'
           : '';
       // Texto puro: evita reconstruir nós DOM, preserva o aviso e os cliques do jogo.
-      turnPrompt.textContent = invasion ? `${text}\n\n${invasion}` : text;
-      turnPrompt.style.display = invasion ? 'block' : '';
-      turnPrompt.style.whiteSpace = invasion ? 'pre-line' : '';
-      turnPrompt.style.lineHeight = invasion ? '1.35' : '';
+      turnPrompt.textContent = resonance ? `${text}\n\n${resonance}` : text;
+      turnPrompt.style.display = resonance ? 'block' : '';
+      turnPrompt.style.whiteSpace = resonance ? 'pre-line' : '';
+      turnPrompt.style.lineHeight = resonance ? '1.35' : '';
       turnPrompt.style.flexDirection = '';
     };
     draw.disabled = true; refresh.disabled = true; capture.disabled = true; discard.disabled = true;
@@ -1449,14 +1461,30 @@
     getRoom() { return state.room; }
   };
 
-  // v75: atualiza apenas os textos de REGRAS com a reposição validada no servidor.
+  // v76 — Regras do próprio jogo, sem depender da revisão do PDF físico.
+  // Atualiza o modal presente nas duas páginas (desktop e mobile).
   function updateOnlineCaptureRules() {
-    for (const item of document.querySelectorAll('#rules li')) {
+    const rules = document.querySelector('#rules ul');
+    if (!rules) return;
+    const items = [...rules.querySelectorAll('li')];
+    for (const item of items) {
       const rule = item.textContent || '';
-      if (rule.includes('Após a captura, sua área é reposta')) {
-        item.innerHTML = 'O jogador pode capturar <b>apenas 1 fragmento por turno</b>. Após a captura, compre cartas da &lt;entrada&gt; até voltar a ter <b>10 cartas</b> na sua área, mesmo que tenha usado 2 ou 3 cartas. Depois, descarte 1 carta.';
-      } else if (rule.includes('depois do descarte reponha novamente')) {
-        item.innerHTML = 'Após uma captura, <b>reponha até 10 cartas antes do descarte</b>. Descarte 1 carta e termine o turno com <b>9 cartas</b>. Não há nova reposição depois de descartar.';
+      if (rule.includes('Cada jogador começa')) {
+        item.innerHTML = '<b>2 a 4 jogadores.</b> Cada jogador começa com <b>8 cartas abertas</b> em sua área de jogo, <b>3 marcadores de &lt;atualização&gt;</b> e <b>4 marcadores de &lt;captura&gt;</b>. A mão comporta temporariamente <b>9 cartas</b> após a compra.';
+      } else if (rule.startsWith('2 jogadores')) {
+        item.innerHTML = '<b>2 jogadores — O Duelo:</b> ocorre &lt;ressonância&gt; quando a carta descartada tem a <b>mesma cor OU o mesmo valor</b> do MSB (primeira posição do &lt;fluxo&gt;). A carta visível da &lt;entrada&gt; entra primeiro no &lt;fluxo&gt;, seguida do descarte, avançando a &lt;memória&gt; duas posições.';
+      } else if (rule.startsWith('3 jogadores')) {
+        item.innerHTML = '<b>3 jogadores — O Triângulo:</b> a &lt;ressonância&gt; ocorre somente quando a carta descartada tem a <b>mesma cor</b> do MSB. Em <b>4 jogadores</b> não há &lt;ressonância&gt;.';
+        const extra = document.createElement('li');
+        extra.innerHTML = '<b>MSB especial (00, 01, 10, 11):</b> qualquer descarte válido ativa &lt;ressonância&gt; em partidas de 2 ou 3 jogadores. Se o MSB é normal, descartar uma especial não ativa o efeito. A carta adicional não gera outra &lt;ressonância&gt; nem &lt;desconecta&gt; cores; apenas o descarte original &lt;desconecta&gt;.';
+        item.after(extra);
+      } else if (rule.includes('8–9–1') || rule.includes('9–1–2')) {
+        item.innerHTML = item.innerHTML.replace('8–9–1', '7–8–1').replace('9–1–2', '8–1–2');
+        item.insertAdjacentHTML('beforeend', ' O &lt;fluxo&gt; possui <b>8 posições (1 byte)</b>.');
+      } else if (rule.includes('Após a captura, sua área é reposta') || rule.includes('Após a captura, compre cartas')) {
+        item.innerHTML = 'O jogador pode &lt;capturar&gt; <b>apenas 1 fragmento por turno</b>. Após capturar usando 2 ou 3 cartas, reponha sua mão com cartas da &lt;entrada&gt; até <b>9 cartas</b>, antes do descarte.';
+      } else if (rule.includes('depois do descarte reponha novamente') || rule.includes('Não há nova reposição depois de descartar')) {
+        item.innerHTML = 'Descarte <b>1 carta</b> e encerre o turno com <b>8 cartas</b>. Não há reposição depois de descartar.';
       }
     }
   }
@@ -1464,6 +1492,7 @@
   installHistory();
   installRefillFX();
   installFixedHandSlots();
+  installByteFlowStyles();
   installMobilePhysicalManual();
   if (DEVICE === 'mobile') {
     $('#fitBtn')?.addEventListener('click', () => {
