@@ -161,13 +161,28 @@
     }
   }
 
+  // v77 — Cada participante vê a sequência circular real dos turnos a partir
+  // de si próprio: sua área no rodapé e, no topo, os próximos a jogar.
+  // Espectadores conservam a disposição por assento, sem perspectiva pessoal.
+  // A mesma função é usada pela interface e pela animação de compra/reposição.
+  function displayPlayersForViewer(room) {
+    const participants = [...(room?.game?.players || [])].sort((a, b) => a.seat - b.seat);
+    if (room?.viewerIsSpectator) return participants;
+    const turnOrder = room?.game?.turnOrder || [];
+    const viewerIndex = turnOrder.indexOf(room?.viewerId);
+    if (viewerIndex < 0) {
+      const viewer = participants.find((player) => player.id === room?.viewerId);
+      return [viewer, ...participants.filter((player) => player.id !== room?.viewerId)].filter(Boolean);
+    }
+    const playersById = new Map(participants.map((player) => [player.id, player]));
+    const fromViewer = [...turnOrder.slice(viewerIndex), ...turnOrder.slice(0, viewerIndex)];
+    return fromViewer.map((id) => playersById.get(id)).filter(Boolean);
+  }
+
   function refillCardElement(playerId, cardId) {
     const room = state.room;
     if (!room?.game) return null;
-    const participants = [...room.game.players].sort((a, b) => a.seat - b.seat);
-    const display = viewerIsSpectator()
-      ? participants
-      : [me(), ...participants.filter((player) => player.id !== room.viewerId)].filter(Boolean);
+    const display = displayPlayersForViewer(room);
     const index = display.findIndex((player) => player.id === playerId);
     if (index < 0) return null;
     return document.querySelector(`#hand${index} [data-card-id="${cardId}"]`);
@@ -974,11 +989,9 @@
     const startupOpen = maybeShowStartupSequence(game);
     if (!startupOpen) maybeShowPlayerModeNotice(game);
 
-    const viewer = me();
     const spectator = viewerIsSpectator();
     document.body.classList.toggle('viewer-spectator', spectator);
-    const participants = [...game.players].sort((a, b) => a.seat - b.seat);
-    const display = spectator ? participants : [viewer, ...participants.filter((player) => player.id !== room.viewerId)].filter(Boolean);
+    const display = displayPlayersForViewer(room);
     const banner = $('#viewerBanner');
     if (banner) {
       const spectators = room.spectators?.length || 0;
