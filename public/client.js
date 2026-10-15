@@ -521,7 +521,10 @@
           text-align:center!important;
         }
         body.device-mobile.in-game.compact-resonance-prompt .turn-prompt {
-          height:62px!important;min-height:62px!important;max-height:62px!important;
+          /* Espaço fixo para a explicação completa; nunca muda entre turnos. */
+          height:104px!important;min-height:104px!important;max-height:104px!important;
+          font-size:9px!important;line-height:1.25!important;
+          padding:5px 7px!important;
         }
         body.device-mobile.in-game .human .controls .msg {
           box-sizing:border-box!important;
@@ -573,8 +576,10 @@
           overflow:hidden!important;
         }
         body.device-mobile.in-game.compact-resonance-prompt .turn-prompt {
-          height:52px!important;min-height:52px!important;max-height:52px!important;
+          height:70px!important;min-height:70px!important;max-height:70px!important;
           white-space:pre-line!important;
+          font-size:8px!important;line-height:1.2!important;
+          padding:3px 6px!important;
         }
         body.device-mobile.in-game #deckHint {
           box-sizing:border-box!important;
@@ -1428,20 +1433,21 @@
       if (!turnPrompt) return;
       turnPrompt.className = `turn-prompt${tone ? ` ${tone}` : ''}`;
       const playerCount = game?.players?.length || 0;
-      // A instrução completa fica em REGRAS. No mobile, o aviso curto não pode
-      // aumentar a altura do tabuleiro quando chega a vez do jogador.
-      const resonance = tone === 'active' && playerCount === 2
-        ? DEVICE === 'mobile'
-          ? '2J: <ressonância> = cor OU valor do MSB. Carta especial no MSB: sempre.'
-          : '2 jogadores — <ressonância>: se a carta comum descartada tiver a mesma cor OU valor da carta do MSB (posição 1 do <fluxo>), o topo da <entrada> entra primeiro no espaço indicado pela <memória> e o descarte ocupa o próximo espaço. A <memória> avança duas posições. Carta especial no MSB: qualquer descarte válido ativa o efeito.'
-        : tone === 'active' && playerCount === 3
-          ? DEVICE === 'mobile'
-            ? '3J: <ressonância> = mesma cor do MSB. Carta especial no MSB: sempre.'
-            : '3 jogadores — <ressonância>: se a carta comum descartada tiver a mesma cor da carta do MSB (posição 1 do <fluxo>), o topo da <entrada> entra primeiro no espaço da <memória> e o descarte ocupa o próximo. A <memória> avança duas posições. Carta especial no MSB: qualquer descarte válido ativa o efeito.'
-          : '';
-      // Texto puro: evita reconstruir nós DOM, preserva o aviso e os cliques do jogo.
-      const landscapePrompt = DEVICE === 'mobile' && window.matchMedia('(orientation: landscape)').matches;
-      turnPrompt.textContent = resonance ? (landscapePrompt ? `${text} ${resonance}` : `${text}\n\n${resonance}`) : text;
+      // v81 — Frases completas, sem abreviações de jogadores ou fórmulas.
+      // A explicação segue o manual: observar o MSB, reconhecer a condição,
+      // compreender a entrada da carta adicional e a exceção das especiais.
+      // O espaço do aviso permanece reservado no mobile, inclusive fora do turno.
+      const resonance = tone === 'active' && (playerCount === 2 || playerCount === 3)
+        ? `${playerCount} jogadores — Observe a carta no primeiro espaço do <fluxo> (MSB). `
+          + (playerCount === 2
+            ? 'Se descartar uma carta comum da mesma cor ou do mesmo valor, ocorrerá uma <ressonância>. '
+            : 'Se descartar uma carta comum da mesma cor, ocorrerá uma <ressonância>. ')
+          + 'Uma carta extra da <entrada> entrará no <fluxo> antes da sua carta descartada. '
+          + 'Se o primeiro espaço tiver uma carta especial, qualquer descarte válido ativa esse efeito.'
+        : '';
+      // Apresentar a ação atual primeiro. Quebras deliberadas separam
+      // a orientação de turno da explicação, sem criar elementos variáveis.
+      turnPrompt.textContent = resonance ? `${text}\n${resonance}` : text;
       turnPrompt.style.display = resonance ? 'block' : '';
       turnPrompt.style.whiteSpace = resonance ? 'pre-line' : '';
       turnPrompt.style.lineHeight = resonance ? '1.35' : '';
