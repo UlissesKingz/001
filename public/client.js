@@ -460,9 +460,47 @@
       #conveyor .flowcard.resonance-enter {
         animation:resonance-card-enter 1050ms ease-out both!important;
       }
+      /* v80 — interferência digital do contorno; não desloca o tabuleiro. */
+      @keyframes purple-neon-glitch {
+        0%, 100% { opacity:0; transform:translateX(0); clip-path:inset(0 0 0 0); }
+        8%, 19% { opacity:1; transform:translateX(-2px); clip-path:inset(0 0 55% 0); border-color:#f5d0ff; }
+        20%, 33% { opacity:.15; transform:translateX(2px); clip-path:inset(45% 0 0 0); }
+        34%, 47% { opacity:1; transform:translateX(2px); clip-path:inset(35% 0 28% 0); border-color:#a849ff; }
+        48%, 62% { opacity:.9; transform:translateX(-1px); clip-path:inset(70% 0 0 0); border-color:#e3aaff; }
+        63%, 75% { opacity:.1; transform:translateX(0); clip-path:inset(0 0 0 0); }
+        76%, 92% { opacity:.8; transform:translateX(1px); clip-path:inset(0 0 73% 0); border-color:#fff2ff; }
+      }
+      #conveyor .slot .purple-glitch-frame {
+        position:absolute;
+        inset:-3px;
+        border:3px solid #dca3ff;
+        border-radius:inherit;
+        box-shadow:0 0 9px 2px #bf70ff, inset 0 0 7px #b45dff;
+        opacity:0;
+        pointer-events:none!important;
+        z-index:13;
+      }
+      #conveyor .slot.purple-glitch .purple-glitch-frame {
+        animation:purple-neon-glitch 320ms steps(1,end) both!important;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        #conveyor .slot.purple-glitch .purple-glitch-frame { animation:none!important; }
+      }
     `;
     document.head.appendChild(style);
   }
+
+  // v80 — uma breve interferência nos contornos roxos a cada 5 s.
+  // A animação da camada interna não substitui a pulsação da ressonância.
+  function glitchPurpleOutlines() {
+    if (!document.body.classList.contains('in-game')) return;
+    $$('#conveyor .slot.msb-slot, #conveyor .slot.resonance-target').forEach((slot) => {
+      slot.classList.remove('purple-glitch');
+      void slot.offsetWidth;
+      slot.classList.add('purple-glitch');
+    });
+  }
+  setInterval(glitchPurpleOutlines, 5000);
 
   // v79 — medidas previsíveis durante a partida: avisos e mensagens não
   // aumentam/reduzem os painéis conforme o número de cartas ou fase do turno.
@@ -708,6 +746,7 @@
 
   const SOUND_VOLUMES = {
     flow: 0.35,
+    resonance: 0.54,
     refresh: 0.50,
     capture: 0.50,
     ui: 0.45,
@@ -715,6 +754,7 @@
   };
   const sounds = {
     flow: new Audio('/assets/sounds/flow.wav'),
+    resonance: new Audio('/assets/sounds/resonance.wav'),
     refresh: new Audio('/assets/sounds/refresh.wav'),
     capture: new Audio('/assets/sounds/capture.wav'),
     ui: new Audio('/assets/sounds/ui-confirm.wav'),
@@ -765,6 +805,10 @@
     state.sfxSeq = event.seq;
     if (event.type === 'capture') {
       playSound('capture');
+      return;
+    }
+    if (event.type === 'resonance') {
+      playSound('resonance');
       return;
     }
     // Toda carta que entra no <fluxo> é audível para a sala em volume menor.
@@ -1092,11 +1136,13 @@
       rows.push({ row, bits, player: orderedPlayers[index], resolved: false, index });
     }
 
-    const revealStep = 700;
+    // v80 — acrescenta 2 s distribuídos entre as revelações e a pausa final.
+    // A mesma duração é calculada no servidor, mantendo o bloqueio sincronizado.
+    const revealStep = 700 + 2000 / (orderedPlayers.length + 1);
     const total = (orderedPlayers.length + 1) * revealStep;
     const elapsed = Math.max(0, total - remaining);
-    // Cada participante é revelado em intervalos exatos de 0,7 s.
-    // Depois do último nome, o quadro permanece mais 0,7 s e fecha.
+    // Cada nome recebe um intervalo ampliado; a última pausa também cresce.
+    // O quadro fecha no mesmo instante em todas as telas.
     const resolveAt = (index) => revealStep * (index + 1);
     const resolveRow = (item) => {
       if (!item || item.resolved) return;
@@ -1142,10 +1188,10 @@
 
     if (count === 2) {
       title.textContent = '2 jogadores — O Duelo';
-      text.innerHTML = 'O <b>MSB</b> é a posição 1 do &lt;fluxo&gt;, destacada em roxo. Quando o descarte é uma <b>carta comum</b> com a <b>mesma cor OU o mesmo valor</b> da carta do MSB, ativa a &lt;ressonância&gt;: uma carta da &lt;entrada&gt; entra primeiro e o descarte entra em seguida. <b>Se a carta do MSB for uma carta especial</b>, qualquer descarte válido ativa o efeito.';
+      text.innerHTML = 'No <b>Duelo</b>, a primeira posição do &lt;fluxo&gt; é o <b>MSB</b>, identificada pelo contorno roxo. Quando uma <b>carta comum</b> é descartada com a <b>mesma cor OU o mesmo valor</b> da carta do MSB, ocorre uma &lt;ressonância&gt;. A carta visível no topo da &lt;entrada&gt; ocupa primeiro o espaço indicado pelo marcador de &lt;memória&gt;; o descarte vai para o espaço seguinte. A &lt;memória&gt; avança duas posições. <b>Se a carta que estiver no MSB for uma carta especial</b> (00, 01, 10 ou 11), qualquer descarte válido ativa o efeito.';
     } else {
       title.textContent = '3 jogadores — O Triângulo';
-      text.innerHTML = 'O <b>MSB</b> é a posição 1 do &lt;fluxo&gt;, destacada em roxo. Quando o descarte é uma <b>carta comum</b> com a <b>mesma cor</b> da carta do MSB, ativa a &lt;ressonância&gt;: uma carta da &lt;entrada&gt; entra primeiro e o descarte entra em seguida. <b>Se a carta do MSB for uma carta especial</b>, qualquer descarte válido ativa o efeito.';
+      text.innerHTML = 'No <b>Triângulo</b>, a primeira posição do &lt;fluxo&gt; é o <b>MSB</b>, identificada pelo contorno roxo. A &lt;ressonância&gt; acontece quando uma <b>carta comum</b> é descartada com a <b>mesma cor</b> da carta do MSB. A carta visível no topo da &lt;entrada&gt; entra no espaço indicado pela &lt;memória&gt;, e o descarte ocupa o espaço seguinte, avançando a &lt;memória&gt; duas posições. <b>Se a carta que estiver no MSB for uma carta especial</b> (00, 01, 10 ou 11), qualquer descarte válido ativa o efeito.';
     }
     modal.classList.add('open');
   }
@@ -1280,7 +1326,8 @@
       if (isMemory) slotHelp.push('O triângulo amarelo indica a <b>&lt;memória&gt;</b>: este é o próximo espaço que receberá uma carta.');
       if (isLatest) slotHelp.push('O marcador azul indica a carta que entrou mais recentemente por descarte.');
       if (isBlocked) slotHelp.push('O símbolo vermelho indica <b>&lt;bloqueio&gt;</b>: este espaço não pode participar de uma captura até receber uma nova carta.');
-      if (index === 0) slotHelp.push('<b>MSB — bit mais significativo</b> deste byte. Nas partidas de 2 ou 3 jogadores, determina a &lt;ressonância&gt;; se a carta do MSB for uma carta especial, todo descarte válido a ativa.');
+      if (isResonanceTarget) slotHelp.push('<b>&lt;ressonância&gt; ativada:</b> a carta visível da &lt;entrada&gt; entrou neste espaço antes de o descarte avançar para o próximo. O contorno roxo pulsa para indicar essa intervenção.');
+      if (index === 0) slotHelp.push('<b>MSB — Most Significant Bit</b>: primeiro espaço do byte compartilhado. Em 2 jogadores, compare cor OU valor da carta comum descartada; em 3 jogadores, compare somente a cor. Se a carta do MSB for uma carta especial, qualquer descarte válido ativa a &lt;ressonância&gt;. Em 4 jogadores não há &lt;ressonância&gt;.');
       slot.dataset.help = slotHelp.join(' ');
 
       const num = document.createElement('span');
@@ -1308,6 +1355,14 @@
           stack.dataset.help = `<b>${game.covers[index]} cartas neste espaço</b>. Apenas a carta do topo está ativa no &lt;fluxo&gt;; as cartas cobertas permanecem sob ela e podem voltar à &lt;entrada&gt; quando o deck precisar ser refeito.`;
           slot.appendChild(stack);
         }
+      }
+      if (index === 0 || isResonanceTarget) {
+        const glitchFrame = document.createElement('span');
+        glitchFrame.className = 'purple-glitch-frame';
+        glitchFrame.setAttribute('aria-hidden', 'true');
+        slot.appendChild(glitchFrame);
+        // Cada ressonância também sinaliza seu início com uma interferência curta.
+        if (isResonanceTarget) slot.classList.add('purple-glitch');
       }
       conveyor.appendChild(slot);
     });
@@ -1378,11 +1433,11 @@
       const resonance = tone === 'active' && playerCount === 2
         ? DEVICE === 'mobile'
           ? '2J: <ressonância> = cor OU valor do MSB. Carta especial no MSB: sempre.'
-          : '2 jogadores — <ressonância>: uma carta comum descartada com a mesma cor OU valor da carta do MSB (posição 1) envia 1 carta extra da <entrada> ao <fluxo>. Se a carta do MSB for uma carta especial, qualquer descarte válido ativa o efeito.'
+          : '2 jogadores — <ressonância>: se a carta comum descartada tiver a mesma cor OU valor da carta do MSB (posição 1 do <fluxo>), o topo da <entrada> entra primeiro no espaço indicado pela <memória> e o descarte ocupa o próximo espaço. A <memória> avança duas posições. Carta especial no MSB: qualquer descarte válido ativa o efeito.'
         : tone === 'active' && playerCount === 3
           ? DEVICE === 'mobile'
             ? '3J: <ressonância> = mesma cor do MSB. Carta especial no MSB: sempre.'
-            : '3 jogadores — <ressonância>: uma carta comum descartada com a mesma cor da carta do MSB (posição 1) envia 1 carta extra da <entrada> ao <fluxo>. Se a carta do MSB for uma carta especial, qualquer descarte válido ativa o efeito.'
+            : '3 jogadores — <ressonância>: se a carta comum descartada tiver a mesma cor da carta do MSB (posição 1 do <fluxo>), o topo da <entrada> entra primeiro no espaço da <memória> e o descarte ocupa o próximo. A <memória> avança duas posições. Carta especial no MSB: qualquer descarte válido ativa o efeito.'
           : '';
       // Texto puro: evita reconstruir nós DOM, preserva o aviso e os cliques do jogo.
       const landscapePrompt = DEVICE === 'mobile' && window.matchMedia('(orientation: landscape)').matches;
@@ -1675,33 +1730,45 @@
     getRoom() { return state.room; }
   };
 
-  // v76 — Regras do próprio jogo, sem depender da revisão do PDF físico.
-  // Atualiza o modal presente nas duas páginas (desktop e mobile).
+  // v80 — Corrige rótulos e ajudas herdados do layout de 9 posições sem
+  // alterar as dimensões do HTML, protegendo o ajuste automático mobile.
+  function updateOnlineHelpLabels() {
+    const label = document.querySelector('.conveyor-title .sub');
+    if (label) label.textContent = '8 posições · 1 byte';
+    const title = document.querySelector('.conveyor-title');
+    if (title) title.dataset.help = '<b>&lt;fluxo&gt;</b>: linha circular de 8 posições (1 byte) que recebe cartas da &lt;entrada&gt; ou dos descartes. Para &lt;capturar&gt; um fragmento, compare três posições consecutivas com cartas disponíveis na sua área de jogo.';
+    const wrap = document.querySelector('.conveyor-wrap');
+    if (wrap) wrap.dataset.help = '<b>&lt;fluxo&gt;</b>: byte compartilhado por todos os jogadores. O marcador de &lt;memória&gt; indica a próxima posição que receberá uma carta; depois do espaço 8, volta para o espaço 1. O contorno roxo permanente identifica o MSB.';
+    const log = document.querySelector('.center-log');
+    if (log) log.dataset.help = '<b>Registro da partida:</b> acompanhe compras, &lt;atualizações&gt;, &lt;capturas&gt;, descartes, &lt;ressonâncias&gt; e cores &lt;desconectadas&gt;.';
+    const help = document.querySelector('#hand0');
+    if (help) help.dataset.help = '<b>Sua área de jogo:</b> você começa com 8 cartas abertas e compra 1 carta a cada turno. Se &lt;capturar&gt; um fragmento, repõe sua área até 9 cartas antes de descartar; ao final do turno, retorna a 8. Selecione as cartas para &lt;capturar&gt; ou descartar.';
+  }
+
+  // v80 — Regras digitais redigidas na organização e terminologia do manual
+  // físico mais recente. As quantidades e os efeitos seguem o motor digital.
   function updateOnlineCaptureRules() {
     const rules = document.querySelector('#rules ul');
     if (!rules) return;
-    const items = [...rules.querySelectorAll('li')];
-    for (const item of items) {
-      const rule = item.textContent || '';
-      if (rule.includes('Cada jogador começa')) {
-        item.innerHTML = '<b>2 a 4 jogadores.</b> Cada jogador começa com <b>8 cartas abertas</b> em sua área de jogo, <b>3 marcadores de &lt;atualização&gt;</b> e <b>4 marcadores de &lt;captura&gt;</b>. A mão comporta temporariamente <b>9 cartas</b> após a compra.';
-      } else if (rule.startsWith('2 jogadores')) {
-        item.innerHTML = '<b>2 jogadores — O Duelo:</b> ocorre &lt;ressonância&gt; quando a carta descartada é uma <b>carta comum</b> com a <b>mesma cor OU o mesmo valor</b> da carta do MSB (primeira posição do &lt;fluxo&gt;). A carta visível da &lt;entrada&gt; entra primeiro no &lt;fluxo&gt;, seguida do descarte, avançando a &lt;memória&gt; duas posições.';
-      } else if (rule.startsWith('3 jogadores')) {
-        item.innerHTML = '<b>3 jogadores — O Triângulo:</b> a &lt;ressonância&gt; ocorre somente quando a carta descartada é uma <b>carta comum</b> com a <b>mesma cor</b> da carta do MSB. Em <b>4 jogadores</b> não há &lt;ressonância&gt;.';
-        const extra = document.createElement('li');
-        extra.innerHTML = '<b>Carta especial no MSB (00, 01, 10, 11):</b> qualquer descarte válido ativa &lt;ressonância&gt; em partidas de 2 ou 3 jogadores. Se a carta do MSB for uma <b>carta comum</b>, descartar uma <b>carta especial</b> não ativa o efeito. A carta adicional não gera outra &lt;ressonância&gt; nem &lt;desconecta&gt; cores; apenas o descarte original &lt;desconecta&gt;.';
-        item.after(extra);
-      } else if (rule.includes('8–9–1') || rule.includes('9–1–2')) {
-        item.innerHTML = item.innerHTML.replace('8–9–1', '7–8–1').replace('9–1–2', '8–1–2');
-        item.insertAdjacentHTML('beforeend', ' O &lt;fluxo&gt; possui <b>8 posições (1 byte)</b>.');
-      } else if (rule.includes('Após a captura, sua área é reposta') || rule.includes('Após a captura, compre cartas')) {
-        item.innerHTML = 'O jogador pode &lt;capturar&gt; <b>apenas 1 fragmento por turno</b>. Após capturar usando 2 ou 3 cartas, reponha sua mão com cartas da &lt;entrada&gt; até <b>9 cartas</b>, antes do descarte.';
-      } else if (rule.includes('depois do descarte reponha novamente') || rule.includes('Não há nova reposição depois de descartar')) {
-        item.innerHTML = 'Descarte <b>1 carta</b> e encerre o turno com <b>8 cartas</b>. Não há reposição depois de descartar.';
-      }
-    }
+    const sections = [
+      `<b>A rede:</b> todos os jogadores estão conectados à mesma rede, disputando fragmentos de informação. No centro, os <b>8 bits</b> formam um byte: o &lt;fluxo&gt;, continuamente atualizado pelas cartas dos jogadores. O primeiro jogador que &lt;capturar&gt; <b>4 fragmentos</b> de 3 bits completa um pacote de 12 bits e vence a partida.`,
+      `<b>Preparação:</b> partida para 2 a 4 jogadores. Cada um recebe <b>8 cartas abertas</b>, <b>3 marcadores de &lt;atualização&gt;</b> e <b>4 marcadores de &lt;captura&gt;</b>. Abra 3 cartas comuns nas posições 1, 2 e 3 do &lt;fluxo&gt;; se aparecer uma carta especial, devolva-a ao fundo do deck de &lt;entrada&gt; e revele outra. O marcador de &lt;memória&gt; começa indicando a posição 4.`,
+      `<b>01 — Filtrar &lt;entrada&gt; e usar &lt;atualização&gt;:</b> antes da compra obrigatória, você pode gastar até os seus 3 marcadores de &lt;atualização&gt;. Cada uso envia a carta visível do topo da &lt;entrada&gt; diretamente para o espaço apontado pela &lt;memória&gt; e avança o marcador. Essa carta <b>não &lt;desconecta&gt; uma cor</b>, e qualquer carta que entre num espaço com &lt;bloqueio&gt; o libera.`,
+      `<b>02 — Comprar carta:</b> depois das possíveis atualizações, compre <b>1 carta</b> do topo visível do deck de &lt;entrada&gt;. Sua área passa temporariamente de 8 para <b>9 cartas</b>. Cartas de uma cor &lt;desconectada&gt; ficam indisponíveis durante o turno.`,
+      `<b>03 — &lt;capturar&gt; fragmento do &lt;fluxo&gt;:</b> você pode capturar <b>1 sequência por turno</b>, usando cartas da sua área que correspondam a <b>3 posições consecutivas</b> e disponíveis do &lt;fluxo&gt;. Nas cartas comuns, os bits e as cores devem corresponder. O byte é circular: sequências <b>7–8–1</b> e <b>8–1–2</b> também são válidas. Após a captura, os três espaços recebem &lt;bloqueio&gt; até que novas cartas sejam colocadas sobre eles.`,
+      `<b>Cartas especiais — 00, 01, 10, 11:</b> na sua área, uma carta especial pode substituir <b>duas posições consecutivas</b> de um fragmento, respeitando a ordem de seus dois bits e ignorando as cores dessas posições. A captura pode usar <b>1 carta especial e 1 carta comum</b>, nunca duas especiais. Uma carta especial presente no &lt;fluxo&gt; representa apenas um de seus dois valores na posição que ocupa.`,
+      `<b>Reposição após &lt;capturar&gt;:</b> repor da &lt;entrada&gt; todas as cartas usadas até voltar a <b>9 cartas</b>, ainda antes do descarte. Se forem usadas três cartas comuns, compre três; se for usada uma especial e uma comum, compre duas. Não há reposição depois de descartar.`,
+      `<b>04 — Descartar carta:</b> escolha <b>1 carta</b> da sua área e coloque-a no espaço indicado pelo marcador de &lt;memória&gt;, cobrindo a anterior e liberando qualquer &lt;bloqueio&gt; desse espaço. A &lt;memória&gt; avança circularmente. Uma carta especial só pode ser descartada se não houver outra carta disponível que possa ser descartada. Você termina normalmente com <b>8 cartas</b>.`,
+      `<b>05 — &lt;desconectar&gt; cor:</b> quando uma <b>carta comum</b> é descartada no &lt;fluxo&gt;, a cor dessa carta fica &lt;desconectada&gt; <b>somente para o próximo jogador</b>. Durante o turno dele, as cartas dessa cor ficam viradas para baixo e não podem ser usadas ou descartadas. A cor se reconecta após o descarte desse jogador. Uma carta enviada ao &lt;fluxo&gt; por &lt;atualização&gt; ou por &lt;ressonância&gt; não &lt;desconecta&gt; cores.`,
+      `<b>2 jogadores — O Duelo:</b> a posição 1 do &lt;fluxo&gt; é o <b>MSB (Most Significant Bit)</b>, marcada pelo contorno roxo. Se a carta comum descartada tiver <b>a mesma cor OU o mesmo valor</b> da carta do MSB, ocorre uma &lt;ressonância&gt;: uma carta do topo da &lt;entrada&gt; ocupa primeiro o espaço indicado pela &lt;memória&gt;, o descarte é colocado no espaço seguinte e a &lt;memória&gt; avança <b>2 posições</b>.`,
+      `<b>3 jogadores — O Triângulo:</b> a &lt;ressonância&gt; segue o mesmo procedimento, mas é ativada apenas quando a carta comum descartada tem <b>a mesma cor</b> da carta presente no MSB. Em partidas de <b>4 jogadores</b>, não há &lt;ressonância&gt;.`,
+      `<b>Carta especial na posição MSB:</b> nos modos de 2 ou 3 jogadores, se o MSB contiver uma carta especial (00, 01, 10, 11), <b>qualquer descarte válido</b> ativa a &lt;ressonância&gt;. Se houver uma carta comum no MSB, descartar uma carta especial não ativa esse efeito. A carta adicional da &lt;entrada&gt; não ativa outra &lt;ressonância&gt; e não &lt;desconecta&gt; uma cor.`,
+      `<b>Se o deck de &lt;entrada&gt; acabar:</b> recolha as cartas ocultas sob os topos visíveis das posições do &lt;fluxo&gt;, embaralhe-as e forme uma nova &lt;entrada&gt;. As cartas visíveis do &lt;fluxo&gt; permanecem em seus espaços.`,
+      `<b>Fim de jogo:</b> o primeiro jogador que &lt;capturar&gt; o <b>4º fragmento</b> completa a transmissão de 12 bits e vence imediatamente a partida.`
+    ];
+    rules.innerHTML = sections.map((section) => `<li>${section}</li>`).join('');
   }
+  updateOnlineHelpLabels();
   updateOnlineCaptureRules();
   installHistory();
   installRefillFX();

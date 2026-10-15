@@ -11,7 +11,9 @@ const ROOM_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const START_INTRO_STEP_MS = 700;
 
 function startIntroDuration(playerCount) {
-  return (Math.max(1, Number(playerCount) || 1) + 1) * START_INTRO_STEP_MS;
+  // v80: 2 segundos extras divididos entre a revelação de cada jogador
+  // e a pausa final antes da partida começar.
+  return (Math.max(1, Number(playerCount) || 1) + 1) * START_INTRO_STEP_MS + 2000;
 }
 const rooms = new Map();
 
@@ -647,7 +649,8 @@ function placeDiscard(room, player, cardId) {
     addLog(game, `${player.name} descartou ${cardLabel(card)} no espaço ${currentPos + 1} do <fluxo>.`);
   }
 
-  setSfxEvent(game, 'flow', player.id);
+  // A <ressonância> possui identidade sonora exclusiva para todos na sala.
+  setSfxEvent(game, extraCard ? 'resonance' : 'flow', player.id);
   if (!isSpecial(card)) {
     const nextIndex = (game.currentIndex + 1) % game.turnOrder.length;
     const next = game.players[game.turnOrder[nextIndex]];
