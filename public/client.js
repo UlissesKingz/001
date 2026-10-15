@@ -37,7 +37,7 @@
 
   // v73 — Em celular vertical, iniciar a partida no mesmo enquadramento do
   // botão de ajustar a tela. Respeita qualquer escolha manual posterior.
-  const portraitAutoFit = { pending: false, internalClick: false, userOverride: false };
+  const portraitAutoFit = { pending: false, internalClick: false, userOverride: false, stable: null };
 
   function syncPortraitAutoFit() {
     if (DEVICE !== 'mobile' || portraitAutoFit.userOverride || portraitAutoFit.pending) return;
@@ -65,6 +65,30 @@
     }));
   }
 
+  // v79 — mantém o enquadramento da partida independente das mudanças de
+  // cartas e mensagens. Não aumenta nem reduz o jogo em cada renderização.
+  // O navegador móvel pode disparar resize só porque a barra de endereço mudou;
+  // nesses casos restauramos o mesmo enquadramento, sem reexecutar o autofit.
+  function rememberPortraitFit(app) {
+    // Mudanças pequenas na altura (barra do navegador) não substituem a escala
+    // de referência. Quando a área visível volta, restauramos o tamanho inicial.
+    const previous = portraitAutoFit.stable;
+    if (previous && Math.abs(previous.viewportWidth - window.innerWidth) <= 8
+        && window.innerHeight < previous.viewportHeight - 1
+        && previous.viewportHeight - window.innerHeight <= 100) return;
+    portraitAutoFit.stable = {
+      viewportWidth: window.innerWidth,
+      viewportHeight: window.innerHeight,
+      zoom: app.style.zoom,
+      width: app.style.width,
+      maxWidth: app.style.maxWidth,
+      transform: app.style.transform,
+      transformOrigin: app.style.transformOrigin,
+      position: app.style.position,
+      left: app.style.left
+    };
+  }
+
   function ensurePortraitAllPlayersVisible(step = 0) {
     if (DEVICE !== 'mobile' || !document.body.classList.contains('in-game')) return;
     if (!window.matchMedia('(orientation: portrait)').matches) return;
@@ -73,15 +97,49 @@
     if (!app) return;
     const bottomLimit = Math.min(window.innerHeight - 4, ($('.legal-footer')?.getBoundingClientRect().top ?? window.innerHeight) - 4);
     const bounds = app.getBoundingClientRect();
-    if (bounds.bottom <= bottomLimit + 1 || bounds.height <= 0) return;
-    // O zoom padrão pode subestimar o rodapé e a altura extra das mensagens.
-    // Corrige somente a área que transbordou, sem reposicionar componentes.
+    if (bounds.bottom <= bottomLimit + 1 || bounds.height <= 0) {
+      // Memoriza somente após o primeiro enquadramento ter se estabilizado.
+      if (step === 0 || !portraitAutoFit.stable) rememberPortraitFit(app);
+      return;
+    }
     const available = bottomLimit - Math.max(0, bounds.top);
     if (available <= 0) return;
     const shrink = Math.max(0.65, Math.min(0.98, (available / bounds.height) * 0.98));
     const zoom = Number.parseFloat(app.style.zoom) || 1;
     app.style.zoom = Math.max(0.30, zoom * shrink).toFixed(3);
+    rememberPortraitFit(app);
     if (step < 4) requestAnimationFrame(() => ensurePortraitAllPlayersVisible(step + 1));
+  }
+
+  function preservePortraitFitOnResize() {
+    if (DEVICE !== 'mobile' || portraitAutoFit.userOverride) return;
+    if (!document.body.classList.contains('in-game') || !window.matchMedia('(orientation: portrait)').matches) {
+      portraitAutoFit.stable = null;
+      syncPortraitAutoFit();
+      return;
+    }
+    const stable = portraitAutoFit.stable;
+    // Uma rotação ou mudança real da largura exige um novo enquadramento.
+    if (!stable || Math.abs(window.innerWidth - stable.viewportWidth) > 8) {
+      portraitAutoFit.stable = null;
+      requestAnimationFrame(() => requestAnimationFrame(() => syncPortraitAutoFit()));
+      return;
+    }
+    // Aguarda o código legado de ajuste à janela e restaura a escala anterior.
+    requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(() => {
+      if (!document.body.classList.contains('in-game') || portraitAutoFit.userOverride) return;
+      if (!window.matchMedia('(orientation: portrait)').matches || !$('#fitBtn')?.classList.contains('active')) return;
+      const app = $('#gameApp');
+      if (!app) return;
+      app.style.zoom = stable.zoom;
+      app.style.width = stable.width;
+      app.style.maxWidth = stable.maxWidth;
+      app.style.transform = stable.transform;
+      app.style.transformOrigin = stable.transformOrigin;
+      app.style.position = stable.position;
+      app.style.left = stable.left;
+      ensurePortraitAllPlayersVisible();
+    })));
   }
 
   function releaseDefaultPortraitFit() {
@@ -401,6 +459,98 @@
       }
       #conveyor .flowcard.resonance-enter {
         animation:resonance-card-enter 1050ms ease-out both!important;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  // v79 — medidas previsíveis durante a partida: avisos e mensagens não
+  // aumentam/reduzem os painéis conforme o número de cartas ou fase do turno.
+  function installStableMobileLayout() {
+    if (document.getElementById('stableMobileLayoutStyles')) return;
+    const style = document.createElement('style');
+    style.id = 'stableMobileLayoutStyles';
+    style.textContent = `
+      @media (orientation:portrait) {
+        body.device-mobile.in-game .turn-prompt {
+          box-sizing:border-box!important;
+          height:30px!important;min-height:30px!important;max-height:30px!important;
+          overflow:hidden!important;
+          font-size:9px!important;line-height:1.2!important;
+          padding:4px 6px!important;margin:0 0 4px!important;
+          white-space:pre-line!important;
+          display:flex!important;align-items:center!important;justify-content:center!important;
+          text-align:center!important;
+        }
+        body.device-mobile.in-game.compact-resonance-prompt .turn-prompt {
+          height:62px!important;min-height:62px!important;max-height:62px!important;
+        }
+        body.device-mobile.in-game .human .controls .msg {
+          box-sizing:border-box!important;
+          height:32px!important;min-height:32px!important;max-height:32px!important;
+          overflow:hidden!important;
+          line-height:1.25!important;
+        }
+        body.device-mobile.in-game #deckHint {
+          box-sizing:border-box!important;
+          display:block!important;
+          width:100%!important;
+          height:15px!important;min-height:15px!important;max-height:15px!important;
+          font-size:8px!important;line-height:15px!important;
+          white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;
+          padding:0!important;margin:0!important;
+        }
+        body.device-mobile.in-game #hand0.fixed-card-slots > .card,
+        body.device-mobile.in-game #hand0.fixed-card-slots > .hand-empty-slot {
+          box-sizing:border-box!important; min-height:50px!important;
+          height:auto!important;aspect-ratio:.56!important;
+        }
+        body.device-mobile.in-game #hand1.fixed-card-slots > .card,
+        body.device-mobile.in-game #hand2.fixed-card-slots > .card,
+        body.device-mobile.in-game #hand3.fixed-card-slots > .card,
+        body.device-mobile.in-game #hand1.fixed-card-slots > .hand-empty-slot,
+        body.device-mobile.in-game #hand2.fixed-card-slots > .hand-empty-slot,
+        body.device-mobile.in-game #hand3.fixed-card-slots > .hand-empty-slot {
+          box-sizing:border-box!important; min-height:34px!important;
+          height:auto!important;aspect-ratio:.70!important;
+        }
+        body.device-mobile.in-game .seat h3 {
+          white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;
+        }
+        body.device-mobile.in-game .seat h3 small {
+          white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;
+        }
+        body.device-mobile.in-game .sort-hint { display:none!important; }
+      }
+      @media (orientation:portrait) and (max-width:360px) {
+        body.device-mobile.in-game #hand0.fixed-card-slots > .card,
+        body.device-mobile.in-game #hand0.fixed-card-slots > .hand-empty-slot {
+          min-height:46px!important;
+        }
+      }
+      @media (orientation:landscape) {
+        body.device-mobile.in-game .turn-prompt {
+          box-sizing:border-box!important;
+          height:21px!important;min-height:21px!important;max-height:21px!important;
+          overflow:hidden!important;
+        }
+        body.device-mobile.in-game.compact-resonance-prompt .turn-prompt {
+          height:52px!important;min-height:52px!important;max-height:52px!important;
+          white-space:pre-line!important;
+        }
+        body.device-mobile.in-game #deckHint {
+          box-sizing:border-box!important;
+          display:block!important;width:100%!important;
+          height:14px!important;min-height:14px!important;max-height:14px!important;
+          white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;
+          font-size:7px!important;line-height:14px!important;
+          padding:0!important;margin:0!important;
+        }
+        body.device-mobile.in-game .human .controls .msg {
+          box-sizing:border-box!important;
+          height:24px!important;min-height:24px!important;max-height:24px!important;
+          overflow:hidden!important;
+        }
       }
     `;
     document.head.appendChild(style);
@@ -1223,18 +1373,26 @@
       if (!turnPrompt) return;
       turnPrompt.className = `turn-prompt${tone ? ` ${tone}` : ''}`;
       const playerCount = game?.players?.length || 0;
+      // A instrução completa fica em REGRAS. No mobile, o aviso curto não pode
+      // aumentar a altura do tabuleiro quando chega a vez do jogador.
       const resonance = tone === 'active' && playerCount === 2
-        ? '2 jogadores — <ressonância>: uma carta comum descartada com a mesma cor OU valor da carta do MSB (posição 1) envia 1 carta extra da <entrada> ao <fluxo>. Se a carta do MSB for uma carta especial, qualquer descarte válido ativa o efeito.'
+        ? DEVICE === 'mobile'
+          ? '2J: <ressonância> = cor OU valor do MSB. Carta especial no MSB: sempre.'
+          : '2 jogadores — <ressonância>: uma carta comum descartada com a mesma cor OU valor da carta do MSB (posição 1) envia 1 carta extra da <entrada> ao <fluxo>. Se a carta do MSB for uma carta especial, qualquer descarte válido ativa o efeito.'
         : tone === 'active' && playerCount === 3
-          ? '3 jogadores — <ressonância>: uma carta comum descartada com a mesma cor da carta do MSB (posição 1) envia 1 carta extra da <entrada> ao <fluxo>. Se a carta do MSB for uma carta especial, qualquer descarte válido ativa o efeito.'
+          ? DEVICE === 'mobile'
+            ? '3J: <ressonância> = mesma cor do MSB. Carta especial no MSB: sempre.'
+            : '3 jogadores — <ressonância>: uma carta comum descartada com a mesma cor da carta do MSB (posição 1) envia 1 carta extra da <entrada> ao <fluxo>. Se a carta do MSB for uma carta especial, qualquer descarte válido ativa o efeito.'
           : '';
       // Texto puro: evita reconstruir nós DOM, preserva o aviso e os cliques do jogo.
-      turnPrompt.textContent = resonance ? `${text}\n\n${resonance}` : text;
+      const landscapePrompt = DEVICE === 'mobile' && window.matchMedia('(orientation: landscape)').matches;
+      turnPrompt.textContent = resonance ? (landscapePrompt ? `${text} ${resonance}` : `${text}\n\n${resonance}`) : text;
       turnPrompt.style.display = resonance ? 'block' : '';
       turnPrompt.style.whiteSpace = resonance ? 'pre-line' : '';
       turnPrompt.style.lineHeight = resonance ? '1.35' : '';
       turnPrompt.style.flexDirection = '';
     };
+    document.body.classList.toggle('compact-resonance-prompt', DEVICE === 'mobile' && (game?.playerCount === 2 || game?.playerCount === 3));
     draw.disabled = true; refresh.disabled = true; capture.disabled = true; discard.disabled = true;
     capture.classList.remove('meld-ready', 'meld-invalid');
     hint.textContent = '';
@@ -1264,7 +1422,7 @@
     if (!isMyTurn()) {
       const current = gamePlayer(game.currentPlayerId);
       const latest = Array.isArray(game.logs) && game.logs.length ? game.logs[game.logs.length - 1]?.text : '';
-      const botAction = current?.type === 'bot' && latest ? latest : '';
+      const botAction = DEVICE !== 'mobile' && current?.type === 'bot' && latest ? latest : '';
       setTurnPrompt(botAction || `Aguarde: é o turno de ${current?.name || 'outro jogador'}.`, 'wait');
       msg.className = 'msg';
       msg.textContent = current?.type === 'bot' ? `${current.name} está jogando...` : `Turno de ${current?.name || 'outro jogador'}.`;
@@ -1273,8 +1431,11 @@
     if (game.phase === 'draw') {
       draw.disabled = !game.deckTop;
       refresh.disabled = player.refresh <= 0 || !game.deckTop || game.refreshesThisTurn >= 3;
-      hint.textContent = game.deckTop ? `Topo: ${cardLabel(game.deckTop)} • Atualizações: ${player.refresh}/3 • usadas neste turno: ${game.refreshesThisTurn}/3` : '<entrada> vazia';
-      setTurnPrompt('É o seu turno: <atualizar> o deck ou comprar carta da <entrada>.', 'active');
+      hint.textContent = !game.deckTop ? '<entrada> vazia'
+        : DEVICE === 'mobile'
+          ? `Topo: ${cardLabel(game.deckTop)} • ↻ ${player.refresh}/3`
+          : `Topo: ${cardLabel(game.deckTop)} • Atualizações: ${player.refresh}/3 • usadas neste turno: ${game.refreshesThisTurn}/3`;
+      setTurnPrompt(DEVICE === 'mobile' ? 'Sua vez: compre ou use <atualização>.' : 'É o seu turno: <atualizar> o deck ou comprar carta da <entrada>.', 'active');
       msg.className = 'msg warn';
       msg.textContent = game.refreshesThisTurn === 0
         ? '1. FILTRAR / COMPRAR — compre o topo visível da <entrada> ou use <atualização>.'
@@ -1282,7 +1443,9 @@
       return;
     }
     if (game.phase === 'play') {
-      setTurnPrompt(game.capturedThisTurn ? 'É o seu turno: descarte 1 carta no <fluxo>.' : 'É o seu turno: <capturar> 1 fragmento ou descartar carta no <fluxo>.', 'active');
+      setTurnPrompt(DEVICE === 'mobile'
+        ? (game.capturedThisTurn ? 'Sua vez: descarte 1 carta.' : 'Sua vez: <capturar> ou descartar.')
+        : (game.capturedThisTurn ? 'É o seu turno: descarte 1 carta no <fluxo>.' : 'É o seu turno: <capturar> 1 fragmento ou descartar carta no <fluxo>.'), 'active');
       const cards = selectedCards();
       discard.disabled = !(cards.length === 1 && canDiscardClient(cards[0]));
       if (game.capturedThisTurn) {
@@ -1320,6 +1483,8 @@
       renderGame();
       if (refillFX.queue.length && !refillFX.running) advanceRefillFX();
     } else {
+      portraitAutoFit.stable = null;
+      portraitAutoFit.userOverride = false;
       releaseDefaultPortraitFit();
       document.body.classList.remove('in-game', 'viewer-spectator');
       closeHistory();
@@ -1408,6 +1573,8 @@
     state.shownModeMatch = null;
     state.flowMatchId = null;
     state.flowCardIds = null;
+    portraitAutoFit.stable = null;
+    portraitAutoFit.userOverride = false;
     releaseDefaultPortraitFit();
     document.body.classList.remove('in-game', 'viewer-spectator', 'mobile-landscape');
     $('#restartVoteModal')?.classList.remove('open');
@@ -1539,14 +1706,15 @@
   installHistory();
   installRefillFX();
   installFixedHandSlots();
+  installStableMobileLayout();
   installByteFlowStyles();
   installMobilePhysicalManual();
   if (DEVICE === 'mobile') {
     $('#fitBtn')?.addEventListener('click', () => {
       if (!portraitAutoFit.internalClick) portraitAutoFit.userOverride = true;
     });
-    window.addEventListener('resize', syncPortraitAutoFit);
-    window.addEventListener('orientationchange', syncPortraitAutoFit);
+    window.addEventListener('resize', preservePortraitFitOnResize);
+    window.addEventListener('orientationchange', () => { portraitAutoFit.stable = null; syncPortraitAutoFit(); });
   }
   connect();
 })();
