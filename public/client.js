@@ -11,6 +11,7 @@
   };
   const COLOR_ORDER = { red: 0, blue: 1, green: 2, yellow: 3 };
   const SPECIAL_ORDER = { '00': 0, '01': 1, '10': 2, '11': 3 };
+  const REFRESH_TOKENS_PER_PLAYER = 5;
   const state = {
     socket: null,
     room: null,
@@ -168,7 +169,7 @@
   }
 
   // v72 — A mesma animação visual para qualquer carta recebida da <entrada>:
-  // compra normal, compra após a 3ª <atualização> e reposição por <captura>.
+  // compra normal, compra após a 5ª <atualização> e reposição por <captura>.
   // Funciona na mão de todos os participantes (humanos e robôs).
   // Cada carta leva 700 ms (350 ms saindo da entrada + 350 ms surgindo na mão).
   // A compra/reposição real continua sendo decidida pelo servidor; esta camada é apenas visual.
@@ -521,10 +522,8 @@
           text-align:center!important;
         }
         body.device-mobile.in-game.compact-resonance-prompt .turn-prompt {
-          /* Espaço fixo para a explicação completa; nunca muda entre turnos. */
-          height:104px!important;min-height:104px!important;max-height:104px!important;
-          font-size:9px!important;line-height:1.25!important;
-          padding:5px 7px!important;
+          /* Mantém a altura original aprovada para o mobile vertical. */
+          height:62px!important;min-height:62px!important;max-height:62px!important;
         }
         body.device-mobile.in-game .human .controls .msg {
           box-sizing:border-box!important;
@@ -576,10 +575,10 @@
           overflow:hidden!important;
         }
         body.device-mobile.in-game.compact-resonance-prompt .turn-prompt {
-          height:70px!important;min-height:70px!important;max-height:70px!important;
+          /* Mantém a altura original aprovada para o mobile horizontal. */
+          height:52px!important;min-height:52px!important;max-height:52px!important;
           white-space:pre-line!important;
           font-size:8px!important;line-height:1.2!important;
-          padding:3px 6px!important;
         }
         body.device-mobile.in-game #deckHint {
           box-sizing:border-box!important;
@@ -1062,13 +1061,13 @@
     const updateLabel = document.createElement('span');
     updateLabel.className = 'updlabel';
     updateLabel.textContent = '<atualização>';
-    updateLabel.dataset.help = `<b>&lt;atualização&gt; de ${player.name}</b>: restam ${player.refresh}/3 marcadores. Antes da compra, cada marcador pode enviar o topo da &lt;entrada&gt; diretamente ao próximo espaço do &lt;fluxo&gt;.`;
+    updateLabel.dataset.help = `<b>&lt;atualização&gt; de ${player.name}</b>: restam ${player.refresh}/${REFRESH_TOKENS_PER_PLAYER} marcadores. Antes da compra, cada marcador pode enviar o topo da &lt;entrada&gt; diretamente ao próximo espaço do &lt;fluxo&gt;.`;
     container.appendChild(updateLabel);
-    for (let i = 0; i < 3; i += 1) {
+    for (let i = 0; i < REFRESH_TOKENS_PER_PLAYER; i += 1) {
       const available = i < player.refresh;
       const marker = document.createElement('span');
       marker.className = `refreshmark${available ? ' on' : ''}`;
-      marker.dataset.help = `<b>Marcador de &lt;atualização&gt; ${i + 1} de ${player.name}</b>: ${available ? 'disponível.' : 'já utilizado.'} Restam ${player.refresh}/3 nesta partida.`;
+      marker.dataset.help = `<b>Marcador de &lt;atualização&gt; ${i + 1} de ${player.name}</b>: ${available ? 'disponível.' : 'já utilizado.'} Restam ${player.refresh}/${REFRESH_TOKENS_PER_PLAYER} nesta partida.`;
       container.appendChild(marker);
     }
   }
@@ -1246,7 +1245,7 @@
       reserveEmptyHandSlots(handBox, cards.length);
       handBox.classList.toggle('selecting', allowInteract && isMyTurn() && game.phase === 'play');
       $(`#meta${slot}`).textContent = `${player.hand.length} cartas • ${player.captures}/4 capturas • ${player.refresh} atualizações`;
-      seat.dataset.help = `<b>Área de ${(!spectator && player.id === room.viewerId) ? 'você' : player.name}</b>: ${player.hand.length} cartas abertas, ${player.captures}/4 &lt;capturados&gt; e ${player.refresh}/3 &lt;atualizações&gt; disponíveis.${game.currentPlayerId === player.id && !game.winnerId ? ' <b>É o turno deste jogador.</b>' : ''}`;
+      seat.dataset.help = `<b>Área de ${(!spectator && player.id === room.viewerId) ? 'você' : player.name}</b>: ${player.hand.length} cartas abertas, ${player.captures}/4 &lt;capturados&gt; e ${player.refresh}/${REFRESH_TOKENS_PER_PLAYER} &lt;atualizações&gt; disponíveis.${game.currentPlayerId === player.id && !game.winnerId ? ' <b>É o turno deste jogador.</b>' : ''}`;
       renderMarkers($(`#melds${slot}`), player);
       seat.classList.toggle('active', game.currentPlayerId === player.id && !game.winnerId);
       seat.classList.toggle('winner', game.winnerId === player.id);
@@ -1433,20 +1432,22 @@
       if (!turnPrompt) return;
       turnPrompt.className = `turn-prompt${tone ? ` ${tone}` : ''}`;
       const playerCount = game?.players?.length || 0;
-      // v81 — Frases completas, sem abreviações de jogadores ou fórmulas.
-      // A explicação segue o manual: observar o MSB, reconhecer a condição,
-      // compreender a entrada da carta adicional e a exceção das especiais.
-      // O espaço do aviso permanece reservado no mobile, inclusive fora do turno.
+      // v82 — Mesma regra explicada por extenso nos dois dispositivos.
+      // Mobile: redação objetiva com frases completas que cabe no aviso original
+      // (62px na vertical / 52px na horizontal), sem alterar o tabuleiro.
+      // Desktop: mantém a explicação completa já aprovada.
       const resonance = tone === 'active' && (playerCount === 2 || playerCount === 3)
-        ? `${playerCount} jogadores — Observe a carta no primeiro espaço do <fluxo> (MSB). `
-          + (playerCount === 2
-            ? 'Se descartar uma carta comum da mesma cor ou do mesmo valor, ocorrerá uma <ressonância>. '
-            : 'Se descartar uma carta comum da mesma cor, ocorrerá uma <ressonância>. ')
-          + 'Uma carta extra da <entrada> entrará no <fluxo> antes da sua carta descartada. '
-          + 'Se o primeiro espaço tiver uma carta especial, qualquer descarte válido ativa esse efeito.'
+        ? DEVICE === 'mobile'
+          ? window.matchMedia('(orientation:landscape)').matches
+            ? `${playerCount} jogadores: descarte com cor${playerCount === 2 ? ' ou valor' : ''} igual à carta do espaço 1 ativa a <ressonância>. Se houver especial ali, qualquer descarte ativa.`
+            : `${playerCount} jogadores: se descartar uma carta comum da mesma cor${playerCount === 2 ? ' ou valor' : ''} que a carta do espaço 1, ocorre <ressonância>: entra uma carta extra. Se a carta do espaço 1 for especial, qualquer descarte ativa.`
+          : `${playerCount} jogadores — Observe a carta no primeiro espaço do <fluxo> (MSB). `
+            + (playerCount === 2
+              ? 'Se descartar uma carta comum da mesma cor ou do mesmo valor, ocorrerá uma <ressonância>. '
+              : 'Se descartar uma carta comum da mesma cor, ocorrerá uma <ressonância>. ')
+            + 'Uma carta extra da <entrada> entrará no <fluxo> antes da sua carta descartada. '
+            + 'Se o primeiro espaço tiver uma carta especial, qualquer descarte válido ativa esse efeito.'
         : '';
-      // Apresentar a ação atual primeiro. Quebras deliberadas separam
-      // a orientação de turno da explicação, sem criar elementos variáveis.
       turnPrompt.textContent = resonance ? `${text}\n${resonance}` : text;
       turnPrompt.style.display = resonance ? 'block' : '';
       turnPrompt.style.whiteSpace = resonance ? 'pre-line' : '';
@@ -1491,11 +1492,11 @@
     }
     if (game.phase === 'draw') {
       draw.disabled = !game.deckTop;
-      refresh.disabled = player.refresh <= 0 || !game.deckTop || game.refreshesThisTurn >= 3;
+      refresh.disabled = player.refresh <= 0 || !game.deckTop || game.refreshesThisTurn >= REFRESH_TOKENS_PER_PLAYER;
       hint.textContent = !game.deckTop ? '<entrada> vazia'
         : DEVICE === 'mobile'
-          ? `Topo: ${cardLabel(game.deckTop)} • ↻ ${player.refresh}/3`
-          : `Topo: ${cardLabel(game.deckTop)} • Atualizações: ${player.refresh}/3 • usadas neste turno: ${game.refreshesThisTurn}/3`;
+          ? `Topo: ${cardLabel(game.deckTop)} • ↻ ${player.refresh}/${REFRESH_TOKENS_PER_PLAYER}`
+          : `Topo: ${cardLabel(game.deckTop)} • Atualizações: ${player.refresh}/${REFRESH_TOKENS_PER_PLAYER} • usadas neste turno: ${game.refreshesThisTurn}/${REFRESH_TOKENS_PER_PLAYER}`;
       setTurnPrompt(DEVICE === 'mobile' ? 'Sua vez: compre ou use <atualização>.' : 'É o seu turno: <atualizar> o deck ou comprar carta da <entrada>.', 'active');
       msg.className = 'msg warn';
       msg.textContent = game.refreshesThisTurn === 0
@@ -1745,6 +1746,8 @@
     if (title) title.dataset.help = '<b>&lt;fluxo&gt;</b>: linha circular de 8 posições (1 byte) que recebe cartas da &lt;entrada&gt; ou dos descartes. Para &lt;capturar&gt; um fragmento, compare três posições consecutivas com cartas disponíveis na sua área de jogo.';
     const wrap = document.querySelector('.conveyor-wrap');
     if (wrap) wrap.dataset.help = '<b>&lt;fluxo&gt;</b>: byte compartilhado por todos os jogadores. O marcador de &lt;memória&gt; indica a próxima posição que receberá uma carta; depois do espaço 8, volta para o espaço 1. O contorno roxo permanente identifica o MSB.';
+    const refreshButton = document.querySelector('#refreshBtn');
+    if (refreshButton) refreshButton.dataset.help = `<b>&lt;atualização&gt;:</b> antes de comprar, você pode gastar quantos quiser dos seus ${REFRESH_TOKENS_PER_PLAYER} marcadores disponíveis na partida. Cada ficha envia a carta visível da &lt;entrada&gt; para o espaço indicado pela &lt;memória&gt;, libera eventuais &lt;bloqueios&gt; e não &lt;desconecta&gt; cores.`;
     const log = document.querySelector('.center-log');
     if (log) log.dataset.help = '<b>Registro da partida:</b> acompanhe compras, &lt;atualizações&gt;, &lt;capturas&gt;, descartes, &lt;ressonâncias&gt; e cores &lt;desconectadas&gt;.';
     const help = document.querySelector('#hand0');
@@ -1758,8 +1761,8 @@
     if (!rules) return;
     const sections = [
       `<b>A rede:</b> todos os jogadores estão conectados à mesma rede, disputando fragmentos de informação. No centro, os <b>8 bits</b> formam um byte: o &lt;fluxo&gt;, continuamente atualizado pelas cartas dos jogadores. O primeiro jogador que &lt;capturar&gt; <b>4 fragmentos</b> de 3 bits completa um pacote de 12 bits e vence a partida.`,
-      `<b>Preparação:</b> partida para 2 a 4 jogadores. Cada um recebe <b>8 cartas abertas</b>, <b>3 marcadores de &lt;atualização&gt;</b> e <b>4 marcadores de &lt;captura&gt;</b>. Abra 3 cartas comuns nas posições 1, 2 e 3 do &lt;fluxo&gt;; se aparecer uma carta especial, devolva-a ao fundo do deck de &lt;entrada&gt; e revele outra. O marcador de &lt;memória&gt; começa indicando a posição 4.`,
-      `<b>01 — Filtrar &lt;entrada&gt; e usar &lt;atualização&gt;:</b> antes da compra obrigatória, você pode gastar até os seus 3 marcadores de &lt;atualização&gt;. Cada uso envia a carta visível do topo da &lt;entrada&gt; diretamente para o espaço apontado pela &lt;memória&gt; e avança o marcador. Essa carta <b>não &lt;desconecta&gt; uma cor</b>, e qualquer carta que entre num espaço com &lt;bloqueio&gt; o libera.`,
+      `<b>Preparação:</b> partida para 2 a 4 jogadores. Cada um recebe <b>8 cartas abertas</b>, <b>5 marcadores de &lt;atualização&gt;</b> e <b>4 marcadores de &lt;captura&gt;</b>. Abra 3 cartas comuns nas posições 1, 2 e 3 do &lt;fluxo&gt;; se aparecer uma carta especial, devolva-a ao fundo do deck de &lt;entrada&gt; e revele outra. O marcador de &lt;memória&gt; começa indicando a posição 4.`,
+      `<b>01 — Filtrar &lt;entrada&gt; e usar &lt;atualização&gt;:</b> antes da compra obrigatória, você pode gastar quantos quiser dos seus <b>5 marcadores de &lt;atualização&gt;</b>, inclusive todos no mesmo turno. Cada uso envia a carta visível do topo da &lt;entrada&gt; diretamente para o espaço apontado pela &lt;memória&gt; e avança o marcador. Essa carta <b>não &lt;desconecta&gt; uma cor</b>, e qualquer carta que entre num espaço com &lt;bloqueio&gt; o libera.`,
       `<b>02 — Comprar carta:</b> depois das possíveis atualizações, compre <b>1 carta</b> do topo visível do deck de &lt;entrada&gt;. Sua área passa temporariamente de 8 para <b>9 cartas</b>. Cartas de uma cor &lt;desconectada&gt; ficam indisponíveis durante o turno.`,
       `<b>03 — &lt;capturar&gt; fragmento do &lt;fluxo&gt;:</b> você pode capturar <b>1 sequência por turno</b>, usando cartas da sua área que correspondam a <b>3 posições consecutivas</b> e disponíveis do &lt;fluxo&gt;. Nas cartas comuns, os bits e as cores devem corresponder. O byte é circular: sequências <b>7–8–1</b> e <b>8–1–2</b> também são válidas. Após a captura, os três espaços recebem &lt;bloqueio&gt; até que novas cartas sejam colocadas sobre eles.`,
       `<b>Cartas especiais — 00, 01, 10, 11:</b> na sua área, uma carta especial pode substituir <b>duas posições consecutivas</b> de um fragmento, respeitando a ordem de seus dois bits e ignorando as cores dessas posições. A captura pode usar <b>1 carta especial e 1 carta comum</b>, nunca duas especiais. Uma carta especial presente no &lt;fluxo&gt; representa apenas um de seus dois valores na posição que ocupa.`,

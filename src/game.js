@@ -9,6 +9,7 @@ const COLORS = [
 
 const ROOM_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const START_INTRO_STEP_MS = 700;
+const REFRESH_TOKENS_PER_PLAYER = 5;
 
 function startIntroDuration(playerCount) {
   // v80: 2 segundos extras divididos entre a revelação de cada jogador
@@ -521,7 +522,7 @@ function startGame(room) {
       hand: [],
       captures: 0,
       offlineColor: null,
-      refresh: 3
+      refresh: REFRESH_TOKENS_PER_PLAYER
     };
   }
   const game = {
@@ -558,7 +559,7 @@ function startGame(room) {
   seedConveyor(game);
   if (game.playerCount === 2) addLog(game, 'Modo 2 jogadores — O Duelo: <ressonância> ativada por mesma cor OU valor da carta do MSB (posição 1 do <fluxo>). Se a carta do MSB for uma carta especial, qualquer descarte válido ativa o efeito.');
   if (game.playerCount === 3) addLog(game, 'Modo 3 jogadores — O Triângulo: <ressonância> ativada por mesma cor da carta do MSB (posição 1 do <fluxo>). Se a carta do MSB for uma carta especial, qualquer descarte válido ativa o efeito.');
-  addLog(game, 'Nova partida: 8 cartas abertas e um <fluxo> de 8 posições (1 byte), 3 <atualização> e 4 marcadores de <capturados> por jogador.');
+  addLog(game, 'Nova partida: 8 cartas abertas e um <fluxo> de 8 posições (1 byte), 5 <atualização> e 4 marcadores de <capturados> por jogador.');
   addLog(game, `${game.players[game.starterId]?.name || 'Jogador'} foi selecionado aleatoriamente para iniciar a partida.`);
   startTurn(room);
   room.updatedAt = Date.now();
@@ -713,14 +714,14 @@ function playerDraw(room, playerId) {
 function playerRefresh(room, playerId) {
   const { game, player } = validateTurn(room, playerId, 'draw');
   if (player.refresh <= 0) throw new Error('Você não possui mais marcadores de <atualização>.');
-  if (game.refreshesThisTurn >= 3) throw new Error('O limite é 3 <atualização> por turno.');
+  if (game.refreshesThisTurn >= REFRESH_TOKENS_PER_PLAYER) throw new Error('Você já usou as 5 <atualizações> possíveis neste turno.');
   const card = useRefresh(room, player);
   if (!card) throw new Error('Não há carta disponível para atualizar.');
   game.refreshesThisTurn += 1;
-  if (game.refreshesThisTurn >= 3) {
+  if (game.refreshesThisTurn >= REFRESH_TOKENS_PER_PLAYER) {
     const bought = drawCard(game, player);
     if (!bought) throw new Error('Não há carta disponível para a compra obrigatória.');
-    addLog(game, `${player.name} usou a 3ª <atualização> e comprou automaticamente ${cardLabel(bought)}.`);
+    addLog(game, `${player.name} usou a 5ª <atualização> e comprou automaticamente ${cardLabel(bought)}.`);
     game.phase = 'play';
   }
   room.updatedAt = Date.now();
@@ -789,7 +790,7 @@ function runBotAction(room) {
 
   if (game.phase === 'draw') {
     const used = game.refreshesThisTurn || 0;
-    if (used < 3 && player.refresh > 0 && game.deck.length > 0) {
+    if (used < REFRESH_TOKENS_PER_PLAYER && player.refresh > 0 && game.deck.length > 0) {
       const chance = used === 0 ? 480 : used === 1 ? 340 : 260;
       const shouldRefresh = !topHelpsBot(room, player) && crypto.randomInt(0, 1000) < chance;
       if (shouldRefresh) {
